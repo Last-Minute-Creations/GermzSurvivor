@@ -121,8 +121,8 @@ convertTileset(
 #------------------------------------------------------------------------ ZOMBIE
 
 convertBitmaps(
-	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT}
-	INTERLEAVED SOURCES
+	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT} INTERLEAVED
+	SOURCES
 		${GEN_DIR}/tiles.png
 	DESTINATIONS
 		${DATA_DIR}/tiles.bm
