@@ -1,0 +1,36 @@
+GIMP Palette
+Name: germz_survivor
+Columns: 8
+#
+  0   0   0	Index 0
+ 51  17  51	Index 1
+ 17  17  85	Index 2
+ 34  34  51	Index 3
+ 68  34  51	Index 4
+ 85  17  68	Index 5
+ 51  51  51	Index 6
+102  34  68	Index 7
+102  51  51	Index 8
+ 85  68  51	Index 9
+ 85  68  51	Index 10
+ 68  85  85	Index 11
+102  68  51	Index 12
+153  68  85	Index 13
+102  85  68	Index 14
+102  85  68	Index 15
+ 51 102  85	Index 16
+119  85  68	Index 17
+102  85  85	Index 18
+119 102  85	Index 19
+ 85 102 119	Index 20
+119 102  85	Index 21
+119 102 102	Index 22
+ 51 136  85	Index 23
+ 85 119 170	Index 24
+153 102  85	Index 25
+187 102 119	Index 26
+119 136 136	Index 27
+153 136 119	Index 28
+221 153 153	Index 29
+170 170 170	Index 30
+238 238 238	Index 31

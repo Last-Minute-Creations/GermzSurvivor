@@ -8,6 +8,7 @@
 #include <ace/managers/key.h>
 #include <ace/managers/mouse.h>
 #include <ace/managers/ptplayer.h>
+#include "game.h"
 
 tStateManager *g_pGameStateManager;
 
@@ -20,23 +21,21 @@ void genericCreate(void) {
 	ptplayerCreate(1);
 	ptplayerSetChannelsForPlayer(0b0111);
 	ptplayerSetMasterVolume(8);
-	//  g_pFont = fontCreateFromFd(GET_SUBFILE_PREFIX("uni54.fnt"));
 
-	// statePush(g_pGameStateManager, &g_sStateLogo);
+	statePush(g_pGameStateManager, &g_sStateGame);
 }
 
 void genericProcess(void) {
 	gameExit();
 	keyProcess();
 	mouseProcess();
-	//  stateProcess(g_pGameStateManager);
+	stateProcess(g_pGameStateManager);
 }
 
 void genericDestroy(void) {
-	//  fontDestroy(g_pFont);
 	ptplayerDestroy();
 
-	//  stateManagerDestroy(g_pGameStateManager);
+	stateManagerDestroy(g_pGameStateManager);
 	keyDestroy();
 	mouseDestroy();
 }
