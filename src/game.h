@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <ace/managers/state.h>
-
 #ifndef SURVIVOR_GAME_H
 #define SURVIVOR_GAME_H
+
+#include <ace/managers/state.h>
 
 extern tState g_sStateGame;
 

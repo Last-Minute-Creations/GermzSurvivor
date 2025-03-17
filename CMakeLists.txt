@@ -17,7 +17,7 @@ set(AUDIO_MIXER_HW_CHANNELS 3)
 set(AUDIO_MIXER_SW_CHANNEL_COUNT 3)
 set(AUDIO_MIXER_PERIOD 161)
 set(ACE_SCROLLBUFFER_ENABLE_SCROLL_X OFF)
-set(ACE_BOB_PRISTINE_BUFFER ON)
+# set(ACE_BOB_PRISTINE_BUFFER ON)
 add_subdirectory(deps/ace ace)
 add_subdirectory(deps/ace_audio_mixer ace_audio_mixer)
 file(GLOB_RECURSE GAME_src src/*.c src/*.cpp src/*.h)
@@ -62,13 +62,27 @@ set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 file(MAKE_DIRECTORY ${DATA_DIR})
 file(MAKE_DIRECTORY ${GEN_DIR})
+file(GLOB COPY_FILES ${RES_DIR}/copied/*)
+file(COPY ${COPY_FILES} DESTINATION ${DATA_DIR})
 
 #----------------------------------------------------------------------- PALETTE
 
+file(GLOB PALETTE_SPRITE ${RES_DIR}/sprite.plt)
 file(GLOB PALETTE_GPL ${RES_DIR}/game.gpl)
 set(PALETTE_PLT ${DATA_DIR}/game.plt)
+set(TRANSPARENCY_HEX "#880088")
 
 convertPalette(${GAME_EXECUTABLE} ${PALETTE_GPL} ${PALETTE_PLT})
+
+#----------------------------------------------------------------------- CURSORS
+
+convertBitmaps(
+	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_SPRITE}
+	INTERLEAVED SOURCES
+		${RES_DIR}/cursors/crosshair.png
+	DESTINATIONS
+		${DATA_DIR}/cursor_crosshair.bm
+)
 
 #------------------------------------------------------------------------- TILES
 file(MAKE_DIRECTORY ${GEN_DIR}/tiles)
@@ -118,12 +132,152 @@ convertTileset(
 
 #-------------------------------------------------------------------------- HERO
 
+file(MAKE_DIRECTORY ${GEN_DIR}/player_s)
+file(MAKE_DIRECTORY ${GEN_DIR}/player_sw)
+file(MAKE_DIRECTORY ${GEN_DIR}/player_nw)
+file(MAKE_DIRECTORY ${GEN_DIR}/player_n)
+file(MAKE_DIRECTORY ${GEN_DIR}/player_ne)
+file(MAKE_DIRECTORY ${GEN_DIR}/player_se)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "PLAYER_S_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/player_s/0.png     8   16 32 32
+	${GEN_DIR}/player_s/1.png    56   16 32 32
+	${GEN_DIR}/player_s/2.png   104   16 32 32
+	${GEN_DIR}/player_s/3.png   152   16 32 32
+	${GEN_DIR}/player_s/4.png   200   16 32 32
+	${GEN_DIR}/player_s/5.png   248   16 32 32
+	${GEN_DIR}/player_s/6.png   296   16 32 32
+	${GEN_DIR}/player_s/7.png   344   16 32 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 32
+	SOURCE ${GEN_DIR}/player_s
+	INTERLEAVED DESTINATION ${GEN_DIR}/player_s.png
+	TILE_PATHS ${PLAYER_S_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "PLAYER_SW_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/player_sw/0.png     8   80 32 32
+	${GEN_DIR}/player_sw/1.png    56   80 32 32
+	${GEN_DIR}/player_sw/2.png   104   80 32 32
+	${GEN_DIR}/player_sw/3.png   152   80 32 32
+	${GEN_DIR}/player_sw/4.png   200   80 32 32
+	${GEN_DIR}/player_sw/5.png   248   80 32 32
+	${GEN_DIR}/player_sw/6.png   296   80 32 32
+	${GEN_DIR}/player_sw/7.png   344   80 32 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 32
+	SOURCE ${GEN_DIR}/player_sw
+	INTERLEAVED DESTINATION ${GEN_DIR}/player_sw.png
+	TILE_PATHS ${PLAYER_SW_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "PLAYER_NW_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/player_nw/0.png     8  144 32 32
+	${GEN_DIR}/player_nw/1.png    56  144 32 32
+	${GEN_DIR}/player_nw/2.png   104  144 32 32
+	${GEN_DIR}/player_nw/3.png   152  144 32 32
+	${GEN_DIR}/player_nw/4.png   200  144 32 32
+	${GEN_DIR}/player_nw/5.png   248  144 32 32
+	${GEN_DIR}/player_nw/6.png   296  144 32 32
+	${GEN_DIR}/player_nw/7.png   344  144 32 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 32
+	SOURCE ${GEN_DIR}/player_nw
+	INTERLEAVED DESTINATION ${GEN_DIR}/player_nw.png
+	TILE_PATHS ${PLAYER_NW_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "PLAYER_N_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/player_n/0.png     8  208 32 32
+	${GEN_DIR}/player_n/1.png    56  208 32 32
+	${GEN_DIR}/player_n/2.png   104  208 32 32
+	${GEN_DIR}/player_n/3.png   152  208 32 32
+	${GEN_DIR}/player_n/4.png   200  208 32 32
+	${GEN_DIR}/player_n/5.png   248  208 32 32
+	${GEN_DIR}/player_n/6.png   296  208 32 32
+	${GEN_DIR}/player_n/7.png   344  208 32 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 32
+	SOURCE ${GEN_DIR}/player_n
+	INTERLEAVED DESTINATION ${GEN_DIR}/player_n.png
+	TILE_PATHS ${PLAYER_N_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "PLAYER_NE_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/player_ne/0.png     8  272 32 32
+	${GEN_DIR}/player_ne/1.png    56  272 32 32
+	${GEN_DIR}/player_ne/2.png   104  272 32 32
+	${GEN_DIR}/player_ne/3.png   152  272 32 32
+	${GEN_DIR}/player_ne/4.png   200  272 32 32
+	${GEN_DIR}/player_ne/5.png   248  272 32 32
+	${GEN_DIR}/player_ne/6.png   296  272 32 32
+	${GEN_DIR}/player_ne/7.png   344  272 32 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 32
+	SOURCE ${GEN_DIR}/player_ne
+	INTERLEAVED DESTINATION ${GEN_DIR}/player_ne.png
+	TILE_PATHS ${PLAYER_NE_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "PLAYER_SE_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/player_se/0.png     8  336 32 32
+	${GEN_DIR}/player_se/1.png    56  336 32 32
+	${GEN_DIR}/player_se/2.png   104  336 32 32
+	${GEN_DIR}/player_se/3.png   152  336 32 32
+	${GEN_DIR}/player_se/4.png   200  336 32 32
+	${GEN_DIR}/player_se/5.png   248  336 32 32
+	${GEN_DIR}/player_se/6.png   296  336 32 32
+	${GEN_DIR}/player_se/7.png   344  336 32 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 32
+	SOURCE ${GEN_DIR}/player_se
+	INTERLEAVED DESTINATION ${GEN_DIR}/player_se.png
+	TILE_PATHS ${PLAYER_SE_PATHS}
+)
+
 #------------------------------------------------------------------------ ZOMBIE
 
 convertBitmaps(
-	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT} INTERLEAVED
-	SOURCES
+	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT}
+	INTERLEAVED SOURCES
 		${GEN_DIR}/tiles.png
 	DESTINATIONS
 		${DATA_DIR}/tiles.bm
+)
+
+convertBitmaps(
+	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT} MASK_COLOR ${TRANSPARENCY_HEX}
+	INTERLEAVED SOURCES
+		${GEN_DIR}/player_s.png ${GEN_DIR}/player_sw.png ${GEN_DIR}/player_nw.png
+		${GEN_DIR}/player_n.png ${GEN_DIR}/player_ne.png ${GEN_DIR}/player_se.png
+	DESTINATIONS
+		${DATA_DIR}/player_s.bm ${DATA_DIR}/player_sw.bm ${DATA_DIR}/player_nw.bm
+		${DATA_DIR}/player_n.bm ${DATA_DIR}/player_ne.bm ${DATA_DIR}/player_se.bm
+	MASKS
+		${DATA_DIR}/player_s_mask.bm ${DATA_DIR}/player_sw_mask.bm ${DATA_DIR}/player_nw_mask.bm
+		${DATA_DIR}/player_n_mask.bm ${DATA_DIR}/player_ne_mask.bm ${DATA_DIR}/player_se_mask.bm
 )
