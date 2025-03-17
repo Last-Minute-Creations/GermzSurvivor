@@ -10,6 +10,7 @@
 #include <ace/managers/viewport/tilebuffer.h>
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/rand.h>
+#include <ace/managers/sprite.h>
 #include <ace/utils/palette.h>
 #include "survivor.h"
 #include "game_math.h"
@@ -19,6 +20,7 @@
 #define MAP_SIZE_Y 40
 #define MAP_TILE_SHIFT 4
 #define GAME_BPP 5
+#define SPRITE_CHANNEL_CURSOR 4
 
 #define PLAYER_BOB_SIZE_X 32
 #define PLAYER_BOB_SIZE_Y 32
@@ -26,12 +28,12 @@
 #define PLAYER_BOB_OFFSET_Y 25
 
 typedef enum tDirection {
-	DIRECTION_NE,
-	DIRECTION_N,
-	DIRECTION_NW,
-	DIRECTION_SW,
-	DIRECTION_S,
 	DIRECTION_SE,
+	DIRECTION_S,
+	DIRECTION_SW,
+	DIRECTION_NW,
+	DIRECTION_N,
+	DIRECTION_NE,
 	DIRECTION_COUNT
 } tDirection;
 
@@ -57,6 +59,8 @@ typedef struct tPlayer {
 	UWORD uwX;
 	UWORD uwY;
 	tBob sBob;
+	tPlayerFrame eFrame;
+	UBYTE ubFrameCooldown;
 } tPlayer;
 
 static tView *s_pView;
@@ -65,7 +69,10 @@ static tVPort *s_pVpHud;
 static tTileBufferManager *s_pBufferMain;
 static tSimpleBufferManager *s_pBufferHud;
 static tBitMap *s_pTileset;
+static tBitMap *s_pBmCrosshair;
 static tRandManager g_sRand;
+static tSprite *s_pSpriteCursor;
+
 static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
 static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
@@ -160,10 +167,18 @@ static void gameGsCreate(void) {
 
 	s_sPlayer.uwX = 100;
 	s_sPlayer.uwY = 100;
+	s_sPlayer.eFrame = 0;
+	s_sPlayer.ubFrameCooldown = 0;
 	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 
 	bobReallocateBuffers();
 	gameMathInit();
+
+	s_pBmCrosshair = bitmapCreateFromPath("data/cursor_crosshair.bm", 0);
+	spriteManagerCreate(s_pView, 0, 0);
+	s_pSpriteCursor = spriteAdd(SPRITE_CHANNEL_CURSOR, s_pBmCrosshair);
+	systemSetDmaBit(DMAB_SPRITE, 1);
+	mouseSetBounds(MOUSE_PORT_1, 0, HUD_HEIGHT, 320, 256);
 
 	systemUnuse();
 	tileBufferRedrawAll(s_pBufferMain);
@@ -179,17 +194,78 @@ static void gameGsLoop(void) {
 
 	bobBegin(s_pBufferMain->pScroll->pBack);
 
-	// UBYTE ubAngle = getAngleBetweenPoints(
-	// 	s_sPlayer.uwX, s_sPlayer.uwY + HUD_HEIGHT,
-	// 	mouseGetX(MOUSE_PORT_1), mouseGetY(MOUSE_PORT_1)
-	// );
-	tDirection eDir = DIRECTION_NE; // TODO
-	tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][0]; // TODO
+	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
+	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
+
+	UBYTE ubAngle = getAngleBetweenPoints( // 0 is right, going clockwise
+		s_sPlayer.uwX - s_pBufferMain->pCamera->uPos.uwX,
+		s_sPlayer.uwY - s_pBufferMain->pCamera->uPos.uwY,
+		uwMouseX, uwMouseY - HUD_HEIGHT
+	);
+	s_pSpriteCursor->wX = uwMouseX - 4;
+	s_pSpriteCursor->wY = uwMouseY - 4;
+	spriteProcess(s_pSpriteCursor);
+	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
+
+	BYTE bDeltaX = 0;
+	BYTE bDeltaY = 0;
+	if(keyCheck(KEY_W)) {
+		bDeltaY = -2;
+	}
+	else if(keyCheck(KEY_S)) {
+		bDeltaY = 2;
+	}
+	if(keyCheck(KEY_A)) {
+		bDeltaX = -2;
+	}
+	else if(keyCheck(KEY_D)) {
+		bDeltaX = 2;
+	}
+	if(bDeltaX || bDeltaY) {
+		s_sPlayer.uwX += bDeltaX;
+		s_sPlayer.uwY += bDeltaY;
+		if(s_sPlayer.ubFrameCooldown >= 2) {
+			s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
+			if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
+				s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+			}
+			s_sPlayer.ubFrameCooldown = 0;
+		}
+		else {
+			++s_sPlayer.ubFrameCooldown;
+		}
+	}
+	else {
+		s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+		s_sPlayer.ubFrameCooldown = 0;
+	}
+
+	tDirection eDir;
+	if(ubAngle < ANGLE_45) {
+		eDir = DIRECTION_SE;
+	}
+	else if(ubAngle < ANGLE_45 + ANGLE_90) {
+		eDir = DIRECTION_S;
+	}
+	else if(ubAngle < ANGLE_180) {
+		eDir = DIRECTION_SW;
+	}
+	else if(ubAngle < ANGLE_180 + ANGLE_45) {
+		eDir = DIRECTION_NW;
+	}
+	else if(ubAngle < ANGLE_180 + ANGLE_45 + ANGLE_90) {
+		eDir = DIRECTION_N;
+	}
+	else {
+		eDir = DIRECTION_NE;
+	}
+
+	tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
 	s_sPlayer.sBob.sPos.uwX = s_sPlayer.uwX - PLAYER_BOB_OFFSET_X;
 	s_sPlayer.sBob.sPos.uwY = s_sPlayer.uwY - PLAYER_BOB_OFFSET_Y;
 	bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
 	bobPush(&s_sPlayer.sBob);
-	// cameraCenterAt(s_pBufferMain->pCamera, s_sPlayer.uwX, s_sPlayer.uwY);
+	cameraCenterAt(s_pBufferMain->pCamera, s_sPlayer.uwX, s_sPlayer.uwY);
 
 	bobPushingDone();
 	bobEnd();
@@ -202,6 +278,9 @@ static void gameGsLoop(void) {
 static void gameGsDestroy(void) {
 	viewLoad(0);
 	systemUse();
+
+	spriteManagerDestroy();
+	bitmapDestroy(s_pBmCrosshair);
 
 	bobManagerDestroy();
 	for(tDirection eDir = 0; eDir < DIRECTION_COUNT; ++eDir) {
