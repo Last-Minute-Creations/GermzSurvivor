@@ -11,6 +11,7 @@
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/rand.h>
 #include <ace/managers/sprite.h>
+#include <ace/managers/ptplayer.h>
 #include <ace/utils/palette.h>
 #include "survivor.h"
 #include "game_math.h"
@@ -92,6 +93,8 @@ static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
 static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
 static tPlayer s_pEnemies[ENEMY_COUNT];
 
+static tPtplayerMod *s_pMod;
+
 static void onTileDraw(
 	UNUSED_ARG UWORD uwTileX, UNUSED_ARG UWORD uwTileY,
 	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
@@ -143,6 +146,8 @@ static void gameGsCreate(void) {
 	);
 
 	paletteLoadFromPath("data/game.plt", s_pVpHud->pPalette, 1 << GAME_BPP);
+
+	s_pMod = ptplayerModCreateFromPath("data/germz1.mod");
 
 	randInit(&g_sRand, 2184, 1911);
 
@@ -242,6 +247,8 @@ static void gameGsCreate(void) {
 	tileBufferRedrawAll(s_pBufferMain);
 	viewLoad(s_pView);
 	logBlockEnd("gameGsCreate()");
+	ptplayerLoadMod(s_pMod, 0, 0);
+	ptplayerEnableMusic(1);
 }
 
 static void gameGsLoop(void) {
@@ -346,7 +353,10 @@ static void gameGsLoop(void) {
 
 static void gameGsDestroy(void) {
 	viewLoad(0);
+	ptplayerStop();
 	systemUse();
+
+	ptplayerModDestroy(s_pMod);
 
 	spriteManagerDestroy();
 	bitmapDestroy(s_pBmCrosshair);

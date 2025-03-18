@@ -20,7 +20,7 @@ void genericCreate(void) {
 	// Bare minimum
 	ptplayerCreate(1);
 	ptplayerSetChannelsForPlayer(0b0111);
-	ptplayerSetMasterVolume(8);
+	ptplayerSetMasterVolume(32);
 
 	statePush(g_pGameStateManager, &g_sStateGame);
 }
