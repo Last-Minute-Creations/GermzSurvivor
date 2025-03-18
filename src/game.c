@@ -29,11 +29,11 @@
 #define PLAYER_BOB_OFFSET_Y 25
 
 #define ENEMY_BOB_SIZE_X 16
-#define ENEMY_BOB_SIZE_Y 32
+#define ENEMY_BOB_SIZE_Y 24
 #define ENEMY_BOB_OFFSET_X 8
 #define ENEMY_BOB_OFFSET_Y 25
 
-#define ENEMY_COUNT 25
+#define ENEMY_COUNT 30
 
 typedef enum tDirection {
 	DIRECTION_SE,
@@ -339,7 +339,9 @@ static void gameGsLoop(void) {
 
 	viewProcessManagers(s_pView);
 	copProcessBlocks();
+	systemIdleBegin();
 	vPortWaitUntilEnd(s_pVpMain);
+	systemIdleEnd();
 }
 
 static void gameGsDestroy(void) {
