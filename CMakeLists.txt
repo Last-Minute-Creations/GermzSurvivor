@@ -16,7 +16,7 @@ set(AUDIO_MIXER_PROFILER OFF)
 set(AUDIO_MIXER_HW_CHANNELS 3)
 set(AUDIO_MIXER_SW_CHANNEL_COUNT 3)
 set(AUDIO_MIXER_PERIOD 161)
-# set(ACE_BOB_PRISTINE_BUFFER ON)
+set(ACE_BOB_PRISTINE_BUFFER ON)
 add_subdirectory(deps/ace ace)
 add_subdirectory(deps/ace_audio_mixer ace_audio_mixer)
 file(GLOB_RECURSE GAME_src src/*.c src/*.cpp src/*.h)
@@ -129,7 +129,7 @@ convertTileset(
 	TILE_PATHS ${TILE_PATHS}
 )
 
-#-------------------------------------------------------------------------- HERO
+#------------------------------------------------------------------------ PLAYER
 
 file(MAKE_DIRECTORY ${GEN_DIR}/player_s)
 file(MAKE_DIRECTORY ${GEN_DIR}/player_sw)
@@ -260,6 +260,135 @@ convertTileset(
 
 #------------------------------------------------------------------------ ZOMBIE
 
+file(MAKE_DIRECTORY ${GEN_DIR}/zombie_s)
+file(MAKE_DIRECTORY ${GEN_DIR}/zombie_sw)
+file(MAKE_DIRECTORY ${GEN_DIR}/zombie_nw)
+file(MAKE_DIRECTORY ${GEN_DIR}/zombie_n)
+file(MAKE_DIRECTORY ${GEN_DIR}/zombie_ne)
+file(MAKE_DIRECTORY ${GEN_DIR}/zombie_se)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "ZOMBIE_S_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/zombie_s/0.png    16   16 16 32
+	${GEN_DIR}/zombie_s/1.png    64   16 16 32
+	${GEN_DIR}/zombie_s/2.png   112   16 16 32
+	${GEN_DIR}/zombie_s/3.png   160   16 16 32
+	${GEN_DIR}/zombie_s/4.png   208   16 16 32
+	${GEN_DIR}/zombie_s/5.png   256   16 16 32
+	${GEN_DIR}/zombie_s/6.png   304   16 16 32
+	${GEN_DIR}/zombie_s/7.png   352   16 16 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 32
+	SOURCE ${GEN_DIR}/zombie_s
+	INTERLEAVED DESTINATION ${GEN_DIR}/zombie_s.png
+	TILE_PATHS ${ZOMBIE_S_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "ZOMBIE_SW_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/zombie_sw/0.png    16   80 16 32
+	${GEN_DIR}/zombie_sw/1.png    64   80 16 32
+	${GEN_DIR}/zombie_sw/2.png   112   80 16 32
+	${GEN_DIR}/zombie_sw/3.png   160   80 16 32
+	${GEN_DIR}/zombie_sw/4.png   208   80 16 32
+	${GEN_DIR}/zombie_sw/5.png   256   80 16 32
+	${GEN_DIR}/zombie_sw/6.png   304   80 16 32
+	${GEN_DIR}/zombie_sw/7.png   352   80 16 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 32
+	SOURCE ${GEN_DIR}/zombie_sw
+	INTERLEAVED DESTINATION ${GEN_DIR}/zombie_sw.png
+	TILE_PATHS ${ZOMBIE_SW_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "ZOMBIE_NW_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/zombie_nw/0.png    16  144 16 32
+	${GEN_DIR}/zombie_nw/1.png    64  144 16 32
+	${GEN_DIR}/zombie_nw/2.png   112  144 16 32
+	${GEN_DIR}/zombie_nw/3.png   160  144 16 32
+	${GEN_DIR}/zombie_nw/4.png   208  144 16 32
+	${GEN_DIR}/zombie_nw/5.png   256  144 16 32
+	${GEN_DIR}/zombie_nw/6.png   304  144 16 32
+	${GEN_DIR}/zombie_nw/7.png   352  144 16 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 32
+	SOURCE ${GEN_DIR}/zombie_nw
+	INTERLEAVED DESTINATION ${GEN_DIR}/zombie_nw.png
+	TILE_PATHS ${ZOMBIE_NW_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "ZOMBIE_N_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/zombie_n/0.png    16  208 16 32
+	${GEN_DIR}/zombie_n/1.png    64  208 16 32
+	${GEN_DIR}/zombie_n/2.png   112  208 16 32
+	${GEN_DIR}/zombie_n/3.png   160  208 16 32
+	${GEN_DIR}/zombie_n/4.png   208  208 16 32
+	${GEN_DIR}/zombie_n/5.png   256  208 16 32
+	${GEN_DIR}/zombie_n/6.png   304  208 16 32
+	${GEN_DIR}/zombie_n/7.png   352  208 16 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 32
+	SOURCE ${GEN_DIR}/zombie_n
+	INTERLEAVED DESTINATION ${GEN_DIR}/zombie_n.png
+	TILE_PATHS ${ZOMBIE_N_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "ZOMBIE_NE_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/zombie_ne/0.png    16  272 16 32
+	${GEN_DIR}/zombie_ne/1.png    64  272 16 32
+	${GEN_DIR}/zombie_ne/2.png   112  272 16 32
+	${GEN_DIR}/zombie_ne/3.png   160  272 16 32
+	${GEN_DIR}/zombie_ne/4.png   208  272 16 32
+	${GEN_DIR}/zombie_ne/5.png   256  272 16 32
+	${GEN_DIR}/zombie_ne/6.png   304  272 16 32
+	${GEN_DIR}/zombie_ne/7.png   352  272 16 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 32
+	SOURCE ${GEN_DIR}/zombie_ne
+	INTERLEAVED DESTINATION ${GEN_DIR}/zombie_ne.png
+	TILE_PATHS ${ZOMBIE_NE_PATHS}
+)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+	GENERATED_FILE_LIST "ZOMBIE_SE_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/zombie_se/0.png    16  336 16 32
+	${GEN_DIR}/zombie_se/1.png    64  336 16 32
+	${GEN_DIR}/zombie_se/2.png   112  336 16 32
+	${GEN_DIR}/zombie_se/3.png   160  336 16 32
+	${GEN_DIR}/zombie_se/4.png   208  336 16 32
+	${GEN_DIR}/zombie_se/5.png   256  336 16 32
+	${GEN_DIR}/zombie_se/6.png   304  336 16 32
+	${GEN_DIR}/zombie_se/7.png   352  336 16 32
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 32
+	SOURCE ${GEN_DIR}/zombie_se
+	INTERLEAVED DESTINATION ${GEN_DIR}/zombie_se.png
+	TILE_PATHS ${ZOMBIE_SE_PATHS}
+)
+
+#----------------------------------------------------------------- CONVERT TO BM
+
 convertBitmaps(
 	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT}
 	INTERLEAVED SOURCES
@@ -279,4 +408,17 @@ convertBitmaps(
 	MASKS
 		${DATA_DIR}/player_s_mask.bm ${DATA_DIR}/player_sw_mask.bm ${DATA_DIR}/player_nw_mask.bm
 		${DATA_DIR}/player_n_mask.bm ${DATA_DIR}/player_ne_mask.bm ${DATA_DIR}/player_se_mask.bm
+)
+
+convertBitmaps(
+	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT} MASK_COLOR ${TRANSPARENCY_HEX}
+	INTERLEAVED SOURCES
+		${GEN_DIR}/zombie_s.png ${GEN_DIR}/zombie_sw.png ${GEN_DIR}/zombie_nw.png
+		${GEN_DIR}/zombie_n.png ${GEN_DIR}/zombie_ne.png ${GEN_DIR}/zombie_se.png
+	DESTINATIONS
+		${DATA_DIR}/zombie_s.bm ${DATA_DIR}/zombie_sw.bm ${DATA_DIR}/zombie_nw.bm
+		${DATA_DIR}/zombie_n.bm ${DATA_DIR}/zombie_ne.bm ${DATA_DIR}/zombie_se.bm
+	MASKS
+		${DATA_DIR}/zombie_s_mask.bm ${DATA_DIR}/zombie_sw_mask.bm ${DATA_DIR}/zombie_nw_mask.bm
+		${DATA_DIR}/zombie_n_mask.bm ${DATA_DIR}/zombie_ne_mask.bm ${DATA_DIR}/zombie_se_mask.bm
 )

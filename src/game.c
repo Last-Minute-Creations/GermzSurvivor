@@ -19,6 +19,7 @@
 #define MAP_SIZE_X 40
 #define MAP_SIZE_Y 40
 #define MAP_TILE_SHIFT 4
+#define MAP_TILE_SIZE  (1 << MAP_TILE_SHIFT)
 #define GAME_BPP 5
 #define SPRITE_CHANNEL_CURSOR 4
 
@@ -26,6 +27,13 @@
 #define PLAYER_BOB_SIZE_Y 32
 #define PLAYER_BOB_OFFSET_X 16
 #define PLAYER_BOB_OFFSET_Y 25
+
+#define ENEMY_BOB_SIZE_X 16
+#define ENEMY_BOB_SIZE_Y 32
+#define ENEMY_BOB_OFFSET_X 8
+#define ENEMY_BOB_OFFSET_Y 25
+
+#define ENEMY_COUNT 25
 
 typedef enum tDirection {
 	DIRECTION_SE,
@@ -67,6 +75,7 @@ static tView *s_pView;
 static tVPort *s_pVpMain;
 static tVPort *s_pVpHud;
 static tTileBufferManager *s_pBufferMain;
+static tBitMap *s_pPristineBuffer;
 static tSimpleBufferManager *s_pBufferHud;
 static tBitMap *s_pTileset;
 static tBitMap *s_pBmCrosshair;
@@ -77,6 +86,21 @@ static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
 static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
 static tPlayer s_sPlayer;
+
+static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
+static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
+static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
+static tPlayer s_pEnemies[ENEMY_COUNT];
+
+static void onTileDraw(
+	UNUSED_ARG UWORD uwTileX, UNUSED_ARG UWORD uwTileY,
+	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
+) {
+	blitCopyAligned(
+		pBitMap, uwBitMapX, uwBitMapY, s_pPristineBuffer, uwBitMapX, uwBitMapY,
+		MAP_TILE_SIZE, MAP_TILE_SIZE
+	);
+}
 
 static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
@@ -111,7 +135,12 @@ static void gameGsCreate(void) {
 		TAG_TILEBUFFER_VPORT, s_pVpMain,
 		TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH, 100,
 		TAG_TILEBUFFER_TILESET, s_pTileset,
+		TAG_TILEBUFFER_CALLBACK_TILE_DRAW, onTileDraw,
 	TAG_END);
+	s_pPristineBuffer = bitmapCreate(
+		bitmapGetByteWidth(s_pBufferMain->pScroll->pBack) * 8,
+		s_pBufferMain->pScroll->pBack->Rows, GAME_BPP, BMF_INTERLEAVED
+	);
 
 	paletteLoadFromPath("data/game.plt", s_pVpHud->pPalette, 1 << GAME_BPP);
 
@@ -160,9 +189,30 @@ static void gameGsCreate(void) {
 		}
 	}
 
+	s_pEnemyFrames[DIRECTION_NE] = bitmapCreateFromPath("data/zombie_ne.bm", 0);
+	s_pEnemyFrames[DIRECTION_N] = bitmapCreateFromPath("data/zombie_n.bm", 0);
+	s_pEnemyFrames[DIRECTION_NW] = bitmapCreateFromPath("data/zombie_nw.bm", 0);
+	s_pEnemyFrames[DIRECTION_SW] = bitmapCreateFromPath("data/zombie_sw.bm", 0);
+	s_pEnemyFrames[DIRECTION_S] = bitmapCreateFromPath("data/zombie_s.bm", 0);
+	s_pEnemyFrames[DIRECTION_SE] = bitmapCreateFromPath("data/zombie_se.bm", 0);
+
+	s_pEnemyMasks[DIRECTION_NE] = bitmapCreateFromPath("data/zombie_ne_mask.bm", 0);
+	s_pEnemyMasks[DIRECTION_N] = bitmapCreateFromPath("data/zombie_n_mask.bm", 0);
+	s_pEnemyMasks[DIRECTION_NW] = bitmapCreateFromPath("data/zombie_nw_mask.bm", 0);
+	s_pEnemyMasks[DIRECTION_SW] = bitmapCreateFromPath("data/zombie_sw_mask.bm", 0);
+	s_pEnemyMasks[DIRECTION_S] = bitmapCreateFromPath("data/zombie_s_mask.bm", 0);
+	s_pEnemyMasks[DIRECTION_SE] = bitmapCreateFromPath("data/zombie_se_mask.bm", 0);
+
+	for(tDirection eDir = 0; eDir < DIRECTION_COUNT; ++eDir) {
+		for(tPlayerFrame eFrame = 0; eFrame < PLAYER_FRAME_COUNT; ++eFrame) {
+			s_pEnemyFrameOffsets[eDir][eFrame].pPixels = bobCalcFrameAddress(s_pEnemyFrames[eDir], eFrame * ENEMY_BOB_SIZE_Y);
+			s_pEnemyFrameOffsets[eDir][eFrame].pMask = bobCalcFrameAddress(s_pEnemyMasks[eDir], eFrame * ENEMY_BOB_SIZE_Y);
+		}
+	}
+
 	bobManagerCreate(
 		s_pBufferMain->pScroll->pFront, s_pBufferMain->pScroll->pBack,
-		s_pBufferMain->pScroll->uwBmAvailHeight
+		s_pPristineBuffer, s_pBufferMain->pScroll->uwBmAvailHeight
 	);
 
 	s_sPlayer.uwX = 100;
@@ -170,6 +220,14 @@ static void gameGsCreate(void) {
 	s_sPlayer.eFrame = 0;
 	s_sPlayer.ubFrameCooldown = 0;
 	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
+
+	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
+		s_pEnemies[i].uwX = 32 + (i % 8) * 32;
+		s_pEnemies[i].uwY = 32 + (i / 8) * 32;
+		s_pEnemies[i].eFrame = 0;
+		s_pEnemies[i].ubFrameCooldown = 0;
+		bobInit(&s_pEnemies[i].sBob, ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_Y, 1, 0, 0, 0, 0);
+	}
 
 	bobReallocateBuffers();
 	gameMathInit();
@@ -261,11 +319,20 @@ static void gameGsLoop(void) {
 	}
 
 	tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
+	bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
 	s_sPlayer.sBob.sPos.uwX = s_sPlayer.uwX - PLAYER_BOB_OFFSET_X;
 	s_sPlayer.sBob.sPos.uwY = s_sPlayer.uwY - PLAYER_BOB_OFFSET_Y;
-	bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
 	bobPush(&s_sPlayer.sBob);
 	cameraCenterAt(s_pBufferMain->pCamera, s_sPlayer.uwX, s_sPlayer.uwY);
+
+	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
+		tPlayer *pEnemy = &s_pEnemies[i];
+		pEnemy->sBob.sPos.uwX = pEnemy->uwX - ENEMY_BOB_OFFSET_X;
+		pEnemy->sBob.sPos.uwY = pEnemy->uwY - ENEMY_BOB_OFFSET_Y;
+		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
+		bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
+		bobPush(&pEnemy->sBob);
+	}
 
 	bobPushingDone();
 	bobEnd();
@@ -286,6 +353,9 @@ static void gameGsDestroy(void) {
 	for(tDirection eDir = 0; eDir < DIRECTION_COUNT; ++eDir) {
 		bitmapDestroy(s_pPlayerFrames[eDir]);
 		bitmapDestroy(s_pPlayerMasks[eDir]);
+
+		bitmapDestroy(s_pEnemyFrames[eDir]);
+		bitmapDestroy(s_pEnemyMasks[eDir]);
 	}
 
 	viewDestroy(s_pView);
