@@ -1,0 +1,23 @@
+Bare minimum:
+	✔ Add player bob @done(25-03-19)
+	✔ Add enemy bobs @done(25-03-19)
+	☐ Add projectiles
+		✔ Spawn projectiles @done(25-03-19)
+		✔ Draw projectiles in optimized way @done(25-03-19)
+		✔ Despawn projectiles on lifetime end @done(25-03-19)
+		☐ Despawn projectiles going out of screen
+	☐ Add collision between characters
+	☐ Add collision between projectiles and enemies
+	☐ Add bloodstains
+	☐ Add basic menu
+
+Score:
+	☐ Add exp
+	☐ Add hi score
+
+Perks:
+	☐ Add level up curve
+	☐ Add perk selection
+	☐ Implement 10 perks
+
+Audio:

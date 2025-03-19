@@ -12,6 +12,7 @@
 #include <ace/managers/sprite.h>
 #include <ace/managers/ptplayer.h>
 #include <ace/utils/palette.h>
+#include <ace/utils/chunky.h>
 #include "survivor.h"
 #include "game_math.h"
 
@@ -34,6 +35,8 @@
 #define ENEMY_BOB_OFFSET_Y 25
 
 #define ENEMY_COUNT 30
+#define PROJECTILE_COUNT 20
+#define PROJECTILE_LIFETIME 50
 
 typedef enum tDirection {
 	DIRECTION_SE,
@@ -71,6 +74,15 @@ typedef struct tPlayer {
 	UBYTE ubFrameCooldown;
 } tPlayer;
 
+typedef struct tProjectile {
+	fix16_t fX;
+	fix16_t fY;
+	fix16_t fDx;
+	fix16_t fDy;
+	ULONG pPrevOffsets[2];
+	UBYTE ubLife;
+} tProjectile;
+
 static tView *s_pView;
 static tVPort *s_pVpMain;
 static tVPort *s_pVpHud;
@@ -91,8 +103,10 @@ static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
 static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
 static tPlayer s_pEnemies[ENEMY_COUNT];
+static tProjectile s_pProjectiles[PROJECTILE_COUNT];
 
 static tPtplayerMod *s_pMod;
+static UBYTE s_ubBufferCurr;
 
 static void drawTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
 	blitCopyAligned(
@@ -175,6 +189,8 @@ static void gameGsCreate(void) {
 		}
 	}
 
+	s_ubBufferCurr = 0;
+
 	// Frames
 	s_pPlayerFrames[DIRECTION_NE] = bitmapCreateFromPath("data/player_ne.bm", 0);
 	s_pPlayerFrames[DIRECTION_N] = bitmapCreateFromPath("data/player_n.bm", 0);
@@ -237,6 +253,18 @@ static void gameGsCreate(void) {
 		bobInit(&s_pEnemies[i].sBob, ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 	}
 
+	for(UBYTE i = 0; i < PROJECTILE_COUNT; ++i) {
+		s_pProjectiles[i].fX = fix16_from_int(32 + (i % 8) * 4);
+		s_pProjectiles[i].fY = fix16_from_int(180 + (i / 8) * 4);
+
+		s_pProjectiles[i].fDx = 0;
+		s_pProjectiles[i].fDy = 0;
+
+		s_pProjectiles[i].ubLife = PROJECTILE_LIFETIME;
+		s_pProjectiles[i].pPrevOffsets[0] = 0;
+		s_pProjectiles[i].pPrevOffsets[1] = 0;
+	}
+
 	bobReallocateBuffers();
 	gameMathInit();
 
@@ -253,6 +281,46 @@ static void gameGsCreate(void) {
 	ptplayerEnableMusic(1);
 }
 
+#define BYTES_PER_BITPLANE_ROW (MAP_SIZE_X * MAP_TILE_SIZE / 8)
+#define BYTES_PER_PIXEL_ROW (BYTES_PER_BITPLANE_ROW * GAME_BPP)
+
+static void projectileProcess(void) {
+	for(UBYTE i = PROJECTILE_COUNT; i--;) {
+		tProjectile *pProjectile = &s_pProjectiles[i];
+		if(pProjectile->ubLife) {
+			--pProjectile->ubLife;
+
+			UBYTE *pTargetPlanes = s_pBufferMain->pBack->Planes[0];
+			ULONG ulOffset = pProjectile->pPrevOffsets[s_ubBufferCurr];
+			for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
+				pTargetPlanes[ulOffset] = s_pPristineBuffer->Planes[0][ulOffset];
+				ulOffset += BYTES_PER_BITPLANE_ROW;
+			}
+
+			pProjectile->fX = fix16_add(pProjectile->fX, pProjectile->fDx);
+			pProjectile->fY = fix16_add(pProjectile->fY, pProjectile->fDy);
+
+			WORD wProjectileX = fix16_to_int(pProjectile->fX);
+			WORD wProjectileY = fix16_to_int(pProjectile->fY);
+			UBYTE ubMask = BV(7) >> (wProjectileX & 0x7);
+			ulOffset = wProjectileY * BYTES_PER_PIXEL_ROW + (wProjectileX / 8);
+			pProjectile->pPrevOffsets[s_ubBufferCurr] = ulOffset;
+			for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
+				pTargetPlanes[ulOffset] |= ubMask;
+				ulOffset += BYTES_PER_BITPLANE_ROW;
+			}
+		}
+		else {
+			pProjectile->ubLife = PROJECTILE_LIFETIME;
+			pProjectile->fX = fix16_from_int(180);
+			pProjectile->fY = fix16_from_int(180);
+			UBYTE ubAngle = randUwMinMax(&g_sRand, 0, ANGLE_360 - 1);
+			pProjectile->fDx = ccos(ubAngle);
+			pProjectile->fDy = csin(ubAngle);
+		}
+	}
+}
+
 static void gameGsLoop(void) {
 	if(keyUse(KEY_ESCAPE)) {
 		statePop(g_pGameStateManager);
@@ -260,6 +328,8 @@ static void gameGsLoop(void) {
 	}
 
 	bobBegin(s_pBufferMain->pBack);
+
+	projectileProcess();
 
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
@@ -347,6 +417,7 @@ static void gameGsLoop(void) {
 
 	bobPushingDone();
 	bobEnd();
+	s_ubBufferCurr = !s_ubBufferCurr;
 
 	viewProcessManagers(s_pView);
 	copProcessBlocks();
