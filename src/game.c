@@ -7,7 +7,6 @@
 #include <ace/managers/key.h>
 #include <ace/managers/mouse.h>
 #include <ace/managers/system.h>
-#include <ace/managers/viewport/tilebuffer.h>
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/rand.h>
 #include <ace/managers/sprite.h>
@@ -17,8 +16,8 @@
 #include "game_math.h"
 
 #define HUD_HEIGHT 16
-#define MAP_SIZE_X 40
-#define MAP_SIZE_Y 40
+#define MAP_SIZE_X 25
+#define MAP_SIZE_Y 25
 #define MAP_TILE_SHIFT 4
 #define MAP_TILE_SIZE  (1 << MAP_TILE_SHIFT)
 #define GAME_BPP 5
@@ -75,7 +74,7 @@ typedef struct tPlayer {
 static tView *s_pView;
 static tVPort *s_pVpMain;
 static tVPort *s_pVpHud;
-static tTileBufferManager *s_pBufferMain;
+static tSimpleBufferManager *s_pBufferMain;
 static tBitMap *s_pPristineBuffer;
 static tSimpleBufferManager *s_pBufferHud;
 static tBitMap *s_pTileset;
@@ -95,12 +94,20 @@ static tPlayer s_pEnemies[ENEMY_COUNT];
 
 static tPtplayerMod *s_pMod;
 
-static void onTileDraw(
-	UNUSED_ARG UWORD uwTileX, UNUSED_ARG UWORD uwTileY,
-	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
-) {
+static void drawTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
 	blitCopyAligned(
-		pBitMap, uwBitMapX, uwBitMapY, s_pPristineBuffer, uwBitMapX, uwBitMapY,
+		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
+		s_pBufferMain->pBack, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		MAP_TILE_SIZE, MAP_TILE_SIZE
+	);
+	blitCopyAligned(
+		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
+		s_pBufferMain->pFront, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		MAP_TILE_SIZE, MAP_TILE_SIZE
+	);
+	blitCopyAligned(
+		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
+		s_pPristineBuffer, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
 		MAP_TILE_SIZE, MAP_TILE_SIZE
 	);
 }
@@ -128,21 +135,17 @@ static void gameGsCreate(void) {
 		TAG_VPORT_BPP, GAME_BPP,
 	TAG_END);
 
-	s_pBufferMain = tileBufferCreate(0,
-		TAG_TILEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
-		TAG_TILEBUFFER_BOUND_TILE_X, MAP_SIZE_X,
-		TAG_TILEBUFFER_BOUND_TILE_Y, MAP_SIZE_Y,
-		TAG_TILEBUFFER_IS_DBLBUF, 1,
-		TAG_TILEBUFFER_MAX_TILESET_SIZE, 25,
-		TAG_TILEBUFFER_TILE_SHIFT, MAP_TILE_SHIFT,
-		TAG_TILEBUFFER_VPORT, s_pVpMain,
-		TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH, 100,
-		TAG_TILEBUFFER_TILESET, s_pTileset,
-		TAG_TILEBUFFER_CALLBACK_TILE_DRAW, onTileDraw,
+	s_pBufferMain = simpleBufferCreate(0,
+		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
+		TAG_SIMPLEBUFFER_BOUND_WIDTH, MAP_SIZE_X * MAP_TILE_SIZE,
+		TAG_SIMPLEBUFFER_BOUND_HEIGHT, MAP_SIZE_Y * MAP_TILE_SIZE,
+		TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
+		TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
 	TAG_END);
+
 	s_pPristineBuffer = bitmapCreate(
-		bitmapGetByteWidth(s_pBufferMain->pScroll->pBack) * 8,
-		s_pBufferMain->pScroll->pBack->Rows, GAME_BPP, BMF_INTERLEAVED
+		bitmapGetByteWidth(s_pBufferMain->pBack) * 8,
+		s_pBufferMain->pBack->Rows, GAME_BPP, BMF_INTERLEAVED
 	);
 
 	paletteLoadFromPath("data/game.plt", s_pVpHud->pPalette, 1 << GAME_BPP);
@@ -151,24 +154,24 @@ static void gameGsCreate(void) {
 
 	randInit(&g_sRand, 2184, 1911);
 
-	s_pBufferMain->pTileData[0][0] = 0;
-	s_pBufferMain->pTileData[MAP_SIZE_X - 1][0] = 1;
-	s_pBufferMain->pTileData[0][MAP_SIZE_Y - 1] = 2;
-	s_pBufferMain->pTileData[MAP_SIZE_X - 1][MAP_SIZE_Y - 1] = 3;
+	drawTile(0, 0, 0);
+	drawTile(1, MAP_SIZE_X - 1, 0);
+	drawTile(2, 0, MAP_SIZE_Y - 1);
+	drawTile(3, MAP_SIZE_X - 1, MAP_SIZE_Y - 1);
 
 	for(UBYTE ubX = 1; ubX < MAP_SIZE_X - 1; ++ubX) {
-		s_pBufferMain->pTileData[ubX][0] = randUwMinMax(&g_sRand, 4, 6);
-		s_pBufferMain->pTileData[ubX][MAP_SIZE_Y - 1] = randUwMinMax(&g_sRand, 13, 15);
+		drawTile(randUwMinMax(&g_sRand, 4, 6), ubX, 0);
+		drawTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_SIZE_Y - 1);
 	}
 
 	for(UBYTE ubY = 1; ubY < MAP_SIZE_Y - 1; ++ubY) {
-		s_pBufferMain->pTileData[0][ubY] = randUwMinMax(&g_sRand, 7, 9);
-		s_pBufferMain->pTileData[MAP_SIZE_X - 1][ubY] = randUwMinMax(&g_sRand, 10, 12);
+		drawTile(randUwMinMax(&g_sRand, 7, 9), 0, ubY);
+		drawTile(randUwMinMax(&g_sRand, 10, 12), MAP_SIZE_X - 1, ubY);
 	}
 
 	for(UBYTE ubX = 1; ubX < MAP_SIZE_X - 1; ++ubX) {
 		for(UBYTE ubY = 1; ubY < MAP_SIZE_Y - 1; ++ubY) {
-			s_pBufferMain->pTileData[ubX][ubY] = randUwMinMax(&g_sRand, 16, 24);
+			drawTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
 		}
 	}
 
@@ -216,8 +219,8 @@ static void gameGsCreate(void) {
 	}
 
 	bobManagerCreate(
-		s_pBufferMain->pScroll->pFront, s_pBufferMain->pScroll->pBack,
-		s_pPristineBuffer, s_pBufferMain->pScroll->uwBmAvailHeight
+		s_pBufferMain->pFront, s_pBufferMain->pBack,
+		s_pPristineBuffer, MAP_SIZE_Y * MAP_TILE_SIZE
 	);
 
 	s_sPlayer.uwX = 100;
@@ -244,7 +247,6 @@ static void gameGsCreate(void) {
 	mouseSetBounds(MOUSE_PORT_1, 0, HUD_HEIGHT, 320, 256);
 
 	systemUnuse();
-	tileBufferRedrawAll(s_pBufferMain);
 	viewLoad(s_pView);
 	logBlockEnd("gameGsCreate()");
 	ptplayerLoadMod(s_pMod, 0, 0);
@@ -257,7 +259,7 @@ static void gameGsLoop(void) {
 		return;
 	}
 
-	bobBegin(s_pBufferMain->pScroll->pBack);
+	bobBegin(s_pBufferMain->pBack);
 
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
