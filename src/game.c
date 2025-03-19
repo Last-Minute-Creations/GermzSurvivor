@@ -267,10 +267,6 @@ static void gameGsLoop(void) {
 		s_sPlayer.uwY - s_pBufferMain->pCamera->uPos.uwY,
 		uwMouseX, uwMouseY - HUD_HEIGHT
 	);
-	s_pSpriteCursor->wX = uwMouseX - 4;
-	s_pSpriteCursor->wY = uwMouseY - 4;
-	spriteProcess(s_pSpriteCursor);
-	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
 
 	BYTE bDeltaX = 0;
 	BYTE bDeltaY = 0;
@@ -330,6 +326,12 @@ static void gameGsLoop(void) {
 	s_sPlayer.sBob.sPos.uwX = s_sPlayer.uwX - PLAYER_BOB_OFFSET_X;
 	s_sPlayer.sBob.sPos.uwY = s_sPlayer.uwY - PLAYER_BOB_OFFSET_Y;
 	bobPush(&s_sPlayer.sBob);
+
+	s_pSpriteCursor->wX = uwMouseX - 4;
+	s_pSpriteCursor->wY = uwMouseY - 4;
+	spriteProcess(s_pSpriteCursor);
+	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
+
 	cameraCenterAt(s_pBufferMain->pCamera, s_sPlayer.uwX, s_sPlayer.uwY);
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
