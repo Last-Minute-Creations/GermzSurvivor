@@ -17,28 +17,33 @@
 #include "game_math.h"
 
 #define HUD_HEIGHT 16
-#define MAP_SIZE_X 25
-#define MAP_SIZE_Y 25
+#define MAP_TILES_X 25
+#define MAP_TILES_Y 25
 #define MAP_TILE_SHIFT 4
 #define MAP_TILE_SIZE  (1 << MAP_TILE_SHIFT)
 #define GAME_BPP 5
 #define SPRITE_CHANNEL_CURSOR 4
 
+#define COLLISION_SIZE_X 8
+#define COLLISION_SIZE_Y 8
+
 #define PLAYER_BOB_SIZE_X 32
 #define PLAYER_BOB_SIZE_Y 32
-#define PLAYER_BOB_OFFSET_X 16
-#define PLAYER_BOB_OFFSET_Y 25
+// From the top-left of the collision rectangle
+#define PLAYER_BOB_OFFSET_X 12
+#define PLAYER_BOB_OFFSET_Y 19
 
 #define ENEMY_BOB_SIZE_X 16
 #define ENEMY_BOB_SIZE_Y 24
-#define ENEMY_BOB_OFFSET_X 8
-#define ENEMY_BOB_OFFSET_Y 25
+// From the top-left of the collision rectangle
+#define ENEMY_BOB_OFFSET_X 4
+#define ENEMY_BOB_OFFSET_Y 15
 
 #define ENEMY_COUNT 30
 #define PROJECTILE_COUNT 20
 #define PROJECTILE_LIFETIME 50
 
-#define BG_BYTES_PER_BITPLANE_ROW (MAP_SIZE_X * MAP_TILE_SIZE / 8)
+#define BG_BYTES_PER_BITPLANE_ROW (MAP_TILES_X * MAP_TILE_SIZE / 8)
 #define BG_BYTES_PER_PIXEL_ROW (BG_BYTES_PER_BITPLANE_ROW * GAME_BPP)
 
 typedef UWORD tFix10p6;
@@ -76,13 +81,12 @@ typedef struct tFrameOffset {
 	UBYTE *pMask;
 } tFrameOffset;
 
-typedef struct tPlayer {
-	UWORD uwX;
-	UWORD uwY;
+typedef struct tCharacter {
+	tUwCoordYX sPos; ///< Top-left coordinate of collision box.
 	tBob sBob;
 	tPlayerFrame eFrame;
 	UBYTE ubFrameCooldown;
-} tPlayer;
+} tCharacter;
 
 typedef struct tProjectile {
 	tFix10p6 fX;
@@ -109,12 +113,12 @@ static tSprite *s_pSpriteCursor;
 static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
 static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
-static tPlayer s_sPlayer;
+static tCharacter s_sPlayer;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
 static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
-static tPlayer s_pEnemies[ENEMY_COUNT];
+static tCharacter s_pEnemies[ENEMY_COUNT];
 static tProjectile s_pProjectiles[PROJECTILE_COUNT];
 
 static tPtplayerMod *s_pMod;
@@ -125,7 +129,9 @@ static const UBYTE s_pBulletMaskFromX[] = {
 	BV(7), BV(6), BV(5), BV(4), BV(3), BV(2), BV(1), BV(0)
 };
 
-static ULONG s_pRowOffsetFromY[MAP_SIZE_Y * MAP_TILE_SIZE];
+static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
+
+static tCharacter *s_pCollisionTiles[MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X][MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y];
 
 static void undrawNextProjectile(void) {
 	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
@@ -158,7 +164,7 @@ static void drawNextProjectile(void) {
 
 		UWORD uwProjectileX = fix10p6ToUword(s_pCurrentProjectile->fX);
 		UWORD uwProjectileY = fix10p6ToUword(s_pCurrentProjectile->fY);
-		if(uwProjectileX >= MAP_SIZE_X * MAP_TILE_SIZE || uwProjectileY >= MAP_SIZE_Y * MAP_TILE_SIZE) {
+		if(uwProjectileX >= MAP_TILES_X * MAP_TILE_SIZE || uwProjectileY >= MAP_TILES_Y * MAP_TILE_SIZE) {
 			s_pCurrentProjectile->ubLife = 0;
 			return;
 		}
@@ -208,6 +214,127 @@ static void drawTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
 	);
 }
 
+static UBYTE isPositionCollidingWithCharacter(
+	tUwCoordYX sPos, const tCharacter *pCharacter
+) {
+	return (
+		sPos.uwX < pCharacter->sPos.uwX + COLLISION_SIZE_X &&
+		sPos.uwX + COLLISION_SIZE_X > pCharacter->sPos.uwX &&
+		sPos.uwY < pCharacter->sPos.uwY + COLLISION_SIZE_Y &&
+		sPos.uwY + COLLISION_SIZE_Y > pCharacter->sPos.uwY
+	);
+}
+
+static UBYTE characterIsCollidingWith(
+	const tCharacter *pCharacter1, const tCharacter *pCharacter2
+) {
+	return isPositionCollidingWithCharacter(pCharacter1->sPos, pCharacter2);
+}
+
+static inline tCharacter *characterGetNearPos(
+	UWORD uwPosX, BYTE bLookupAddX, UWORD uwPosY, BYTE bLookupAddY
+) {
+	UWORD uwLookupX = uwPosX / COLLISION_SIZE_X + bLookupAddX;
+	UWORD uwLookupY = uwPosY / COLLISION_SIZE_Y + bLookupAddY;
+	return s_pCollisionTiles[uwLookupX][uwLookupY];
+}
+
+static UBYTE characterTryMoveBy(tCharacter *pCharacter, BYTE bDeltaX, BYTE bDeltaY) {
+	UBYTE ubOldLookupX = pCharacter->sPos.uwX / COLLISION_SIZE_X;
+	UBYTE ubOldLookupY = pCharacter->sPos.uwY / COLLISION_SIZE_Y;
+	UBYTE isMoved = 0;
+
+	if (bDeltaX) {
+		tUwCoordYX sOldPos = {.ulYX = pCharacter->sPos.ulYX};
+		pCharacter->sPos.uwX += bDeltaX;
+		UBYTE isColliding = (bDeltaX > 0 ?
+			pCharacter->sPos.uwX >= MAP_TILES_X * MAP_TILE_SIZE :
+			pCharacter->sPos.uwX <= PLAYER_BOB_OFFSET_X
+		);
+
+		// collision with upper corner
+		if(!isColliding) {
+			tCharacter *pUp = characterGetNearPos(sOldPos.uwX, SGN(bDeltaX), sOldPos.uwY, 0);
+			if(pUp && pUp != pCharacter) {
+				isColliding = characterIsCollidingWith(pCharacter, pUp);
+			}
+		}
+
+		// collision with lower corner
+		if (!isColliding && (sOldPos.uwY & (COLLISION_SIZE_Y - 1))) {
+			tCharacter *pDown = characterGetNearPos(sOldPos.uwX, SGN(bDeltaX), sOldPos.uwY, +1);
+			if(pDown && pDown != pCharacter) {
+				isColliding = characterIsCollidingWith(pCharacter, pDown);
+			}
+		}
+
+		if(!isColliding) {
+			isMoved = 1;
+		}
+		else {
+			pCharacter->sPos.ulYX = sOldPos.ulYX;
+		}
+	}
+
+	if (bDeltaY) {
+		tUwCoordYX sOldPos = {.ulYX = pCharacter->sPos.ulYX};
+		pCharacter->sPos.uwY += bDeltaY;
+		UBYTE isColliding = (bDeltaY > 0 ?
+			pCharacter->sPos.uwY >= MAP_TILES_Y * MAP_TILE_SIZE - COLLISION_SIZE_Y :
+			pCharacter->sPos.uwY <= PLAYER_BOB_OFFSET_Y
+		);
+
+		// collision with left corner
+		if(!isColliding) {
+			tCharacter *pLeft = characterGetNearPos(sOldPos.uwX, 0, sOldPos.uwY, SGN(bDeltaY));
+			if(pLeft && pLeft != pCharacter) {
+				isColliding = characterIsCollidingWith(pCharacter, pLeft);
+			}
+		}
+
+		// collision with right corner
+		if (!isColliding && (sOldPos.uwX & (COLLISION_SIZE_X - 1))) {
+			tCharacter *pRight = characterGetNearPos(sOldPos.uwX, +1, sOldPos.uwY, SGN(bDeltaY));
+			if(pRight && pRight != pCharacter) {
+				isColliding = characterIsCollidingWith(pCharacter, pRight);
+			}
+		}
+
+		if(!isColliding) {
+			isMoved = 1;
+		}
+		else {
+			pCharacter->sPos.ulYX = sOldPos.ulYX;
+		}
+	}
+
+	if(isMoved) {
+		// Update lookup
+		if(
+			s_pCollisionTiles[ubOldLookupX][ubOldLookupY] &&
+			s_pCollisionTiles[ubOldLookupX][ubOldLookupY] != pCharacter
+		) {
+			logWrite(
+				"ERR: Erasing other character %p\n",
+				s_pCollisionTiles[ubOldLookupX][ubOldLookupY]
+			);
+		}
+		s_pCollisionTiles[ubOldLookupX][ubOldLookupY] = 0;
+
+		UBYTE ubNewLookupX = pCharacter->sPos.uwX / COLLISION_SIZE_X;
+		UBYTE ubNewLookupY = pCharacter->sPos.uwY / COLLISION_SIZE_Y;
+		if(s_pCollisionTiles[ubNewLookupX][ubNewLookupY]) {
+			logWrite(
+				"ERR: Overwriting other character %p in lookup with %p\n",
+				s_pCollisionTiles[ubNewLookupX][ubNewLookupY], pCharacter
+			);
+		}
+		s_pCollisionTiles[ubNewLookupX][ubNewLookupY] = pCharacter;
+	}
+
+	return isMoved;
+}
+
 static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
@@ -233,8 +360,8 @@ static void gameGsCreate(void) {
 
 	s_pBufferMain = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
-		TAG_SIMPLEBUFFER_BOUND_WIDTH, MAP_SIZE_X * MAP_TILE_SIZE,
-		TAG_SIMPLEBUFFER_BOUND_HEIGHT, MAP_SIZE_Y * MAP_TILE_SIZE,
+		TAG_SIMPLEBUFFER_BOUND_WIDTH, MAP_TILES_X * MAP_TILE_SIZE,
+		TAG_SIMPLEBUFFER_BOUND_HEIGHT, MAP_TILES_Y * MAP_TILE_SIZE,
 		TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
 		TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
 	TAG_END);
@@ -252,27 +379,27 @@ static void gameGsCreate(void) {
 	randInit(&g_sRand, 2184, 1911);
 
 	drawTile(0, 0, 0);
-	drawTile(1, MAP_SIZE_X - 1, 0);
-	drawTile(2, 0, MAP_SIZE_Y - 1);
-	drawTile(3, MAP_SIZE_X - 1, MAP_SIZE_Y - 1);
+	drawTile(1, MAP_TILES_X - 1, 0);
+	drawTile(2, 0, MAP_TILES_Y - 1);
+	drawTile(3, MAP_TILES_X - 1, MAP_TILES_Y - 1);
 
-	for(UBYTE ubX = 1; ubX < MAP_SIZE_X - 1; ++ubX) {
+	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
 		drawTile(randUwMinMax(&g_sRand, 4, 6), ubX, 0);
-		drawTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_SIZE_Y - 1);
+		drawTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1);
 	}
 
-	for(UBYTE ubY = 1; ubY < MAP_SIZE_Y - 1; ++ubY) {
+	for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
 		drawTile(randUwMinMax(&g_sRand, 7, 9), 0, ubY);
-		drawTile(randUwMinMax(&g_sRand, 10, 12), MAP_SIZE_X - 1, ubY);
+		drawTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1, ubY);
 	}
 
-	for(UBYTE ubX = 1; ubX < MAP_SIZE_X - 1; ++ubX) {
-		for(UBYTE ubY = 1; ubY < MAP_SIZE_Y - 1; ++ubY) {
+	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
+		for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
 			drawTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
 		}
 	}
 
-	for(UWORD uwY = 0; uwY < MAP_SIZE_Y * MAP_TILE_SIZE; ++uwY) {
+	for(UWORD uwY = 0; uwY < MAP_TILES_Y * MAP_TILE_SIZE; ++uwY) {
 		s_pRowOffsetFromY[uwY] = uwY * BG_BYTES_PER_PIXEL_ROW;
 	}
 
@@ -323,21 +450,23 @@ static void gameGsCreate(void) {
 
 	bobManagerCreate(
 		s_pBufferMain->pFront, s_pBufferMain->pBack,
-		s_pPristineBuffer, MAP_SIZE_Y * MAP_TILE_SIZE,
+		s_pPristineBuffer, MAP_TILES_Y * MAP_TILE_SIZE,
 		onBobBegin, onBobEnd
 	);
 
-	s_sPlayer.uwX = 100;
-	s_sPlayer.uwY = 100;
+	s_sPlayer.sPos.uwX = 100;
+	s_sPlayer.sPos.uwY = 100;
 	s_sPlayer.eFrame = 0;
 	s_sPlayer.ubFrameCooldown = 0;
+	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
 	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
-		s_pEnemies[i].uwX = 32 + (i % 8) * 32;
-		s_pEnemies[i].uwY = 32 + (i / 8) * 32;
+		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
+		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
 		s_pEnemies[i].eFrame = 0;
 		s_pEnemies[i].ubFrameCooldown = 0;
+		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
 		bobInit(&s_pEnemies[i].sBob, ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 	}
 
@@ -386,8 +515,8 @@ static void gameGsLoop(void) {
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
 
 	UBYTE ubAngle = getAngleBetweenPoints( // 0 is right, going clockwise
-		s_sPlayer.uwX - s_pBufferMain->pCamera->uPos.uwX,
-		s_sPlayer.uwY - s_pBufferMain->pCamera->uPos.uwY,
+		s_sPlayer.sPos.uwX - s_pBufferMain->pCamera->uPos.uwX,
+		s_sPlayer.sPos.uwY - s_pBufferMain->pCamera->uPos.uwY,
 		uwMouseX, uwMouseY - HUD_HEIGHT
 	);
 
@@ -406,8 +535,7 @@ static void gameGsLoop(void) {
 		bDeltaX = 2;
 	}
 	if(bDeltaX || bDeltaY) {
-		s_sPlayer.uwX += bDeltaX;
-		s_sPlayer.uwY += bDeltaY;
+		characterTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
 		if(s_sPlayer.ubFrameCooldown >= 2) {
 			s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
 			if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
@@ -446,8 +574,8 @@ static void gameGsLoop(void) {
 
 	tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
 	bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
-	s_sPlayer.sBob.sPos.uwX = s_sPlayer.uwX - PLAYER_BOB_OFFSET_X;
-	s_sPlayer.sBob.sPos.uwY = s_sPlayer.uwY - PLAYER_BOB_OFFSET_Y;
+	s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
+	s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
 	bobPush(&s_sPlayer.sBob);
 
 	s_pSpriteCursor->wX = uwMouseX - 4;
@@ -455,12 +583,12 @@ static void gameGsLoop(void) {
 	spriteProcess(s_pSpriteCursor);
 	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
 
-	cameraCenterAt(s_pBufferMain->pCamera, s_sPlayer.uwX, s_sPlayer.uwY);
+	cameraCenterAt(s_pBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
-		tPlayer *pEnemy = &s_pEnemies[i];
-		pEnemy->sBob.sPos.uwX = pEnemy->uwX - ENEMY_BOB_OFFSET_X;
-		pEnemy->sBob.sPos.uwY = pEnemy->uwY - ENEMY_BOB_OFFSET_Y;
+		tCharacter *pEnemy = &s_pEnemies[i];
+		pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
+		pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
 		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
 		bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
 		bobPush(&pEnemy->sBob);
