@@ -248,7 +248,7 @@ static UBYTE characterTryMoveBy(tCharacter *pCharacter, BYTE bDeltaX, BYTE bDelt
 		tUwCoordYX sOldPos = {.ulYX = pCharacter->sPos.ulYX};
 		pCharacter->sPos.uwX += bDeltaX;
 		UBYTE isColliding = (bDeltaX > 0 ?
-			pCharacter->sPos.uwX >= MAP_TILES_X * MAP_TILE_SIZE :
+			pCharacter->sPos.uwX >= MAP_TILES_X * MAP_TILE_SIZE - (PLAYER_BOB_SIZE_X - PLAYER_BOB_OFFSET_X) :
 			pCharacter->sPos.uwX <= PLAYER_BOB_OFFSET_X
 		);
 
@@ -280,7 +280,7 @@ static UBYTE characterTryMoveBy(tCharacter *pCharacter, BYTE bDeltaX, BYTE bDelt
 		tUwCoordYX sOldPos = {.ulYX = pCharacter->sPos.ulYX};
 		pCharacter->sPos.uwY += bDeltaY;
 		UBYTE isColliding = (bDeltaY > 0 ?
-			pCharacter->sPos.uwY >= MAP_TILES_Y * MAP_TILE_SIZE - COLLISION_SIZE_Y :
+			pCharacter->sPos.uwY >= MAP_TILES_Y * MAP_TILE_SIZE - (PLAYER_BOB_SIZE_Y - PLAYER_BOB_OFFSET_Y) :
 			pCharacter->sPos.uwY <= PLAYER_BOB_OFFSET_Y
 		);
 
