@@ -587,6 +587,9 @@ static void gameGsLoop(void) {
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
 		tCharacter *pEnemy = &s_pEnemies[i];
+		bDeltaX = (randUw(&g_sRand) & 1) ? -1 : 1;
+		bDeltaY = (randUw(&g_sRand) & 1) ? -1 : 1;
+		characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
 		pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
 		pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
 		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
