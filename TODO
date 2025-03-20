@@ -1,11 +1,11 @@
 Bare minimum:
 	✔ Add player bob @done(25-03-19)
 	✔ Add enemy bobs @done(25-03-19)
-	☐ Add projectiles
+	✔ Add projectiles @done(25-03-20)
 		✔ Spawn projectiles @done(25-03-19)
 		✔ Draw projectiles in optimized way @done(25-03-19)
 		✔ Despawn projectiles on lifetime end @done(25-03-19)
-		☐ Despawn projectiles going out of screen
+		✔ Despawn projectiles going out of screen @done(25-03-20)
 	☐ Add collision between characters
 	☐ Add collision between projectiles and enemies
 	☐ Add bloodstains
