@@ -344,7 +344,11 @@ static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
 
-	s_pView = viewCreate(0, TAG_END);
+	ULONG ulRawCopSize = 16 + simpleBufferGetRawCopperlistInstructionCount(GAME_BPP) * 2;
+	s_pView = viewCreate(0,
+		TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_RAW,
+		TAG_VIEW_COPLIST_RAW_COUNT, ulRawCopSize,
+	TAG_END);
 
 	s_pVpHud = vPortCreate(0,
 		TAG_VPORT_BPP, GAME_BPP,
@@ -352,10 +356,12 @@ static void gameGsCreate(void) {
 		TAG_VPORT_VIEW, s_pView,
 	TAG_END);
 
+	ULONG ulCopOffset = 16;
 	s_pBufferHud = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
 		TAG_SIMPLEBUFFER_USE_X_SCROLLING, 0,
 		TAG_SIMPLEBUFFER_VPORT, s_pVpHud,
+		TAG_SIMPLEBUFFER_COPLIST_OFFSET, ulCopOffset,
 	TAG_END);
 
 	s_pVpMain = vPortCreate(0,
@@ -363,12 +369,14 @@ static void gameGsCreate(void) {
 		TAG_VPORT_BPP, GAME_BPP,
 	TAG_END);
 
+	ulCopOffset += simpleBufferGetRawCopperlistInstructionCount(GAME_BPP);
 	s_pBufferMain = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
 		TAG_SIMPLEBUFFER_BOUND_WIDTH, MAP_TILES_X * MAP_TILE_SIZE,
 		TAG_SIMPLEBUFFER_BOUND_HEIGHT, MAP_TILES_Y * MAP_TILE_SIZE,
 		TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
 		TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
+		TAG_SIMPLEBUFFER_COPLIST_OFFSET, ulCopOffset,
 	TAG_END);
 
 	blitRect(s_pBufferHud->pBack, 0, 0, 320, HUD_SIZE_Y, 15);
@@ -627,7 +635,7 @@ static void gameGsLoop(void) {
 	s_ubBufferCurr = !s_ubBufferCurr;
 
 	vPortProcessManagers(s_pVpMain);
-	copProcessBlocks();
+	copSwapBuffers();
 	systemIdleBegin();
 	vPortWaitUntilEnd(s_pVpMain);
 	systemIdleEnd();
