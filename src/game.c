@@ -32,6 +32,7 @@
 // From the top-left of the collision rectangle
 #define PLAYER_BOB_OFFSET_X 12
 #define PLAYER_BOB_OFFSET_Y 19
+#define PLAYER_ATTACK_COOLDOWN 12
 
 #define ENEMY_BOB_SIZE_X 16
 #define ENEMY_BOB_SIZE_Y 24
@@ -81,6 +82,7 @@ typedef struct tCharacter {
 	tBob sBob;
 	tPlayerFrame eFrame;
 	UBYTE ubFrameCooldown;
+	UBYTE ubAttackCooldown;
 } tCharacter;
 
 typedef struct tProjectile {
@@ -230,8 +232,8 @@ static inline UBYTE isPositionCollidingWithCharacter(
 	WORD Dx = sPos.uwX - pCharacter->sPos.uwX;
 	WORD Dy = sPos.uwY - pCharacter->sPos.uwY;
 	return (
-		-COLLISION_SIZE_X < Dx && Dx < COLLISION_SIZE_X &&
-		-COLLISION_SIZE_Y < Dy && Dy < COLLISION_SIZE_Y
+		-COLLISION_SIZE_X <= Dx && Dx <= COLLISION_SIZE_X &&
+		-COLLISION_SIZE_Y <= Dy && Dy <= COLLISION_SIZE_Y
 	);
 }
 
@@ -482,6 +484,7 @@ static void gameGsCreate(void) {
 	s_sPlayer.sPos.uwY = 180;
 	s_sPlayer.eFrame = 0;
 	s_sPlayer.ubFrameCooldown = 0;
+	s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
 	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
 	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 
@@ -537,7 +540,7 @@ static void gameGsLoop(void) {
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
 
-	UBYTE ubAngle = getAngleBetweenPoints( // 0 is right, going clockwise
+	UBYTE ubAimAngle = getAngleBetweenPoints( // 0 is right, going clockwise
 		s_sPlayer.sPos.uwX - s_pBufferMain->pCamera->uPos.uwX,
 		s_sPlayer.sPos.uwY - s_pBufferMain->pCamera->uPos.uwY,
 		uwMouseX, uwMouseY - HUD_SIZE_Y
@@ -574,21 +577,24 @@ static void gameGsLoop(void) {
 		s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
 		s_sPlayer.ubFrameCooldown = 0;
 	}
+	if(s_sPlayer.ubAttackCooldown) {
+		--s_sPlayer.ubAttackCooldown;
+	}
 
 	tDirection eDir;
-	if(ubAngle < ANGLE_45) {
+	if(ubAimAngle < ANGLE_45) {
 		eDir = DIRECTION_SE;
 	}
-	else if(ubAngle < ANGLE_45 + ANGLE_90) {
+	else if(ubAimAngle < ANGLE_45 + ANGLE_90) {
 		eDir = DIRECTION_S;
 	}
-	else if(ubAngle < ANGLE_180) {
+	else if(ubAimAngle < ANGLE_180) {
 		eDir = DIRECTION_SW;
 	}
-	else if(ubAngle < ANGLE_180 + ANGLE_45) {
+	else if(ubAimAngle < ANGLE_180 + ANGLE_45) {
 		eDir = DIRECTION_NW;
 	}
-	else if(ubAngle < ANGLE_180 + ANGLE_45 + ANGLE_90) {
+	else if(ubAimAngle < ANGLE_180 + ANGLE_45 + ANGLE_90) {
 		eDir = DIRECTION_N;
 	}
 	else {
@@ -620,15 +626,19 @@ static void gameGsLoop(void) {
 		bobPush(&pEnemy->sBob);
 	}
 
-	s_pCurrentProjectile = &s_pProjectiles[0];
-	while(s_ubFreeProjectileCount) {
-		tProjectile *pProjectile = s_pFreeProjectiles[--s_ubFreeProjectileCount];
-		pProjectile->ubLife = PROJECTILE_LIFETIME;
-		pProjectile->fX = fix10p6FromUword(30);
-		pProjectile->fY = fix10p6FromUword(30);
-		UBYTE ubAngle = randUwMinMax(&g_sRand, 0, ANGLE_360 - 1);
-		pProjectile->fDx = fix10p6Cos(ubAngle);
-		pProjectile->fDy = fix10p6Sin(ubAngle);
+	if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB) && !s_sPlayer.ubAttackCooldown) {
+		if(s_ubFreeProjectileCount) {
+			tProjectile *pProjectile = s_pFreeProjectiles[--s_ubFreeProjectileCount];
+			pProjectile->ubLife = PROJECTILE_LIFETIME;
+			pProjectile->fX = fix10p6FromUword(s_sPlayer.sPos.uwX);
+			pProjectile->fY = fix10p6FromUword(s_sPlayer.sPos.uwY);
+			pProjectile->fDx = fix10p6Cos(ubAimAngle) * 5;
+			pProjectile->fDy = fix10p6Sin(ubAimAngle) * 5;
+			s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
+		}
+		else {
+			logWrite("ERR: No free projectiles");
+		}
 	}
 
 	s_pCurrentProjectile = &s_pProjectiles[0];

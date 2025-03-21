@@ -9,7 +9,7 @@ Bare minimum:
 	✔ Add collision between characters @done(25-03-20)
 		✔ Collision between player and zombies @done(25-03-20)
 		✔ Collision between zombies @done(25-03-20)
-	☐ Shoot the projectiles
+	✔ Shoot the projectiles @done(25-03-21)
 	☐ Add health system for zombies
 		☐ Add collision between projectiles and enemies
 		☐ Respawn zombies after their death
