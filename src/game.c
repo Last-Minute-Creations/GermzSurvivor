@@ -333,6 +333,15 @@ static inline UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LON
 	return isMoved;
 }
 
+static void cameraCenterAtOptimized(
+	tCameraManager *pManager, ULONG ulCenterX, ULONG ulCenterY
+) {
+	LONG lTop = ulCenterX - 320 / 2;
+	LONG lLeft = ulCenterY - (256 - HUD_SIZE_Y) / 2;
+	pManager->uPos.uwX = CLAMP(lTop, 0, pManager->uMaxPos.uwX);
+	pManager->uPos.uwY = CLAMP(lLeft, 0, pManager->uMaxPos.uwY);
+}
+
 static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
@@ -584,7 +593,7 @@ static void gameGsLoop(void) {
 	spriteProcess(s_pSpriteCursor);
 	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
 
-	cameraCenterAt(s_pBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
+	cameraCenterAtOptimized(s_pBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
 		tCharacter *pEnemy = &s_pEnemies[i];
