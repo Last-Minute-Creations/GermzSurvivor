@@ -47,11 +47,6 @@
 #define BG_BYTES_PER_PIXEL_ROW (BG_BYTES_PER_BITPLANE_ROW * GAME_BPP)
 
 typedef UWORD tFix10p6;
-static inline tFix10p6 fix10p6Add(tFix10p6 a, tFix10p6 b) {return a + b; }
-static inline tFix10p6 fix10p6FromUword(UWORD x) {return x << 6; }
-static inline tFix10p6 fix10p6ToUword(UWORD x) {return x >> 6; }
-static inline tFix10p6 fix10p6Sin(UBYTE ubAngle) {return csin(ubAngle) >> 10;}
-static inline tFix10p6 fix10p6Cos(UBYTE ubAngle) {return ccos(ubAngle) >> 10;}
 
 typedef enum tDirection {
 	DIRECTION_SE,
@@ -124,6 +119,7 @@ static tProjectile s_pProjectiles[PROJECTILE_COUNT];
 static tPtplayerMod *s_pMod;
 static UBYTE s_ubBufferCurr;
 static tProjectile *s_pCurrentProjectile;
+static tFix10p6 s_pSin10p6[GAME_MATH_ANGLE_COUNT];
 
 static const UBYTE s_pBulletMaskFromX[] = {
 	BV(7), BV(6), BV(5), BV(4), BV(3), BV(2), BV(1), BV(0)
@@ -132,6 +128,12 @@ static const UBYTE s_pBulletMaskFromX[] = {
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
 
 static tCharacter *s_pCollisionTiles[MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X][MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y];
+
+static inline tFix10p6 fix10p6Add(tFix10p6 a, tFix10p6 b) {return a + b; }
+static inline tFix10p6 fix10p6FromUword(UWORD x) {return x << 6; }
+static inline tFix10p6 fix10p6ToUword(UWORD x) {return x >> 6; }
+#define fix10p6Sin(x) s_pSin10p6[x]
+#define fix10p6Cos(x) (((x) < 3 * ANGLE_90) ? fix10p6Sin(ANGLE_90 + (x)) : fix10p6Sin((x) - (3 * ANGLE_90)))
 
 __attribute__((always_inline))
 static inline void undrawNextProjectile(void) {
@@ -498,6 +500,9 @@ static void gameGsCreate(void) {
 
 	bobReallocateBuffers();
 	gameMathInit();
+	for(UBYTE ubAngle = 0; ubAngle < GAME_MATH_ANGLE_COUNT; ++ubAngle) {
+		s_pSin10p6[ubAngle] = csin(ubAngle) >> 6;
+	}
 
 	s_pBmCrosshair = bitmapCreateFromPath("data/cursor_crosshair.bm", 0);
 	spriteManagerCreate(s_pView, 0, 0);
@@ -626,7 +631,6 @@ static void gameGsLoop(void) {
 		++s_pCurrentProjectile;
 	}
 
-	bobPushingDone();
 	s_pCurrentProjectile = &s_pProjectiles[0];
 	bobEnd();
 	while(s_pCurrentProjectile != &s_pProjectiles[PROJECTILE_COUNT]) {
@@ -634,7 +638,8 @@ static void gameGsLoop(void) {
 	}
 	s_ubBufferCurr = !s_ubBufferCurr;
 
-	vPortProcessManagers(s_pVpMain);
+	simpleBufferProcess(s_pBufferMain);
+	cameraProcess(s_pBufferMain->pCamera);
 	copSwapBuffers();
 	systemIdleBegin();
 	vPortWaitUntilEnd(s_pVpMain);
