@@ -16,7 +16,7 @@
 #include "survivor.h"
 #include "game_math.h"
 
-#define HUD_HEIGHT 16
+#define HUD_SIZE_Y 16
 #define MAP_TILES_X 32
 #define MAP_TILES_Y 32
 #define MAP_TILE_SHIFT 4
@@ -133,7 +133,8 @@ static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
 
 static tCharacter *s_pCollisionTiles[MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X][MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y];
 
-static void undrawNextProjectile(void) {
+__attribute__((always_inline))
+static inline void undrawNextProjectile(void) {
 	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
 		return;
 	}
@@ -150,7 +151,8 @@ static void undrawNextProjectile(void) {
 	}
 }
 
-static void drawNextProjectile(void) {
+__attribute__((always_inline))
+static inline void drawNextProjectile(void) {
 	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
 		return;
 	}
@@ -188,11 +190,11 @@ static void drawNextProjectile(void) {
 	++s_pCurrentProjectile;
 }
 
-static void onBobBegin(void) {
+void bobOnBegin(void) {
 	undrawNextProjectile();
 }
 
-static void onBobEnd(void) {
+void bobOnEnd(void) {
 	drawNextProjectile();
 }
 
@@ -233,7 +235,8 @@ static inline tCharacter *characterGetNearPos(
 	return s_pCollisionTiles[uwLookupX][uwLookupY];
 }
 
-static UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LONG lDeltaY) {
+__attribute__((always_inline))
+static inline UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LONG lDeltaY) {
 	tUwCoordYX sGoodPos = pCharacter->sPos;
 	UBYTE isMoved = 0;
 
@@ -338,7 +341,7 @@ static void gameGsCreate(void) {
 
 	s_pVpHud = vPortCreate(0,
 		TAG_VPORT_BPP, GAME_BPP,
-		TAG_VPORT_HEIGHT, HUD_HEIGHT,
+		TAG_VPORT_HEIGHT, HUD_SIZE_Y,
 		TAG_VPORT_VIEW, s_pView,
 	TAG_END);
 
@@ -360,6 +363,8 @@ static void gameGsCreate(void) {
 		TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
 		TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
 	TAG_END);
+
+	blitRect(s_pBufferHud->pBack, 0, 0, 320, HUD_SIZE_Y, 15);
 
 	s_pPristineBuffer = bitmapCreate(
 		bitmapGetByteWidth(s_pBufferMain->pBack) * 8,
@@ -445,8 +450,7 @@ static void gameGsCreate(void) {
 
 	bobManagerCreate(
 		s_pBufferMain->pFront, s_pBufferMain->pBack,
-		s_pPristineBuffer, MAP_TILES_Y * MAP_TILE_SIZE,
-		onBobBegin, onBobEnd
+		s_pPristineBuffer, MAP_TILES_Y * MAP_TILE_SIZE
 	);
 
 	s_sPlayer.sPos.uwX = 180;
@@ -484,10 +488,12 @@ static void gameGsCreate(void) {
 	spriteManagerCreate(s_pView, 0, 0);
 	s_pSpriteCursor = spriteAdd(SPRITE_CHANNEL_CURSOR, s_pBmCrosshair);
 	systemSetDmaBit(DMAB_SPRITE, 1);
-	mouseSetBounds(MOUSE_PORT_1, 0, HUD_HEIGHT, 320, 256);
+	mouseSetBounds(MOUSE_PORT_1, 0, HUD_SIZE_Y, 320, 256);
 
 	systemUnuse();
 	viewLoad(s_pView);
+	viewProcessManagers(s_pView);
+	viewProcessManagers(s_pView);
 	logBlockEnd("gameGsCreate()");
 	ptplayerLoadMod(s_pMod, 0, 0);
 	ptplayerEnableMusic(1);
@@ -512,7 +518,7 @@ static void gameGsLoop(void) {
 	UBYTE ubAngle = getAngleBetweenPoints( // 0 is right, going clockwise
 		s_sPlayer.sPos.uwX - s_pBufferMain->pCamera->uPos.uwX,
 		s_sPlayer.sPos.uwY - s_pBufferMain->pCamera->uPos.uwY,
-		uwMouseX, uwMouseY - HUD_HEIGHT
+		uwMouseX, uwMouseY - HUD_SIZE_Y
 	);
 
 	BYTE bDeltaX = 0;
@@ -600,7 +606,7 @@ static void gameGsLoop(void) {
 	}
 	s_ubBufferCurr = !s_ubBufferCurr;
 
-	viewProcessManagers(s_pView);
+	vPortProcessManagers(s_pVpMain);
 	copProcessBlocks();
 	systemIdleBegin();
 	vPortWaitUntilEnd(s_pVpMain);
