@@ -139,16 +139,25 @@ static inline void undrawNextProjectile(void) {
 		return;
 	}
 
-	ULONG ulOffset = s_pCurrentProjectile->pPrevOffsets[s_ubBufferCurr];
-	++s_pCurrentProjectile;
-	UBYTE *pTargetPlanes = &s_pBackPlanes[ulOffset];
-	UBYTE *pBgPlanes = &s_pPristinePlanes[ulOffset];
+	if(s_pCurrentProjectile->ubLife) {
+		ULONG ulOffset = s_pCurrentProjectile->pPrevOffsets[s_ubBufferCurr];
+		UBYTE *pTargetPlanes = &s_pBackPlanes[ulOffset];
+		UBYTE *pBgPlanes = &s_pPristinePlanes[ulOffset];
 
-	for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
-		*pTargetPlanes = *pBgPlanes;
-		pTargetPlanes += BG_BYTES_PER_BITPLANE_ROW;
-		pBgPlanes += BG_BYTES_PER_BITPLANE_ROW;
+		for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
+			*pTargetPlanes = *pBgPlanes;
+			pTargetPlanes += BG_BYTES_PER_BITPLANE_ROW;
+			pBgPlanes += BG_BYTES_PER_BITPLANE_ROW;
+		}
+
+		--s_pCurrentProjectile->ubLife;
+		if(s_pCurrentProjectile->ubLife) {
+			s_pCurrentProjectile->fX = fix10p6Add(s_pCurrentProjectile->fX, s_pCurrentProjectile->fDx);
+			s_pCurrentProjectile->fY = fix10p6Add(s_pCurrentProjectile->fY, s_pCurrentProjectile->fDy);
+		}
 	}
+
+	++s_pCurrentProjectile;
 }
 
 __attribute__((always_inline))
@@ -159,33 +168,22 @@ static inline void drawNextProjectile(void) {
 
 	UBYTE *pTargetPlanes = s_pBackPlanes;
 	if(s_pCurrentProjectile->ubLife) {
-		--s_pCurrentProjectile->ubLife;
-
-		s_pCurrentProjectile->fX = fix10p6Add(s_pCurrentProjectile->fX, s_pCurrentProjectile->fDx);
-		s_pCurrentProjectile->fY = fix10p6Add(s_pCurrentProjectile->fY, s_pCurrentProjectile->fDy);
-
 		UWORD uwProjectileX = fix10p6ToUword(s_pCurrentProjectile->fX);
 		UWORD uwProjectileY = fix10p6ToUword(s_pCurrentProjectile->fY);
+		// TODO: collision with enemies
 		if(uwProjectileX >= MAP_TILES_X * MAP_TILE_SIZE || uwProjectileY >= MAP_TILES_Y * MAP_TILE_SIZE) {
 			s_pCurrentProjectile->ubLife = 0;
-			return;
+		}
+		else {
+			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
+			ULONG ulOffset = s_pRowOffsetFromY[uwProjectileY] + (uwProjectileX / 8);
+			s_pCurrentProjectile->pPrevOffsets[s_ubBufferCurr] = ulOffset;
+			for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
+				pTargetPlanes[ulOffset] |= ubMask;
+				ulOffset += BG_BYTES_PER_BITPLANE_ROW;
+			}
 		}
 
-		UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
-		ULONG ulOffset = s_pRowOffsetFromY[uwProjectileY] + (uwProjectileX / 8);
-		s_pCurrentProjectile->pPrevOffsets[s_ubBufferCurr] = ulOffset;
-		for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
-			pTargetPlanes[ulOffset] |= ubMask;
-			ulOffset += BG_BYTES_PER_BITPLANE_ROW;
-		}
-	}
-	else {
-		s_pCurrentProjectile->ubLife = PROJECTILE_LIFETIME;
-		s_pCurrentProjectile->fX = fix10p6FromUword(30);
-		s_pCurrentProjectile->fY = fix10p6FromUword(30);
-		UBYTE ubAngle = randUwMinMax(&g_sRand, 0, ANGLE_360 - 1);
-		s_pCurrentProjectile->fDx = fix10p6Cos(ubAngle);
-		s_pCurrentProjectile->fDy = fix10p6Sin(ubAngle);
 	}
 	++s_pCurrentProjectile;
 }
@@ -605,6 +603,19 @@ static void gameGsLoop(void) {
 		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
 		bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
 		bobPush(&pEnemy->sBob);
+	}
+
+	s_pCurrentProjectile = &s_pProjectiles[0];
+	while(s_pCurrentProjectile != &s_pProjectiles[PROJECTILE_COUNT]) {
+		if(!s_pCurrentProjectile->ubLife) {
+			s_pCurrentProjectile->ubLife = PROJECTILE_LIFETIME;
+			s_pCurrentProjectile->fX = fix10p6FromUword(30);
+			s_pCurrentProjectile->fY = fix10p6FromUword(30);
+			UBYTE ubAngle = randUwMinMax(&g_sRand, 0, ANGLE_360 - 1);
+			s_pCurrentProjectile->fDx = fix10p6Cos(ubAngle);
+			s_pCurrentProjectile->fDy = fix10p6Sin(ubAngle);
+		}
+		++s_pCurrentProjectile;
 	}
 
 	bobPushingDone();

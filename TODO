@@ -9,6 +9,7 @@ Bare minimum:
 	✔ Add collision between characters @done(25-03-20)
 		✔ Collision between player and zombies @done(25-03-20)
 		✔ Collision between zombies @done(25-03-20)
+	☐ Shoot the projectiles
 	☐ Add health system for zombies
 		☐ Add collision between projectiles and enemies
 		☐ Respawn zombies after their death
@@ -16,6 +17,17 @@ Bare minimum:
 		☐ Add HP bar on HUD
 		☐ Play death animation
 		☐ restart the game with R
+	☐ Add weapons
+		☐ Pistol (default weapon, small dmg, slow, low spray)
+		☐ Shotgun (small angle)
+		☐ Sawed-off shotgun (large angle)
+		☐ Assault rifle (slower, stronger, low spray)
+		☐ Submachine gun (fastest, low dmg, high spray)
+	☐ Add ammo system
+		☐ Add reload on end of shooting
+		☐ Add reload on R
+		☐ Add ammo indicator on HUD
+		☐ Add reload indicator on cursor
 	☐ Add bloodstains
 	☐ Add zombie kill VFX
 	☐ Add basic menu
