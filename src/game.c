@@ -17,8 +17,8 @@
 #include "game_math.h"
 
 #define HUD_HEIGHT 16
-#define MAP_TILES_X 25
-#define MAP_TILES_Y 25
+#define MAP_TILES_X 32
+#define MAP_TILES_Y 32
 #define MAP_TILE_SHIFT 4
 #define MAP_TILE_SIZE  (1 << MAP_TILE_SHIFT)
 #define GAME_BPP 5
@@ -196,7 +196,7 @@ static void onBobEnd(void) {
 	drawNextProjectile();
 }
 
-static void drawTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
+static void setTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
 	blitCopyAligned(
 		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
 		s_pBufferMain->pBack, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
@@ -214,21 +214,15 @@ static void drawTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
 	);
 }
 
-static UBYTE isPositionCollidingWithCharacter(
+static inline UBYTE isPositionCollidingWithCharacter(
 	tUwCoordYX sPos, const tCharacter *pCharacter
 ) {
+	WORD Dx = sPos.uwX - pCharacter->sPos.uwX;
+	WORD Dy = sPos.uwY - pCharacter->sPos.uwY;
 	return (
-		sPos.uwX < pCharacter->sPos.uwX + COLLISION_SIZE_X &&
-		sPos.uwX + COLLISION_SIZE_X > pCharacter->sPos.uwX &&
-		sPos.uwY < pCharacter->sPos.uwY + COLLISION_SIZE_Y &&
-		sPos.uwY + COLLISION_SIZE_Y > pCharacter->sPos.uwY
+		-COLLISION_SIZE_X < Dx && Dx < COLLISION_SIZE_X &&
+		-COLLISION_SIZE_Y < Dy && Dy < COLLISION_SIZE_Y
 	);
-}
-
-static UBYTE characterIsCollidingWith(
-	const tCharacter *pCharacter1, const tCharacter *pCharacter2
-) {
-	return isPositionCollidingWithCharacter(pCharacter1->sPos, pCharacter2);
 }
 
 static inline tCharacter *characterGetNearPos(
@@ -239,76 +233,77 @@ static inline tCharacter *characterGetNearPos(
 	return s_pCollisionTiles[uwLookupX][uwLookupY];
 }
 
-static UBYTE characterTryMoveBy(tCharacter *pCharacter, BYTE bDeltaX, BYTE bDeltaY) {
-	UBYTE ubOldLookupX = pCharacter->sPos.uwX / COLLISION_SIZE_X;
-	UBYTE ubOldLookupY = pCharacter->sPos.uwY / COLLISION_SIZE_Y;
+static UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LONG lDeltaY) {
+	tUwCoordYX sGoodPos = pCharacter->sPos;
 	UBYTE isMoved = 0;
 
-	if (bDeltaX) {
-		tUwCoordYX sOldPos = {.ulYX = pCharacter->sPos.ulYX};
-		pCharacter->sPos.uwX += bDeltaX;
-		UBYTE isColliding = (bDeltaX > 0 ?
-			pCharacter->sPos.uwX >= MAP_TILES_X * MAP_TILE_SIZE - (PLAYER_BOB_SIZE_X - PLAYER_BOB_OFFSET_X) :
-			pCharacter->sPos.uwX <= PLAYER_BOB_OFFSET_X
-		);
+	if (lDeltaX) {
+		tUwCoordYX sNewPos = sGoodPos;
+		sNewPos.uwX += lDeltaX;
+		UWORD uwTestX = sNewPos.uwX;
+		if(lDeltaX < 0) {
+			uwTestX -= PLAYER_BOB_OFFSET_X;
+		}
+		UBYTE isColliding = (uwTestX >= MAP_TILES_X * MAP_TILE_SIZE - (PLAYER_BOB_SIZE_X - PLAYER_BOB_OFFSET_X));
 
 		// collision with upper corner
 		if(!isColliding) {
-			tCharacter *pUp = characterGetNearPos(sOldPos.uwX, SGN(bDeltaX), sOldPos.uwY, 0);
+			tCharacter *pUp = characterGetNearPos(sGoodPos.uwX, SGN(lDeltaX), sGoodPos.uwY, 0);
 			if(pUp && pUp != pCharacter) {
-				isColliding = characterIsCollidingWith(pCharacter, pUp);
+				isColliding = isPositionCollidingWithCharacter(sNewPos, pUp);
 			}
 		}
 
 		// collision with lower corner
-		if (!isColliding && (sOldPos.uwY & (COLLISION_SIZE_Y - 1))) {
-			tCharacter *pDown = characterGetNearPos(sOldPos.uwX, SGN(bDeltaX), sOldPos.uwY, +1);
+		if (!isColliding && (sGoodPos.uwY & (COLLISION_SIZE_Y - 1))) {
+			tCharacter *pDown = characterGetNearPos(sGoodPos.uwX, SGN(lDeltaX), sGoodPos.uwY, +1);
 			if(pDown && pDown != pCharacter) {
-				isColliding = characterIsCollidingWith(pCharacter, pDown);
+				isColliding = isPositionCollidingWithCharacter(sNewPos, pDown);
 			}
 		}
 
 		if(!isColliding) {
 			isMoved = 1;
-		}
-		else {
-			pCharacter->sPos.ulYX = sOldPos.ulYX;
+			sGoodPos = sNewPos;
 		}
 	}
 
-	if (bDeltaY) {
-		tUwCoordYX sOldPos = {.ulYX = pCharacter->sPos.ulYX};
-		pCharacter->sPos.uwY += bDeltaY;
-		UBYTE isColliding = (bDeltaY > 0 ?
-			pCharacter->sPos.uwY >= MAP_TILES_Y * MAP_TILE_SIZE - (PLAYER_BOB_SIZE_Y - PLAYER_BOB_OFFSET_Y) :
-			pCharacter->sPos.uwY <= PLAYER_BOB_OFFSET_Y
-		);
+	if (lDeltaY) {
+		tUwCoordYX sNewPos = sGoodPos;
+		sNewPos.uwY += lDeltaY;
+
+		UWORD uwTestY = sNewPos.uwY;
+		if(lDeltaY < 0) {
+			uwTestY -= PLAYER_BOB_OFFSET_Y;
+		}
+		UBYTE isColliding = (uwTestY >= MAP_TILES_Y * MAP_TILE_SIZE - (PLAYER_BOB_SIZE_Y - PLAYER_BOB_OFFSET_Y));
 
 		// collision with left corner
 		if(!isColliding) {
-			tCharacter *pLeft = characterGetNearPos(sOldPos.uwX, 0, sOldPos.uwY, SGN(bDeltaY));
+			tCharacter *pLeft = characterGetNearPos(sGoodPos.uwX, 0, sGoodPos.uwY, SGN(lDeltaY));
 			if(pLeft && pLeft != pCharacter) {
-				isColliding = characterIsCollidingWith(pCharacter, pLeft);
+				isColliding = isPositionCollidingWithCharacter(sNewPos, pLeft);
 			}
 		}
 
 		// collision with right corner
-		if (!isColliding && (sOldPos.uwX & (COLLISION_SIZE_X - 1))) {
-			tCharacter *pRight = characterGetNearPos(sOldPos.uwX, +1, sOldPos.uwY, SGN(bDeltaY));
+		if (!isColliding && (sGoodPos.uwX & (COLLISION_SIZE_X - 1))) {
+			tCharacter *pRight = characterGetNearPos(sGoodPos.uwX, +1, sGoodPos.uwY, SGN(lDeltaY));
 			if(pRight && pRight != pCharacter) {
-				isColliding = characterIsCollidingWith(pCharacter, pRight);
+				isColliding = isPositionCollidingWithCharacter(sNewPos, pRight);
 			}
 		}
 
 		if(!isColliding) {
 			isMoved = 1;
-		}
-		else {
-			pCharacter->sPos.ulYX = sOldPos.ulYX;
+			sGoodPos = sNewPos;
 		}
 	}
 
 	if(isMoved) {
+		pCharacter->sPos = sGoodPos;
+		ULONG ubOldLookupX = pCharacter->sPos.uwX / COLLISION_SIZE_X;
+		ULONG ubOldLookupY = pCharacter->sPos.uwY / COLLISION_SIZE_Y;
 		// Update lookup
 		if(
 			s_pCollisionTiles[ubOldLookupX][ubOldLookupY] &&
@@ -321,8 +316,8 @@ static UBYTE characterTryMoveBy(tCharacter *pCharacter, BYTE bDeltaX, BYTE bDelt
 		}
 		s_pCollisionTiles[ubOldLookupX][ubOldLookupY] = 0;
 
-		UBYTE ubNewLookupX = pCharacter->sPos.uwX / COLLISION_SIZE_X;
-		UBYTE ubNewLookupY = pCharacter->sPos.uwY / COLLISION_SIZE_Y;
+		ULONG ubNewLookupX = pCharacter->sPos.uwX / COLLISION_SIZE_X;
+		ULONG ubNewLookupY = pCharacter->sPos.uwY / COLLISION_SIZE_Y;
 		if(s_pCollisionTiles[ubNewLookupX][ubNewLookupY]) {
 			logWrite(
 				"ERR: Overwriting other character %p in lookup with %p\n",
@@ -378,24 +373,24 @@ static void gameGsCreate(void) {
 
 	randInit(&g_sRand, 2184, 1911);
 
-	drawTile(0, 0, 0);
-	drawTile(1, MAP_TILES_X - 1, 0);
-	drawTile(2, 0, MAP_TILES_Y - 1);
-	drawTile(3, MAP_TILES_X - 1, MAP_TILES_Y - 1);
+	setTile(0, 0, 0);
+	setTile(1, MAP_TILES_X - 1, 0);
+	setTile(2, 0, MAP_TILES_Y - 1);
+	setTile(3, MAP_TILES_X - 1, MAP_TILES_Y - 1);
 
 	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
-		drawTile(randUwMinMax(&g_sRand, 4, 6), ubX, 0);
-		drawTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1);
+		setTile(randUwMinMax(&g_sRand, 4, 6), ubX, 0);
+		setTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1);
 	}
 
 	for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
-		drawTile(randUwMinMax(&g_sRand, 7, 9), 0, ubY);
-		drawTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1, ubY);
+		setTile(randUwMinMax(&g_sRand, 7, 9), 0, ubY);
+		setTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1, ubY);
 	}
 
 	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
 		for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
-			drawTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
+			setTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
 		}
 	}
 
@@ -454,8 +449,8 @@ static void gameGsCreate(void) {
 		onBobBegin, onBobEnd
 	);
 
-	s_sPlayer.sPos.uwX = 100;
-	s_sPlayer.sPos.uwY = 100;
+	s_sPlayer.sPos.uwX = 180;
+	s_sPlayer.sPos.uwY = 180;
 	s_sPlayer.eFrame = 0;
 	s_sPlayer.ubFrameCooldown = 0;
 	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
