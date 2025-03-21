@@ -174,7 +174,7 @@ static inline void drawNextProjectile(void) {
 		UWORD uwProjectileY = fix10p6ToUword(s_pCurrentProjectile->fY);
 		// TODO: collision with enemies
 		if(uwProjectileX >= MAP_TILES_X * MAP_TILE_SIZE || uwProjectileY >= MAP_TILES_Y * MAP_TILE_SIZE) {
-			s_pCurrentProjectile->ubLife = 0;
+			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
 		}
 		else {
 			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
@@ -501,7 +501,7 @@ static void gameGsCreate(void) {
 	bobReallocateBuffers();
 	gameMathInit();
 	for(UBYTE ubAngle = 0; ubAngle < GAME_MATH_ANGLE_COUNT; ++ubAngle) {
-		s_pSin10p6[ubAngle] = csin(ubAngle) >> 6;
+		s_pSin10p6[ubAngle] = csin(ubAngle) >> 10;
 	}
 
 	s_pBmCrosshair = bitmapCreateFromPath("data/cursor_crosshair.bm", 0);
