@@ -114,7 +114,6 @@ static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
 static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
 static tCharacter s_pEnemies[ENEMY_COUNT];
-static tProjectile s_pProjectiles[PROJECTILE_COUNT];
 
 static tPtplayerMod *s_pMod;
 static UBYTE s_ubBufferCurr;
@@ -128,6 +127,12 @@ static const UBYTE s_pBulletMaskFromX[] = {
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
 
 static tCharacter *s_pCollisionTiles[MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X][MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y];
+
+static tProjectile s_pProjectiles[PROJECTILE_COUNT];
+static tProjectile *s_pFreeProjectiles[PROJECTILE_COUNT];
+static UBYTE s_ubFreeProjectileCount;
+
+//------------------------------------------------------------------ PRIVATE FNS
 
 static inline tFix10p6 fix10p6Add(tFix10p6 a, tFix10p6 b) {return a + b; }
 static inline tFix10p6 fix10p6FromUword(UWORD x) {return x << 6; }
@@ -156,6 +161,9 @@ static inline void undrawNextProjectile(void) {
 		if(s_pCurrentProjectile->ubLife) {
 			s_pCurrentProjectile->fX = fix10p6Add(s_pCurrentProjectile->fX, s_pCurrentProjectile->fDx);
 			s_pCurrentProjectile->fY = fix10p6Add(s_pCurrentProjectile->fY, s_pCurrentProjectile->fDy);
+		}
+		else {
+			s_pFreeProjectiles[s_ubFreeProjectileCount++] = s_pCurrentProjectile;
 		}
 	}
 
@@ -487,16 +495,10 @@ static void gameGsCreate(void) {
 	}
 
 	for(UBYTE i = 0; i < PROJECTILE_COUNT; ++i) {
-		s_pProjectiles[i].fX = fix10p6FromUword(32 + (i % 8) * 4);
-		s_pProjectiles[i].fY = fix10p6FromUword(180 + (i / 8) * 4);
-
-		s_pProjectiles[i].fDx = 0;
-		s_pProjectiles[i].fDy = 0;
-
-		s_pProjectiles[i].ubLife = PROJECTILE_LIFETIME;
-		s_pProjectiles[i].pPrevOffsets[0] = 0;
-		s_pProjectiles[i].pPrevOffsets[1] = 0;
+		s_pProjectiles[i].ubLife = 0;
+		s_pFreeProjectiles[i] = &s_pProjectiles[i];
 	}
+	s_ubFreeProjectileCount = PROJECTILE_COUNT;
 
 	bobReallocateBuffers();
 	gameMathInit();
@@ -619,16 +621,14 @@ static void gameGsLoop(void) {
 	}
 
 	s_pCurrentProjectile = &s_pProjectiles[0];
-	while(s_pCurrentProjectile != &s_pProjectiles[PROJECTILE_COUNT]) {
-		if(!s_pCurrentProjectile->ubLife) {
-			s_pCurrentProjectile->ubLife = PROJECTILE_LIFETIME;
-			s_pCurrentProjectile->fX = fix10p6FromUword(30);
-			s_pCurrentProjectile->fY = fix10p6FromUword(30);
-			UBYTE ubAngle = randUwMinMax(&g_sRand, 0, ANGLE_360 - 1);
-			s_pCurrentProjectile->fDx = fix10p6Cos(ubAngle);
-			s_pCurrentProjectile->fDy = fix10p6Sin(ubAngle);
-		}
-		++s_pCurrentProjectile;
+	while(s_ubFreeProjectileCount) {
+		tProjectile *pProjectile = s_pFreeProjectiles[--s_ubFreeProjectileCount];
+		pProjectile->ubLife = PROJECTILE_LIFETIME;
+		pProjectile->fX = fix10p6FromUword(30);
+		pProjectile->fY = fix10p6FromUword(30);
+		UBYTE ubAngle = randUwMinMax(&g_sRand, 0, ANGLE_360 - 1);
+		pProjectile->fDx = fix10p6Cos(ubAngle);
+		pProjectile->fDy = fix10p6Sin(ubAngle);
 	}
 
 	s_pCurrentProjectile = &s_pProjectiles[0];
