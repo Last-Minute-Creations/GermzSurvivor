@@ -48,7 +48,8 @@
 
 #define ENEMY_COUNT 30
 #define PROJECTILE_COUNT 20
-#define PROJECTILE_LIFETIME 50
+#define PROJECTILE_LIFETIME 25
+#define PROJECTILE_SPEED 5
 
 #define BG_BYTES_PER_BITPLANE_ROW (MAP_TILES_X * MAP_TILE_SIZE / 8)
 #define BG_BYTES_PER_PIXEL_ROW (BG_BYTES_PER_BITPLANE_ROW * GAME_BPP)
@@ -65,7 +66,7 @@ typedef enum tDirection {
 	DIRECTION_COUNT
 } tDirection;
 
-typedef enum tPlayerFrame {
+typedef enum tCharacterFrame {
 	PLAYER_FRAME_WALK_1,
 	PLAYER_FRAME_WALK_2,
 	PLAYER_FRAME_WALK_3,
@@ -76,7 +77,15 @@ typedef enum tPlayerFrame {
 	PLAYER_FRAME_WALK_8,
 
 	PLAYER_FRAME_COUNT
-} tPlayerFrame;
+} tCharacterFrame;
+
+typedef enum tWeaponKind {
+	WEAPON_KIND_BASE_RIFLE,
+	WEAPON_KIND_SMG,
+	WEAPON_KIND_ASSAULT_RIFLE,
+	WEAPON_KIND_SHOTGUN,
+	WEAPON_KIND_SAWOFF,
+} tWeaponKind;
 
 typedef struct tFrameOffset {
 	UBYTE *pPixels;
@@ -86,7 +95,8 @@ typedef struct tFrameOffset {
 typedef struct tCharacter {
 	tUwCoordYX sPos; ///< Top-left coordinate of collision box.
 	tBob sBob;
-	tPlayerFrame eFrame;
+	tCharacterFrame eFrame;
+	tWeaponKind eWeapon;
 	WORD wHealth;
 	UBYTE ubFrameCooldown;
 	UBYTE ubAttackCooldown;
@@ -99,6 +109,7 @@ typedef struct tProjectile {
 	tFix10p6 fDy;
 	ULONG pPrevOffsets[2];
 	UBYTE ubLife;
+	UBYTE ubDamage;
 } tProjectile;
 
 static tView *s_pView;
@@ -307,7 +318,7 @@ static inline void drawNextProjectile(void) {
 	}
 
 	UBYTE *pTargetPlanes = s_pBackPlanes;
-	if(s_pCurrentProjectile->ubLife) {
+	if(s_pCurrentProjectile->ubLife > 1) {
 		UWORD uwProjectileX = fix10p6ToUword(s_pCurrentProjectile->fX);
 		UWORD uwProjectileY = fix10p6ToUword(s_pCurrentProjectile->fY);
 		tCharacter *pEnemy;
@@ -322,7 +333,7 @@ static inline void drawNextProjectile(void) {
 			((pEnemy = characterGetNearPos(uwProjectileX, -1, uwProjectileY, -1)) && pEnemy != &s_sPlayer)
 		) {
 			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
-			pEnemy->wHealth -= 5;
+			pEnemy->wHealth -= s_pCurrentProjectile->ubDamage;
 		}
 		else {
 			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
@@ -385,6 +396,75 @@ static void hudProcess(void) {
 	}
 }
 
+static void playerSetWeapon(tWeaponKind eWeaponKind) {
+	s_sPlayer.eWeapon = eWeaponKind;
+	// TOOD: set ammo
+}
+
+__attribute__((always_inline))
+static inline void playerShootProjectile(BYTE bAngle, UBYTE ubDamage) {
+	static UBYTE s_ubSpread = 0;
+	if(bAngle < 0) {
+		bAngle += ANGLE_360;
+	}
+	if(s_ubFreeProjectileCount) {
+		tProjectile *pProjectile = s_pFreeProjectiles[--s_ubFreeProjectileCount];
+		pProjectile->ubLife = PROJECTILE_LIFETIME;
+		pProjectile->ubDamage = ubDamage;
+		pProjectile->fDx = fix10p6Cos(bAngle) * PROJECTILE_SPEED;
+		pProjectile->fDy = fix10p6Sin(bAngle) * PROJECTILE_SPEED;
+		pProjectile->fX = fix10p6FromUword(s_sPlayer.sPos.uwX);
+		pProjectile->fY = fix10p6FromUword(s_sPlayer.sPos.uwY);
+		if(s_ubSpread == 0) {
+			++s_ubSpread;
+		}
+		else if(s_ubSpread == 1) {
+			pProjectile->fX += pProjectile->fDx;
+			pProjectile->fY += pProjectile->fDy;
+			++s_ubSpread;
+		}
+		else { // if(s_ubSpread == 2)
+			pProjectile->fX -= pProjectile->fDx;
+			pProjectile->fY -= pProjectile->fDy;
+			s_ubSpread = 0;
+		}
+	}
+	else {
+		logWrite("ERR: No free projectiles");
+	}
+}
+
+static void playerShootWeapon(UBYTE ubAimAngle) {
+	// TODO: precalculate random stuff
+	switch(s_sPlayer.eWeapon) {
+		case WEAPON_KIND_BASE_RIFLE:
+			playerShootProjectile(ubAimAngle - 2/2 + randUwMax(&g_sRand, 2), 5);
+			s_sPlayer.ubAttackCooldown = 20;
+			break;
+			case WEAPON_KIND_SMG:
+			playerShootProjectile(ubAimAngle - 4/2 + randUwMax(&g_sRand, 4), 3);
+			s_sPlayer.ubAttackCooldown = 5;
+			break;
+		case WEAPON_KIND_ASSAULT_RIFLE:
+			playerShootProjectile(ubAimAngle - 2/2 + randUwMax(&g_sRand, 2), 5);
+			s_sPlayer.ubAttackCooldown = 8;
+			break;
+		case WEAPON_KIND_SHOTGUN:
+			for(UBYTE i = 0; i < 10; ++i) {
+				playerShootProjectile(ubAimAngle - 6/2 + randUwMax(&g_sRand, 6), 3);
+			}
+			s_sPlayer.ubAttackCooldown = 25;
+			break;
+		case WEAPON_KIND_SAWOFF:
+			for(UBYTE i = 0; i < 10; ++i) {
+				playerShootProjectile(ubAimAngle - ANGLE_60/2 + randUwMax(&g_sRand, ANGLE_60), 3);
+			}
+			s_sPlayer.ubAttackCooldown = 25;
+			break;
+	}
+	// TODO: remove ammo from magazine
+}
+
 static void gameStart(void) {
 	setTile(0, 0, 0);
 	setTile(1, MAP_TILES_X - 1, 0);
@@ -415,6 +495,7 @@ static void gameStart(void) {
 	s_sPlayer.eFrame = 0;
 	s_sPlayer.ubFrameCooldown = 0;
 	s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
+	playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
 	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
@@ -509,7 +590,7 @@ static void gameGsCreate(void) {
 	s_pPlayerMasks[DIRECTION_SE] = bitmapCreateFromPath("data/player_se_mask.bm", 0);
 
 	for(tDirection eDir = 0; eDir < DIRECTION_COUNT; ++eDir) {
-		for(tPlayerFrame eFrame = 0; eFrame < PLAYER_FRAME_COUNT; ++eFrame) {
+		for(tCharacterFrame eFrame = 0; eFrame < PLAYER_FRAME_COUNT; ++eFrame) {
 			s_pPlayerFrameOffsets[eDir][eFrame].pPixels = bobCalcFrameAddress(s_pPlayerFrames[eDir], eFrame * PLAYER_BOB_SIZE_Y);
 			s_pPlayerFrameOffsets[eDir][eFrame].pMask = bobCalcFrameAddress(s_pPlayerMasks[eDir], eFrame * PLAYER_BOB_SIZE_Y);
 
@@ -538,7 +619,7 @@ static void gameGsCreate(void) {
 	s_pEnemyMasks[DIRECTION_SE] = bitmapCreateFromPath("data/zombie_se_mask.bm", 0);
 
 	for(tDirection eDir = 0; eDir < DIRECTION_COUNT; ++eDir) {
-		for(tPlayerFrame eFrame = 0; eFrame < PLAYER_FRAME_COUNT; ++eFrame) {
+		for(tCharacterFrame eFrame = 0; eFrame < PLAYER_FRAME_COUNT; ++eFrame) {
 			s_pEnemyFrameOffsets[eDir][eFrame].pPixels = bobCalcFrameAddress(s_pEnemyFrames[eDir], eFrame * ENEMY_BOB_SIZE_Y);
 			s_pEnemyFrameOffsets[eDir][eFrame].pMask = bobCalcFrameAddress(s_pEnemyMasks[eDir], eFrame * ENEMY_BOB_SIZE_Y);
 
@@ -601,6 +682,22 @@ static void gameGsLoop(void) {
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
 
 	if(s_sPlayer.wHealth > 0) {
+		if(keyUse(KEY_1)) {
+			playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
+		}
+		else if(keyUse(KEY_2)) {
+			playerSetWeapon(WEAPON_KIND_SMG);
+		}
+		else if(keyUse(KEY_3)) {
+			playerSetWeapon(WEAPON_KIND_ASSAULT_RIFLE);
+		}
+		else if(keyUse(KEY_4)) {
+			playerSetWeapon(WEAPON_KIND_SHOTGUN);
+		}
+		else if(keyUse(KEY_5)) {
+			playerSetWeapon(WEAPON_KIND_SAWOFF);
+		}
+
 		UBYTE ubAimAngle = getAngleBetweenPoints( // 0 is right, going clockwise
 			s_sPlayer.sPos.uwX - s_pBufferMain->pCamera->uPos.uwX,
 			s_sPlayer.sPos.uwY - s_pBufferMain->pCamera->uPos.uwY,
@@ -668,18 +765,7 @@ static void gameGsLoop(void) {
 		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
 
 		if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB) && !s_sPlayer.ubAttackCooldown) {
-			if(s_ubFreeProjectileCount) {
-				tProjectile *pProjectile = s_pFreeProjectiles[--s_ubFreeProjectileCount];
-				pProjectile->ubLife = PROJECTILE_LIFETIME;
-				pProjectile->fX = fix10p6FromUword(s_sPlayer.sPos.uwX);
-				pProjectile->fY = fix10p6FromUword(s_sPlayer.sPos.uwY);
-				pProjectile->fDx = fix10p6Cos(ubAimAngle) * 5;
-				pProjectile->fDy = fix10p6Sin(ubAimAngle) * 5;
-				s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
-			}
-			else {
-				logWrite("ERR: No free projectiles");
-			}
+			playerShootWeapon(ubAimAngle);
 		}
 	}
 	else {
@@ -742,7 +828,9 @@ static void gameGsLoop(void) {
 				--pEnemy->ubAttackCooldown;
 			}
 
-			characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
+			if(0) {
+				characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
+			}
 			tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
 			bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
 		}

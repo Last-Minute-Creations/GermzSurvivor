@@ -13,11 +13,14 @@
 #define GAME_MATH_PRECALCULATED
 // #define GAME_MATH_SAVE_PRECALC
 
-#define ANGLE_0    0
-#define ANGLE_45   (GAME_MATH_ANGLE_COUNT / 8)
-#define ANGLE_90   (GAME_MATH_ANGLE_COUNT / 4)
-#define ANGLE_180  (GAME_MATH_ANGLE_COUNT / 2)
 #define ANGLE_360  (GAME_MATH_ANGLE_COUNT)
+#define ANGLE_180  (ANGLE_360 / 2)
+#define ANGLE_90   (ANGLE_360 / 4)
+#define ANGLE_60   (ANGLE_360 / 6)
+#define ANGLE_45   (ANGLE_360 / 8)
+#define ANGLE_30   (ANGLE_360 / 12)
+#define ANGLE_15   (ANGLE_360 / 24)
+#define ANGLE_0    0
 #define ANGLE_LAST ((GAME_MATH_ANGLE_COUNT)-1)
 
 #define csin(x) (g_pSin[x])

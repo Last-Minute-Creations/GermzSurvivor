@@ -20,11 +20,11 @@ Bare minimum:
 		✔ restart the game with R @done(25-03-22)
 		☐ Play death animation
 	Add weapons:
-		☐ Slow shot rifle (default weapon, small dmg, slow, low spray)
-		☐ Shotgun (small angle)
-		☐ Sawed-off shotgun (large angle)
-		☐ Assault rifle (slower, stronger, low spray)
-		☐ Submachine gun (fastest, low dmg, high spray)
+		✔ Slow shot rifle (default weapon, small dmg, slow, low spray) @done(25-03-22)
+		✔ Shotgun (small angle) @done(25-03-22)
+		✔ Sawed-off shotgun (large angle) @done(25-03-22)
+		✔ Assault rifle (slower, stronger, low spray) @done(25-03-22)
+		✔ Submachine gun (fastest, low dmg, high spray) @done(25-03-22)
 		☐ Display weapon on HUD
 	Add ammo system:
 		☐ Add reload on end of shooting
@@ -69,6 +69,7 @@ Optimizations:
 	☐ Simplify projectile collision - remove check with edges in favor of dummy tiles
 	☐ Process two bullet undraws in one bob undraw and do something else in remaining calls?
 	☐ Skip zombie draw when offscreen?
+	☐ Precalculate weapon attack pattern randomization
 
 Score:
 	☐ Add exp
