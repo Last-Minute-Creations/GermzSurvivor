@@ -15,7 +15,8 @@ Bare minimum:
 		✔ Respawn zombies after their death @done(25-03-22)
 	✔ Add zombie homing @done(25-03-22)
 	Add health system for player:
-		☐ Add HP bar on HUD
+		✔ Add HP bar on HUD @done(25-03-22)
+		✔ Damage the player @done(25-03-22)
 		☐ Play death animation
 		☐ restart the game with R
 	Add weapons:

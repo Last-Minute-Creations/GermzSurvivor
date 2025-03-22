@@ -35,13 +35,16 @@
 #define PLAYER_BOB_OFFSET_X 12
 #define PLAYER_BOB_OFFSET_Y 19
 #define PLAYER_ATTACK_COOLDOWN 12
+#define PLAYER_HEALTH_MAX 100
 
 #define ENEMY_BOB_SIZE_X 16
 #define ENEMY_BOB_SIZE_Y 24
 // From the top-left of the collision rectangle
 #define ENEMY_BOB_OFFSET_X 4
 #define ENEMY_BOB_OFFSET_Y 15
+#define ENEMY_ATTACK_COOLDOWN 15
 #define ENEMY_HEALTH_MAX 20
+#define ENEMY_SPEED 1
 
 #define ENEMY_COUNT 30
 #define PROJECTILE_COUNT 20
@@ -49,7 +52,6 @@
 
 #define BG_BYTES_PER_BITPLANE_ROW (MAP_TILES_X * MAP_TILE_SIZE / 8)
 #define BG_BYTES_PER_PIXEL_ROW (BG_BYTES_PER_BITPLANE_ROW * GAME_BPP)
-#define DELTAS_TO_DIR_INDEX(dx, dy) ((((dx) + 1) << 2) | ((dy) + 1))
 
 typedef UWORD tFix10p6;
 
@@ -131,18 +133,6 @@ static const UBYTE s_pBulletMaskFromX[] = {
 	BV(7), BV(6), BV(5), BV(4), BV(3), BV(2), BV(1), BV(0)
 };
 
-static const UBYTE s_pDeltasToDir[] = {
-	[DELTAS_TO_DIR_INDEX(0, 0)] = DIRECTION_S,
-	[DELTAS_TO_DIR_INDEX(0, 1)] = DIRECTION_S,
-	[DELTAS_TO_DIR_INDEX(-1, 1)] = DIRECTION_SW,
-	[DELTAS_TO_DIR_INDEX(-1, 0)] = DIRECTION_NW,
-	[DELTAS_TO_DIR_INDEX(-1, -1)] = DIRECTION_NW,
-	[DELTAS_TO_DIR_INDEX(0, -1)] = DIRECTION_N,
-	[DELTAS_TO_DIR_INDEX(1, -1)] = DIRECTION_NE,
-	[DELTAS_TO_DIR_INDEX(1, 0)] = DIRECTION_SE,
-	[DELTAS_TO_DIR_INDEX(1, 1)] = DIRECTION_SE,
-};
-
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
 
 static tCharacter *s_pCollisionTiles[MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X][MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y];
@@ -150,6 +140,8 @@ static tCharacter *s_pCollisionTiles[MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZ
 static tProjectile s_pProjectiles[PROJECTILE_COUNT];
 static tProjectile *s_pFreeProjectiles[PROJECTILE_COUNT];
 static UBYTE s_ubFreeProjectileCount;
+
+static UWORD s_uwHudHealth;
 
 //------------------------------------------------------------------ PRIVATE FNS
 
@@ -380,6 +372,19 @@ static void cameraCenterAtOptimized(
 	pManager->uPos.uwY = CLAMP(lLeft, 0, pManager->uMaxPos.uwY);
 }
 
+static void hudProcess(void) {
+	UWORD uwCurrentHealth = s_sPlayer.wHealth;
+	if(s_uwHudHealth != uwCurrentHealth) {
+		if(uwCurrentHealth > s_uwHudHealth) {
+			blitRect(s_pBufferHud->pBack, 200 + s_uwHudHealth, 10, uwCurrentHealth - s_uwHudHealth, 4, 26);
+		}
+		else {
+			blitRect(s_pBufferHud->pBack, 200 + uwCurrentHealth, 10, s_uwHudHealth - uwCurrentHealth, 4, 3);
+		}
+		s_uwHudHealth = uwCurrentHealth;
+	}
+}
+
 static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
@@ -524,6 +529,7 @@ static void gameGsCreate(void) {
 		s_pPristineBuffer, MAP_TILES_Y * MAP_TILE_SIZE
 	);
 
+	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
 	s_sPlayer.sPos.uwX = 180;
 	s_sPlayer.sPos.uwY = 180;
 	s_sPlayer.eFrame = 0;
@@ -532,12 +538,15 @@ static void gameGsCreate(void) {
 	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
 	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 
+	s_uwHudHealth = 0;
+
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
 		s_pEnemies[i].wHealth = ENEMY_HEALTH_MAX;
 		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
 		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
 		s_pEnemies[i].eFrame = 0;
 		s_pEnemies[i].ubFrameCooldown = 0;
+		s_pEnemies[i].ubAttackCooldown = 0;
 		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
 		bobInit(&s_pEnemies[i].sBob, ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 	}
@@ -585,71 +594,91 @@ static void gameGsLoop(void) {
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
 
-	UBYTE ubAimAngle = getAngleBetweenPoints( // 0 is right, going clockwise
-		s_sPlayer.sPos.uwX - s_pBufferMain->pCamera->uPos.uwX,
-		s_sPlayer.sPos.uwY - s_pBufferMain->pCamera->uPos.uwY,
-		uwMouseX, uwMouseY - HUD_SIZE_Y
-	);
+	if(s_sPlayer.wHealth > 0) {
+		UBYTE ubAimAngle = getAngleBetweenPoints( // 0 is right, going clockwise
+			s_sPlayer.sPos.uwX - s_pBufferMain->pCamera->uPos.uwX,
+			s_sPlayer.sPos.uwY - s_pBufferMain->pCamera->uPos.uwY,
+			uwMouseX, uwMouseY - HUD_SIZE_Y
+		);
 
-	BYTE bDeltaX = 0;
-	BYTE bDeltaY = 0;
-	if(keyCheck(KEY_W)) {
-		bDeltaY = -3;
-	}
-	else if(keyCheck(KEY_S)) {
-		bDeltaY = 3;
-	}
-	if(keyCheck(KEY_A)) {
-		bDeltaX = -3;
-	}
-	else if(keyCheck(KEY_D)) {
-		bDeltaX = 3;
-	}
-	if(bDeltaX || bDeltaY) {
-		characterTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
-		if(s_sPlayer.ubFrameCooldown >= 1) {
-			s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
-			if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
-				s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+		BYTE bDeltaX = 0;
+		BYTE bDeltaY = 0;
+		if(keyCheck(KEY_W)) {
+			bDeltaY = -3;
+		}
+		else if(keyCheck(KEY_S)) {
+			bDeltaY = 3;
+		}
+		if(keyCheck(KEY_A)) {
+			bDeltaX = -3;
+		}
+		else if(keyCheck(KEY_D)) {
+			bDeltaX = 3;
+		}
+		if(bDeltaX || bDeltaY) {
+			characterTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
+			if(s_sPlayer.ubFrameCooldown >= 1) {
+				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
+				if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
+					s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+				}
+				s_sPlayer.ubFrameCooldown = 0;
 			}
-			s_sPlayer.ubFrameCooldown = 0;
+			else {
+				++s_sPlayer.ubFrameCooldown;
+			}
 		}
 		else {
-			++s_sPlayer.ubFrameCooldown;
+			s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+			s_sPlayer.ubFrameCooldown = 0;
+		}
+		if(s_sPlayer.ubAttackCooldown) {
+			--s_sPlayer.ubAttackCooldown;
+		}
+
+		tDirection eDir;
+		if(ubAimAngle < ANGLE_45) {
+			eDir = DIRECTION_SE;
+		}
+		else if(ubAimAngle < ANGLE_45 + ANGLE_90) {
+			eDir = DIRECTION_S;
+		}
+		else if(ubAimAngle < ANGLE_180) {
+			eDir = DIRECTION_SW;
+		}
+		else if(ubAimAngle < ANGLE_180 + ANGLE_45) {
+			eDir = DIRECTION_NW;
+		}
+		else if(ubAimAngle < ANGLE_180 + ANGLE_45 + ANGLE_90) {
+			eDir = DIRECTION_N;
+		}
+		else {
+			eDir = DIRECTION_NE;
+		}
+
+		tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
+		bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
+		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
+		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
+
+		if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB) && !s_sPlayer.ubAttackCooldown) {
+			if(s_ubFreeProjectileCount) {
+				tProjectile *pProjectile = s_pFreeProjectiles[--s_ubFreeProjectileCount];
+				pProjectile->ubLife = PROJECTILE_LIFETIME;
+				pProjectile->fX = fix10p6FromUword(s_sPlayer.sPos.uwX);
+				pProjectile->fY = fix10p6FromUword(s_sPlayer.sPos.uwY);
+				pProjectile->fDx = fix10p6Cos(ubAimAngle) * 5;
+				pProjectile->fDy = fix10p6Sin(ubAimAngle) * 5;
+				s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
+			}
+			else {
+				logWrite("ERR: No free projectiles");
+			}
 		}
 	}
 	else {
-		s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
-		s_sPlayer.ubFrameCooldown = 0;
+		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
 	}
-	if(s_sPlayer.ubAttackCooldown) {
-		--s_sPlayer.ubAttackCooldown;
-	}
-
-	tDirection eDir;
-	if(ubAimAngle < ANGLE_45) {
-		eDir = DIRECTION_SE;
-	}
-	else if(ubAimAngle < ANGLE_45 + ANGLE_90) {
-		eDir = DIRECTION_S;
-	}
-	else if(ubAimAngle < ANGLE_180) {
-		eDir = DIRECTION_SW;
-	}
-	else if(ubAimAngle < ANGLE_180 + ANGLE_45) {
-		eDir = DIRECTION_NW;
-	}
-	else if(ubAimAngle < ANGLE_180 + ANGLE_45 + ANGLE_90) {
-		eDir = DIRECTION_N;
-	}
-	else {
-		eDir = DIRECTION_NE;
-	}
-
-	tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
-	bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
-	s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
-	s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
 	bobPush(&s_sPlayer.sBob);
 
 	s_pSpriteCursor->wX = uwMouseX - 4;
@@ -660,12 +689,51 @@ static void gameGsLoop(void) {
 	cameraCenterAtOptimized(s_pBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
+		BYTE bDeltaX, bDeltaY;
+		tDirection eDir;
 		tCharacter *pEnemy = &s_pEnemies[i];
 		if(pEnemy->wHealth > 0) {
-			bDeltaX = s_sPlayer.sPos.uwX < pEnemy->sPos.uwX ? -1 : 1;
-			bDeltaY = s_sPlayer.sPos.uwY < pEnemy->sPos.uwY ? -1 : 1;
+			WORD wDistanceToPlayerX = s_sPlayer.sPos.uwX - pEnemy->sPos.uwX;
+			WORD wDistanceToPlayerY = s_sPlayer.sPos.uwY - pEnemy->sPos.uwY;
+			if(wDistanceToPlayerX < 0) {
+				bDeltaX = -ENEMY_SPEED;
+				if(wDistanceToPlayerY < 0) {
+					bDeltaY = -ENEMY_SPEED;
+					eDir = DIRECTION_NW;
+					wDistanceToPlayerY = -wDistanceToPlayerY;
+				}
+				else {
+					bDeltaY = ENEMY_SPEED;
+					eDir = DIRECTION_SW;
+				}
+				wDistanceToPlayerX = -wDistanceToPlayerX;
+			}
+			else {
+				bDeltaX = ENEMY_SPEED;
+				if(wDistanceToPlayerY < 0) {
+					bDeltaY = -ENEMY_SPEED;
+					eDir = DIRECTION_NE;
+					wDistanceToPlayerX = -wDistanceToPlayerX;
+				}
+				else {
+					bDeltaY = ENEMY_SPEED;
+					eDir = DIRECTION_SE;
+				}
+			}
+
+			if(pEnemy->ubAttackCooldown == 0) {
+				if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
+					s_sPlayer.wHealth -= 5;
+					pEnemy->ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
+				}
+			}
+			else {
+				--pEnemy->ubAttackCooldown;
+			}
+
 			characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
-			eDir = s_pDeltasToDir[DELTAS_TO_DIR_INDEX(bDeltaX, bDeltaY)];
+			tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
+			bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
 		}
 		else {
 			pEnemy->wHealth = ENEMY_HEALTH_MAX;
@@ -674,24 +742,7 @@ static void gameGsLoop(void) {
 		}
 		pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
 		pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
-		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
-		bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
 		bobPush(&pEnemy->sBob);
-	}
-
-	if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB) && !s_sPlayer.ubAttackCooldown) {
-		if(s_ubFreeProjectileCount) {
-			tProjectile *pProjectile = s_pFreeProjectiles[--s_ubFreeProjectileCount];
-			pProjectile->ubLife = PROJECTILE_LIFETIME;
-			pProjectile->fX = fix10p6FromUword(s_sPlayer.sPos.uwX);
-			pProjectile->fY = fix10p6FromUword(s_sPlayer.sPos.uwY);
-			pProjectile->fDx = fix10p6Cos(ubAimAngle) * 5;
-			pProjectile->fDy = fix10p6Sin(ubAimAngle) * 5;
-			s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
-		}
-		else {
-			logWrite("ERR: No free projectiles");
-		}
 	}
 
 	s_pCurrentProjectile = &s_pProjectiles[0];
@@ -700,6 +751,8 @@ static void gameGsLoop(void) {
 		drawNextProjectile();
 	}
 	s_ubBufferCurr = !s_ubBufferCurr;
+
+	hudProcess();
 
 	simpleBufferProcess(s_pBufferMain);
 	cameraProcess(s_pBufferMain->pCamera);
