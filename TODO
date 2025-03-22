@@ -10,9 +10,10 @@ Bare minimum:
 		✔ Collision between player and zombies @done(25-03-20)
 		✔ Collision between zombies @done(25-03-20)
 	✔ Shoot the projectiles @done(25-03-21)
-	☐ Add health system for zombies
-		☐ Add collision between projectiles and enemies
-		☐ Respawn zombies after their death
+	✔ Add health system for zombies @done(25-03-22)
+		✔ Add collision between projectiles and enemies @done(25-03-22)
+		✔ Respawn zombies after their death @done(25-03-22)
+	☐ Add zombie homing
 	☐ Add health system for player
 		☐ Add HP bar on HUD
 		☐ Play death animation
@@ -33,6 +34,20 @@ Bare minimum:
 	☐ Add basic menu
 	☐ Sort zombies
 	☐ Skip zombie draw when offscreen?
+	☐ Add pickups
+		☐ Medkit
+		☐ Fast move
+		☐ Super bullets
+		☐ Instant reload
+		☐ Exp
+		☐ Weapons
+		☐ Display hover text
+		☐ Display beneath all monsters
+		☐ Dissipate after some time
+
+Optimizations:
+	☐ Simplify projectile collision - remove check with edges in favor of dummy tiles
+	☐ Process two bullet undraws in one bob undraw and do something else in remaining calls?
 
 Score:
 	☐ Add exp
@@ -42,5 +57,45 @@ Perks:
 	☐ Add level up curve
 	☐ Add perk selection
 	☐ Implement 10 perks
+		☐ Fast loader
+		☐ My favourite weapon - +2 bullets, no weapon pickups
+		☐ Ammo maniac - 20% more ammo in magazine
+		☐ Anxious loader - click to reload faster
+		☐ Grim deal - 20% more exp, instant death
+		☐ Fatal lottery - 50-50 death or exp bonus
+		☐ Retaliation - hit the monster when it bits you
+		☐ Telekinetic - move pickups to you by hover
+		☐ Perk expert - +1 perk to choose, lower exp requirements for levels
+		☐ Unstoppable - getting hit doesn't slow you down
+		☐ Regression bullets - fire from empty clip, costs exp
+		☐ Dodger - chance to dodge attack
+		☐ Increase chance for pickups
+		☐ Bonus Economist - increase effect of pickups
+		☐ Thick-skinned - trade 25% health to receive only 75% of damage
+		☐ Ammunition within - fire from empty clip, costs health
+		☐ Ninja - improved dodger
+		☐ Highlander - Immortal, 5% chance for instant death on hit
+		☐ Death clock - die in 30 seconds, immortal
+		☐ Stationary reloader - reload quicker when standing still
+		☐ Tough reloader - damage received during reload is halved
+		☐ Swift reloader - reloading doesn't slow you down
+		☐ Bandage - heal 50% health
 
-Audio:
+Weapon audio:
+	☐ slow shot rifle - first weapon
+	☐ shotgun
+	☐ smg
+	☐ assault rifle
+	☐ reload
+
+Misc audio:
+	☐ Hitting the meat with bullet
+	☐ Zombie bite
+	☐ Death
+	☐ Level up
+	☐ UI selection
+
+Music:
+	☐ Title
+	☐ Gameplay
+	☐ Post-gameplay

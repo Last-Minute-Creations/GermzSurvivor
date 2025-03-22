@@ -41,6 +41,7 @@
 // From the top-left of the collision rectangle
 #define ENEMY_BOB_OFFSET_X 4
 #define ENEMY_BOB_OFFSET_Y 15
+#define ENEMY_HEALTH_MAX 20
 
 #define ENEMY_COUNT 30
 #define PROJECTILE_COUNT 20
@@ -83,6 +84,7 @@ typedef struct tCharacter {
 	tUwCoordYX sPos; ///< Top-left coordinate of collision box.
 	tBob sBob;
 	tPlayerFrame eFrame;
+	UBYTE ubHealth;
 	UBYTE ubFrameCooldown;
 	UBYTE ubAttackCooldown;
 } tCharacter;
@@ -145,89 +147,6 @@ static inline tFix10p6 fix10p6ToUword(UWORD x) {return x >> 6; }
 #define fix10p6Cos(x) (((x) < 3 * ANGLE_90) ? fix10p6Sin(ANGLE_90 + (x)) : fix10p6Sin((x) - (3 * ANGLE_90)))
 
 __attribute__((always_inline))
-static inline void undrawNextProjectile(void) {
-	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
-		return;
-	}
-
-	if(s_pCurrentProjectile->ubLife) {
-		ULONG ulOffset = s_pCurrentProjectile->pPrevOffsets[s_ubBufferCurr];
-		UBYTE *pTargetPlanes = &s_pBackPlanes[ulOffset];
-		UBYTE *pBgPlanes = &s_pPristinePlanes[ulOffset];
-
-		for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
-			*pTargetPlanes = *pBgPlanes;
-			pTargetPlanes += BG_BYTES_PER_BITPLANE_ROW;
-			pBgPlanes += BG_BYTES_PER_BITPLANE_ROW;
-		}
-
-		--s_pCurrentProjectile->ubLife;
-		if(s_pCurrentProjectile->ubLife) {
-			s_pCurrentProjectile->fX = fix10p6Add(s_pCurrentProjectile->fX, s_pCurrentProjectile->fDx);
-			s_pCurrentProjectile->fY = fix10p6Add(s_pCurrentProjectile->fY, s_pCurrentProjectile->fDy);
-		}
-		else {
-			s_pFreeProjectiles[s_ubFreeProjectileCount++] = s_pCurrentProjectile;
-		}
-	}
-
-	++s_pCurrentProjectile;
-}
-
-__attribute__((always_inline))
-static inline void drawNextProjectile(void) {
-	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
-		return;
-	}
-
-	UBYTE *pTargetPlanes = s_pBackPlanes;
-	if(s_pCurrentProjectile->ubLife) {
-		UWORD uwProjectileX = fix10p6ToUword(s_pCurrentProjectile->fX);
-		UWORD uwProjectileY = fix10p6ToUword(s_pCurrentProjectile->fY);
-		// TODO: collision with enemies
-		if(uwProjectileX >= MAP_TILES_X * MAP_TILE_SIZE || uwProjectileY >= MAP_TILES_Y * MAP_TILE_SIZE) {
-			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
-		}
-		else {
-			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
-			ULONG ulOffset = s_pRowOffsetFromY[uwProjectileY] + (uwProjectileX / 8);
-			s_pCurrentProjectile->pPrevOffsets[s_ubBufferCurr] = ulOffset;
-			for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
-				pTargetPlanes[ulOffset] |= ubMask;
-				ulOffset += BG_BYTES_PER_BITPLANE_ROW;
-			}
-		}
-
-	}
-	++s_pCurrentProjectile;
-}
-
-void bobOnBegin(void) {
-	undrawNextProjectile();
-}
-
-void bobOnEnd(void) {
-	drawNextProjectile();
-}
-
-static void setTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
-	blitCopyAligned(
-		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		s_pBufferMain->pBack, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
-		MAP_TILE_SIZE, MAP_TILE_SIZE
-	);
-	blitCopyAligned(
-		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		s_pBufferMain->pFront, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
-		MAP_TILE_SIZE, MAP_TILE_SIZE
-	);
-	blitCopyAligned(
-		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		s_pPristineBuffer, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
-		MAP_TILE_SIZE, MAP_TILE_SIZE
-	);
-}
-
 static inline UBYTE isPositionCollidingWithCharacter(
 	tUwCoordYX sPos, const tCharacter *pCharacter
 ) {
@@ -239,6 +158,7 @@ static inline UBYTE isPositionCollidingWithCharacter(
 	);
 }
 
+__attribute__((always_inline))
 static inline tCharacter *characterGetNearPos(
 	UWORD uwPosX, BYTE bLookupAddX, UWORD uwPosY, BYTE bLookupAddY
 ) {
@@ -343,6 +263,100 @@ static inline UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LON
 	}
 
 	return isMoved;
+}
+
+__attribute__((always_inline))
+static inline void undrawNextProjectile(void) {
+	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
+		return;
+	}
+
+	if(s_pCurrentProjectile->ubLife) {
+		ULONG ulOffset = s_pCurrentProjectile->pPrevOffsets[s_ubBufferCurr];
+		UBYTE *pTargetPlanes = &s_pBackPlanes[ulOffset];
+		UBYTE *pBgPlanes = &s_pPristinePlanes[ulOffset];
+
+		for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
+			*pTargetPlanes = *pBgPlanes;
+			pTargetPlanes += BG_BYTES_PER_BITPLANE_ROW;
+			pBgPlanes += BG_BYTES_PER_BITPLANE_ROW;
+		}
+
+		--s_pCurrentProjectile->ubLife;
+		if(s_pCurrentProjectile->ubLife) {
+			s_pCurrentProjectile->fX = fix10p6Add(s_pCurrentProjectile->fX, s_pCurrentProjectile->fDx);
+			s_pCurrentProjectile->fY = fix10p6Add(s_pCurrentProjectile->fY, s_pCurrentProjectile->fDy);
+		}
+		else {
+			s_pFreeProjectiles[s_ubFreeProjectileCount++] = s_pCurrentProjectile;
+		}
+	}
+
+	++s_pCurrentProjectile;
+}
+
+__attribute__((always_inline))
+static inline void drawNextProjectile(void) {
+	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
+		return;
+	}
+
+	UBYTE *pTargetPlanes = s_pBackPlanes;
+	if(s_pCurrentProjectile->ubLife) {
+		UWORD uwProjectileX = fix10p6ToUword(s_pCurrentProjectile->fX);
+		UWORD uwProjectileY = fix10p6ToUword(s_pCurrentProjectile->fY);
+		tCharacter *pEnemy;
+		if(uwProjectileX >= MAP_TILES_X * MAP_TILE_SIZE || uwProjectileY >= MAP_TILES_Y * MAP_TILE_SIZE) {
+			// TODO: Remove in favor of dummy entries in collision tiles at the edges
+			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
+		}
+		else if(
+			((pEnemy = characterGetNearPos(uwProjectileX, 0, uwProjectileY, 0)) && pEnemy != &s_sPlayer) ||
+			((pEnemy = characterGetNearPos(uwProjectileX, -1, uwProjectileY, 0)) && pEnemy != &s_sPlayer) ||
+			((pEnemy = characterGetNearPos(uwProjectileX, 0, uwProjectileY, -1)) && pEnemy != &s_sPlayer) ||
+			((pEnemy = characterGetNearPos(uwProjectileX, -1, uwProjectileY, -1)) && pEnemy != &s_sPlayer)
+		) {
+			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
+			pEnemy->ubHealth = 0;
+		}
+		else {
+			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
+			ULONG ulOffset = s_pRowOffsetFromY[uwProjectileY] + (uwProjectileX / 8);
+			s_pCurrentProjectile->pPrevOffsets[s_ubBufferCurr] = ulOffset;
+			for(UBYTE ubPlane = GAME_BPP; ubPlane--;) {
+				pTargetPlanes[ulOffset] |= ubMask;
+				ulOffset += BG_BYTES_PER_BITPLANE_ROW;
+			}
+		}
+
+	}
+	++s_pCurrentProjectile;
+}
+
+void bobOnBegin(void) {
+	undrawNextProjectile();
+}
+
+void bobOnEnd(void) {
+	drawNextProjectile();
+}
+
+static void setTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
+	blitCopyAligned(
+		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
+		s_pBufferMain->pBack, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		MAP_TILE_SIZE, MAP_TILE_SIZE
+	);
+	blitCopyAligned(
+		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
+		s_pBufferMain->pFront, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		MAP_TILE_SIZE, MAP_TILE_SIZE
+	);
+	blitCopyAligned(
+		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
+		s_pPristineBuffer, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		MAP_TILE_SIZE, MAP_TILE_SIZE
+	);
 }
 
 static void cameraCenterAtOptimized(
@@ -507,6 +521,7 @@ static void gameGsCreate(void) {
 	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
+		s_pEnemies[i].ubHealth = ENEMY_HEALTH_MAX;
 		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
 		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
 		s_pEnemies[i].eFrame = 0;
@@ -634,9 +649,16 @@ static void gameGsLoop(void) {
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
 		tCharacter *pEnemy = &s_pEnemies[i];
-		bDeltaX = (randUw(&g_sRand) & 1) ? -1 : 1;
-		bDeltaY = (randUw(&g_sRand) & 1) ? -1 : 1;
-		characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
+		if(pEnemy->ubHealth) {
+			bDeltaX = (randUw(&g_sRand) & 1) ? -1 : 1;
+			bDeltaY = (randUw(&g_sRand) & 1) ? -1 : 1;
+			characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
+		}
+		else {
+			pEnemy->ubHealth = ENEMY_HEALTH_MAX;
+			pEnemy->sPos.uwX = randUwMinMax(&g_sRand, 32, MAP_TILES_X * MAP_TILE_SIZE - 32);
+			pEnemy->sPos.uwY = randUwMinMax(&g_sRand, 32, MAP_TILES_Y * MAP_TILE_SIZE - 32);
+		}
 		pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
 		pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
 		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
