@@ -1,43 +1,48 @@
 Bare minimum:
 	✔ Add player bob @done(25-03-19)
 	✔ Add enemy bobs @done(25-03-19)
-	✔ Add projectiles @done(25-03-20)
+	Add projectiles:
 		✔ Spawn projectiles @done(25-03-19)
 		✔ Draw projectiles in optimized way @done(25-03-19)
 		✔ Despawn projectiles on lifetime end @done(25-03-19)
 		✔ Despawn projectiles going out of screen @done(25-03-20)
-	✔ Add collision between characters @done(25-03-20)
+	Add collision between characters:
 		✔ Collision between player and zombies @done(25-03-20)
 		✔ Collision between zombies @done(25-03-20)
 	✔ Shoot the projectiles @done(25-03-21)
-	✔ Add health system for zombies @done(25-03-22)
+	Add health system for zombies:
 		✔ Add collision between projectiles and enemies @done(25-03-22)
 		✔ Respawn zombies after their death @done(25-03-22)
-	☐ Add zombie homing
-	☐ Add health system for player
+	✔ Add zombie homing @done(25-03-22)
+	Add health system for player:
 		☐ Add HP bar on HUD
 		☐ Play death animation
 		☐ restart the game with R
-	☐ Add weapons
-		☐ Pistol (default weapon, small dmg, slow, low spray)
+	Add weapons:
+		☐ Slow shot rifle (default weapon, small dmg, slow, low spray)
 		☐ Shotgun (small angle)
 		☐ Sawed-off shotgun (large angle)
 		☐ Assault rifle (slower, stronger, low spray)
 		☐ Submachine gun (fastest, low dmg, high spray)
-	☐ Add ammo system
+		☐ Display weapon on HUD
+	Add ammo system:
 		☐ Add reload on end of shooting
 		☐ Add reload on R
 		☐ Add ammo indicator on HUD
 		☐ Add reload indicator on cursor
 	☐ Add bloodstains
-	☐ Add zombie kill VFX
-	☐ Add basic menu
-	☐ Sort zombies
-	☐ Skip zombie draw when offscreen?
-	☐ Add pickups
+	☐ Add zombie kill anim
+	Add basic menu:
+		☐ New game
+		☐ How to play
+		☐ High scores
+		☐ About
+		☐ Exit
+		☐ In-game escape moves to main menu
+	☐ Sort zombies & player
+	☐ Respawn zombies off-screen
+	Add pickups:
 		☐ Medkit
-		☐ Fast move
-		☐ Super bullets
 		☐ Instant reload
 		☐ Exp
 		☐ Weapons
@@ -45,41 +50,55 @@ Bare minimum:
 		☐ Display beneath all monsters
 		☐ Dissipate after some time
 
+Nice to have:
+	Perks:
+		☐ Add level up curve
+		☐ Add perk selection
+		☐ Implement at least 10 perks
+	More pickups:
+		☐ Fast move
+		☐ Stronger bullets
+	☐ Add pause screen - resume, exit to main menu
+	☐ Add intro
+	☐ Scale zombies with exp
+		☐ Increase health
+		☐ Increase speed with delta/delay ratio r=delta/(delay+1), min 1/1 (r=0.5), max 2/0 (r=2.0)
+
 Optimizations:
 	☐ Simplify projectile collision - remove check with edges in favor of dummy tiles
 	☐ Process two bullet undraws in one bob undraw and do something else in remaining calls?
+	☐ Skip zombie draw when offscreen?
 
 Score:
 	☐ Add exp
-	☐ Add hi score
+	☐ Add game over screen
+	☐ Add hi score entering
 
-Perks:
-	☐ Add level up curve
-	☐ Add perk selection
-	☐ Implement 10 perks
-		☐ Fast loader
-		☐ My favourite weapon - +2 bullets, no weapon pickups
-		☐ Ammo maniac - 20% more ammo in magazine
-		☐ Anxious loader - click to reload faster
-		☐ Grim deal - 20% more exp, instant death
-		☐ Fatal lottery - 50-50 death or exp bonus
-		☐ Retaliation - hit the monster when it bits you
-		☐ Telekinetic - move pickups to you by hover
-		☐ Perk expert - +1 perk to choose, lower exp requirements for levels
-		☐ Unstoppable - getting hit doesn't slow you down
-		☐ Regression bullets - fire from empty clip, costs exp
-		☐ Dodger - chance to dodge attack
-		☐ Increase chance for pickups
-		☐ Bonus Economist - increase effect of pickups
-		☐ Thick-skinned - trade 25% health to receive only 75% of damage
-		☐ Ammunition within - fire from empty clip, costs health
-		☐ Ninja - improved dodger
-		☐ Highlander - Immortal, 5% chance for instant death on hit
-		☐ Death clock - die in 30 seconds, immortal
-		☐ Stationary reloader - reload quicker when standing still
-		☐ Tough reloader - damage received during reload is halved
-		☐ Swift reloader - reloading doesn't slow you down
-		☐ Bandage - heal 50% health
+Perks to implement:
+	☐ Fast loader
+	☐ My favourite weapon - +2 bullets, no weapon pickups
+	☐ Ammo maniac - 20% more ammo in magazine
+	☐ Anxious loader - click to reload faster
+	☐ Grim deal - 20% more exp, instant death
+	☐ Fatal lottery - 50-50 death or exp bonus
+	☐ Retaliation - hit the monster when it bits you
+	☐ Telekinetic - move pickups to you by hover
+	☐ Perk expert - +1 perk to choose, lower exp requirements for levels
+	☐ Unstoppable - getting hit doesn't slow you down
+	☐ Regression bullets - fire from empty clip, costs exp
+	☐ Dodger - chance to dodge attack
+	☐ Increase chance for pickups
+	☐ Bonus Economist - increase effect of pickups
+	☐ Thick-skinned - trade 25% health to receive only 75% of damage
+	☐ Ammunition within - fire from empty clip, costs health
+	☐ Ninja - improved dodger
+	☐ Highlander - Immortal, 5% chance for instant death on hit
+	☐ Death clock - die in 30 seconds, immortal
+	☐ Stationary reloader - reload quicker when standing still
+	☐ Tough reloader - damage received during reload is halved
+	☐ Swift reloader - reloading doesn't slow you down
+	☐ Bandage - heal 50% health
+	☐ Increase max hp by 10%
 
 Weapon audio:
 	☐ slow shot rifle - first weapon

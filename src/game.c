@@ -49,6 +49,7 @@
 
 #define BG_BYTES_PER_BITPLANE_ROW (MAP_TILES_X * MAP_TILE_SIZE / 8)
 #define BG_BYTES_PER_PIXEL_ROW (BG_BYTES_PER_BITPLANE_ROW * GAME_BPP)
+#define DELTAS_TO_DIR_INDEX(dx, dy) ((((dx) + 1) << 2) | ((dy) + 1))
 
 typedef UWORD tFix10p6;
 
@@ -84,7 +85,7 @@ typedef struct tCharacter {
 	tUwCoordYX sPos; ///< Top-left coordinate of collision box.
 	tBob sBob;
 	tPlayerFrame eFrame;
-	UBYTE ubHealth;
+	WORD wHealth;
 	UBYTE ubFrameCooldown;
 	UBYTE ubAttackCooldown;
 } tCharacter;
@@ -128,6 +129,18 @@ static tFix10p6 s_pSin10p6[GAME_MATH_ANGLE_COUNT];
 
 static const UBYTE s_pBulletMaskFromX[] = {
 	BV(7), BV(6), BV(5), BV(4), BV(3), BV(2), BV(1), BV(0)
+};
+
+static const UBYTE s_pDeltasToDir[] = {
+	[DELTAS_TO_DIR_INDEX(0, 0)] = DIRECTION_S,
+	[DELTAS_TO_DIR_INDEX(0, 1)] = DIRECTION_S,
+	[DELTAS_TO_DIR_INDEX(-1, 1)] = DIRECTION_SW,
+	[DELTAS_TO_DIR_INDEX(-1, 0)] = DIRECTION_NW,
+	[DELTAS_TO_DIR_INDEX(-1, -1)] = DIRECTION_NW,
+	[DELTAS_TO_DIR_INDEX(0, -1)] = DIRECTION_N,
+	[DELTAS_TO_DIR_INDEX(1, -1)] = DIRECTION_NE,
+	[DELTAS_TO_DIR_INDEX(1, 0)] = DIRECTION_SE,
+	[DELTAS_TO_DIR_INDEX(1, 1)] = DIRECTION_SE,
 };
 
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
@@ -317,7 +330,7 @@ static inline void drawNextProjectile(void) {
 			((pEnemy = characterGetNearPos(uwProjectileX, -1, uwProjectileY, -1)) && pEnemy != &s_sPlayer)
 		) {
 			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
-			pEnemy->ubHealth = 0;
+			pEnemy->wHealth -= 5;
 		}
 		else {
 			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
@@ -328,7 +341,6 @@ static inline void drawNextProjectile(void) {
 				ulOffset += BG_BYTES_PER_BITPLANE_ROW;
 			}
 		}
-
 	}
 	++s_pCurrentProjectile;
 }
@@ -521,7 +533,7 @@ static void gameGsCreate(void) {
 	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
-		s_pEnemies[i].ubHealth = ENEMY_HEALTH_MAX;
+		s_pEnemies[i].wHealth = ENEMY_HEALTH_MAX;
 		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
 		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
 		s_pEnemies[i].eFrame = 0;
@@ -649,13 +661,14 @@ static void gameGsLoop(void) {
 
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
 		tCharacter *pEnemy = &s_pEnemies[i];
-		if(pEnemy->ubHealth) {
-			bDeltaX = (randUw(&g_sRand) & 1) ? -1 : 1;
-			bDeltaY = (randUw(&g_sRand) & 1) ? -1 : 1;
+		if(pEnemy->wHealth > 0) {
+			bDeltaX = s_sPlayer.sPos.uwX < pEnemy->sPos.uwX ? -1 : 1;
+			bDeltaY = s_sPlayer.sPos.uwY < pEnemy->sPos.uwY ? -1 : 1;
 			characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
+			eDir = s_pDeltasToDir[DELTAS_TO_DIR_INDEX(bDeltaX, bDeltaY)];
 		}
 		else {
-			pEnemy->ubHealth = ENEMY_HEALTH_MAX;
+			pEnemy->wHealth = ENEMY_HEALTH_MAX;
 			pEnemy->sPos.uwX = randUwMinMax(&g_sRand, 32, MAP_TILES_X * MAP_TILE_SIZE - 32);
 			pEnemy->sPos.uwY = randUwMinMax(&g_sRand, 32, MAP_TILES_Y * MAP_TILE_SIZE - 32);
 		}
