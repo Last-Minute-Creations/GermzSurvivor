@@ -676,6 +676,7 @@ static void gameGsDestroy(void) {
 	}
 
 	viewDestroy(s_pView);
+	bitmapDestroy(s_pPristineBuffer);
 	bitmapDestroy(s_pTileset);
 }
 
