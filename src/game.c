@@ -16,6 +16,8 @@
 #include "survivor.h"
 #include "game_math.h"
 
+// #define GAME_COLLISION_DEBUG
+
 #define HUD_SIZE_Y 16
 #define MAP_TILES_X 32
 #define MAP_TILES_Y 32
@@ -314,9 +316,9 @@ static inline UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LON
 	}
 
 	if(isMoved) {
-		pCharacter->sPos = sGoodPos;
 		ULONG ubOldLookupX = pCharacter->sPos.uwX / COLLISION_SIZE_X;
 		ULONG ubOldLookupY = pCharacter->sPos.uwY / COLLISION_SIZE_Y;
+		pCharacter->sPos = sGoodPos;
 		// Update lookup
 		if(
 			s_pCollisionTiles[ubOldLookupX][ubOldLookupY] &&
@@ -451,6 +453,14 @@ static void gameGsCreate(void) {
 		for(tPlayerFrame eFrame = 0; eFrame < PLAYER_FRAME_COUNT; ++eFrame) {
 			s_pPlayerFrameOffsets[eDir][eFrame].pPixels = bobCalcFrameAddress(s_pPlayerFrames[eDir], eFrame * PLAYER_BOB_SIZE_Y);
 			s_pPlayerFrameOffsets[eDir][eFrame].pMask = bobCalcFrameAddress(s_pPlayerMasks[eDir], eFrame * PLAYER_BOB_SIZE_Y);
+
+#if defined(GAME_COLLISION_DEBUG)
+			blitRect(
+				s_pPlayerFrames[eDir], PLAYER_BOB_OFFSET_X,
+				eFrame * PLAYER_BOB_SIZE_Y + PLAYER_BOB_OFFSET_Y,
+				COLLISION_SIZE_X, COLLISION_SIZE_Y, 31
+			);
+#endif
 		}
 	}
 
@@ -472,6 +482,14 @@ static void gameGsCreate(void) {
 		for(tPlayerFrame eFrame = 0; eFrame < PLAYER_FRAME_COUNT; ++eFrame) {
 			s_pEnemyFrameOffsets[eDir][eFrame].pPixels = bobCalcFrameAddress(s_pEnemyFrames[eDir], eFrame * ENEMY_BOB_SIZE_Y);
 			s_pEnemyFrameOffsets[eDir][eFrame].pMask = bobCalcFrameAddress(s_pEnemyMasks[eDir], eFrame * ENEMY_BOB_SIZE_Y);
+
+#if defined(GAME_COLLISION_DEBUG)
+			blitRect(
+				s_pEnemyFrames[eDir], ENEMY_BOB_OFFSET_X,
+				eFrame * ENEMY_BOB_SIZE_Y + ENEMY_BOB_OFFSET_Y,
+				COLLISION_SIZE_X, COLLISION_SIZE_Y, 25
+			);
+#endif
 		}
 	}
 
