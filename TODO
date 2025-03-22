@@ -17,8 +17,8 @@ Bare minimum:
 	Add health system for player:
 		✔ Add HP bar on HUD @done(25-03-22)
 		✔ Damage the player @done(25-03-22)
+		✔ restart the game with R @done(25-03-22)
 		☐ Play death animation
-		☐ restart the game with R
 	Add weapons:
 		☐ Slow shot rifle (default weapon, small dmg, slow, low spray)
 		☐ Shotgun (small angle)

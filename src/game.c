@@ -385,6 +385,55 @@ static void hudProcess(void) {
 	}
 }
 
+static void gameStart(void) {
+	setTile(0, 0, 0);
+	setTile(1, MAP_TILES_X - 1, 0);
+	setTile(2, 0, MAP_TILES_Y - 1);
+	setTile(3, MAP_TILES_X - 1, MAP_TILES_Y - 1);
+
+	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
+		setTile(randUwMinMax(&g_sRand, 4, 6), ubX, 0);
+		setTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1);
+	}
+
+	for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
+		setTile(randUwMinMax(&g_sRand, 7, 9), 0, ubY);
+		setTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1, ubY);
+	}
+
+	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
+		for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
+			setTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
+		}
+	}
+
+	s_uwHudHealth = 0;
+
+	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
+	s_sPlayer.sPos.uwX = 180;
+	s_sPlayer.sPos.uwY = 180;
+	s_sPlayer.eFrame = 0;
+	s_sPlayer.ubFrameCooldown = 0;
+	s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
+	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
+
+	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
+		s_pEnemies[i].wHealth = ENEMY_HEALTH_MAX;
+		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
+		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
+		s_pEnemies[i].eFrame = 0;
+		s_pEnemies[i].ubFrameCooldown = 0;
+		s_pEnemies[i].ubAttackCooldown = 0;
+		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
+	}
+
+	for(UBYTE i = 0; i < PROJECTILE_COUNT; ++i) {
+		s_pProjectiles[i].ubLife = 0;
+		s_pFreeProjectiles[i] = &s_pProjectiles[i];
+	}
+	s_ubFreeProjectileCount = PROJECTILE_COUNT;
+}
+
 static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
@@ -437,27 +486,6 @@ static void gameGsCreate(void) {
 	s_pMod = ptplayerModCreateFromPath("data/germz1.mod");
 
 	randInit(&g_sRand, 2184, 1911);
-
-	setTile(0, 0, 0);
-	setTile(1, MAP_TILES_X - 1, 0);
-	setTile(2, 0, MAP_TILES_Y - 1);
-	setTile(3, MAP_TILES_X - 1, MAP_TILES_Y - 1);
-
-	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
-		setTile(randUwMinMax(&g_sRand, 4, 6), ubX, 0);
-		setTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1);
-	}
-
-	for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
-		setTile(randUwMinMax(&g_sRand, 7, 9), 0, ubY);
-		setTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1, ubY);
-	}
-
-	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
-		for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
-			setTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
-		}
-	}
 
 	for(UWORD uwY = 0; uwY < MAP_TILES_Y * MAP_TILE_SIZE; ++uwY) {
 		s_pRowOffsetFromY[uwY] = uwY * BG_BYTES_PER_PIXEL_ROW;
@@ -529,33 +557,10 @@ static void gameGsCreate(void) {
 		s_pPristineBuffer, MAP_TILES_Y * MAP_TILE_SIZE
 	);
 
-	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
-	s_sPlayer.sPos.uwX = 180;
-	s_sPlayer.sPos.uwY = 180;
-	s_sPlayer.eFrame = 0;
-	s_sPlayer.ubFrameCooldown = 0;
-	s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
-	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
 	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
-
-	s_uwHudHealth = 0;
-
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
-		s_pEnemies[i].wHealth = ENEMY_HEALTH_MAX;
-		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
-		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
-		s_pEnemies[i].eFrame = 0;
-		s_pEnemies[i].ubFrameCooldown = 0;
-		s_pEnemies[i].ubAttackCooldown = 0;
-		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
 		bobInit(&s_pEnemies[i].sBob, ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 	}
-
-	for(UBYTE i = 0; i < PROJECTILE_COUNT; ++i) {
-		s_pProjectiles[i].ubLife = 0;
-		s_pFreeProjectiles[i] = &s_pProjectiles[i];
-	}
-	s_ubFreeProjectileCount = PROJECTILE_COUNT;
 
 	bobReallocateBuffers();
 	gameMathInit();
@@ -570,6 +575,7 @@ static void gameGsCreate(void) {
 	mouseSetBounds(MOUSE_PORT_1, 0, HUD_SIZE_Y, 320, 256);
 
 	systemUnuse();
+	gameStart();
 	viewLoad(s_pView);
 	viewProcessManagers(s_pView);
 	viewProcessManagers(s_pView);
@@ -678,6 +684,11 @@ static void gameGsLoop(void) {
 	}
 	else {
 		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
+		if(keyUse(KEY_R)) {
+			bobDiscardUndraw();
+			gameStart();
+			return;
+		}
 	}
 	bobPush(&s_sPlayer.sBob);
 
