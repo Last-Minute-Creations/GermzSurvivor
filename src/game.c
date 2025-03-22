@@ -549,20 +549,20 @@ static void gameGsLoop(void) {
 	BYTE bDeltaX = 0;
 	BYTE bDeltaY = 0;
 	if(keyCheck(KEY_W)) {
-		bDeltaY = -2;
+		bDeltaY = -3;
 	}
 	else if(keyCheck(KEY_S)) {
-		bDeltaY = 2;
+		bDeltaY = 3;
 	}
 	if(keyCheck(KEY_A)) {
-		bDeltaX = -2;
+		bDeltaX = -3;
 	}
 	else if(keyCheck(KEY_D)) {
-		bDeltaX = 2;
+		bDeltaX = 3;
 	}
 	if(bDeltaX || bDeltaY) {
 		characterTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
-		if(s_sPlayer.ubFrameCooldown >= 2) {
+		if(s_sPlayer.ubFrameCooldown >= 1) {
 			s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
 			if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
 				s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;

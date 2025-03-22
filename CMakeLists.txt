@@ -269,7 +269,7 @@ file(MAKE_DIRECTORY ${GEN_DIR}/zombie_n)
 file(MAKE_DIRECTORY ${GEN_DIR}/zombie_ne)
 file(MAKE_DIRECTORY ${GEN_DIR}/zombie_se)
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
 	GENERATED_FILE_LIST "ZOMBIE_S_PATHS"
 	DESTINATIONS
 	${GEN_DIR}/zombie_s/0.png    16   20 16 24
@@ -289,7 +289,7 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_S_PATHS}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
 	GENERATED_FILE_LIST "ZOMBIE_SW_PATHS"
 	DESTINATIONS
 	${GEN_DIR}/zombie_sw/0.png    16   84 16 24
@@ -309,7 +309,7 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_SW_PATHS}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
 	GENERATED_FILE_LIST "ZOMBIE_NW_PATHS"
 	DESTINATIONS
 	${GEN_DIR}/zombie_nw/0.png    16  148 16 24
@@ -329,7 +329,7 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_NW_PATHS}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
 	GENERATED_FILE_LIST "ZOMBIE_N_PATHS"
 	DESTINATIONS
 	${GEN_DIR}/zombie_n/0.png    16  212 16 24
@@ -349,7 +349,7 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_N_PATHS}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
 	GENERATED_FILE_LIST "ZOMBIE_NE_PATHS"
 	DESTINATIONS
 	${GEN_DIR}/zombie_ne/0.png    16  276 16 24
@@ -369,7 +369,7 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_NE_PATHS}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
 	GENERATED_FILE_LIST "ZOMBIE_SE_PATHS"
 	DESTINATIONS
 	${GEN_DIR}/zombie_se/0.png    16  340 16 24
