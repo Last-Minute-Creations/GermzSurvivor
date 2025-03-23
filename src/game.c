@@ -50,6 +50,7 @@
 #define PROJECTILE_COUNT 20
 #define PROJECTILE_LIFETIME 25
 #define PROJECTILE_SPEED 5
+#define SPREAD_SIDE_COUNT 40
 
 #define BG_BYTES_PER_BITPLANE_ROW (MAP_TILES_X * MAP_TILE_SIZE / 8)
 #define BG_BYTES_PER_PIXEL_ROW (BG_BYTES_PER_BITPLANE_ROW * GAME_BPP)
@@ -151,6 +152,10 @@ static tCharacter *s_pCollisionTiles[MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZ
 static tProjectile s_pProjectiles[PROJECTILE_COUNT];
 static tProjectile *s_pFreeProjectiles[PROJECTILE_COUNT];
 static UBYTE s_ubFreeProjectileCount;
+static BYTE s_pSpreadSide1[SPREAD_SIDE_COUNT];
+static BYTE s_pSpreadSide2[SPREAD_SIDE_COUNT];
+static BYTE s_pSpreadSide3[SPREAD_SIDE_COUNT];
+static BYTE s_pSpreadSide10[SPREAD_SIDE_COUNT];
 
 static UWORD s_uwHudHealth;
 
@@ -402,8 +407,15 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 }
 
 __attribute__((always_inline))
-static inline void playerShootProjectile(BYTE bAngle, UBYTE ubDamage) {
+static inline void playerShootProjectile(BYTE bAngle, BYTE pSpreadSide[static SPREAD_SIDE_COUNT], UBYTE ubDamage) {
 	static UBYTE s_ubSpread = 0;
+	static UBYTE s_ubSpreadSide = 0;
+
+	bAngle += pSpreadSide[s_ubSpreadSide];
+	if(++s_ubSpreadSide >= SPREAD_SIDE_COUNT) {
+		s_ubSpreadSide = 0;
+	}
+
 	if(bAngle < 0) {
 		bAngle += ANGLE_360;
 	}
@@ -438,26 +450,26 @@ static void playerShootWeapon(UBYTE ubAimAngle) {
 	// TODO: precalculate random stuff
 	switch(s_sPlayer.eWeapon) {
 		case WEAPON_KIND_BASE_RIFLE:
-			playerShootProjectile(ubAimAngle - 2/2 + randUwMax(&g_sRand, 2), 5);
+			playerShootProjectile(ubAimAngle, s_pSpreadSide1, 5);
 			s_sPlayer.ubAttackCooldown = 20;
 			break;
 			case WEAPON_KIND_SMG:
-			playerShootProjectile(ubAimAngle - 4/2 + randUwMax(&g_sRand, 4), 3);
+			playerShootProjectile(ubAimAngle, s_pSpreadSide2, 3);
 			s_sPlayer.ubAttackCooldown = 5;
 			break;
 		case WEAPON_KIND_ASSAULT_RIFLE:
-			playerShootProjectile(ubAimAngle - 2/2 + randUwMax(&g_sRand, 2), 5);
+			playerShootProjectile(ubAimAngle, s_pSpreadSide1, 5);
 			s_sPlayer.ubAttackCooldown = 8;
 			break;
 		case WEAPON_KIND_SHOTGUN:
 			for(UBYTE i = 0; i < 10; ++i) {
-				playerShootProjectile(ubAimAngle - 6/2 + randUwMax(&g_sRand, 6), 3);
+				playerShootProjectile(ubAimAngle, s_pSpreadSide3, 3);
 			}
 			s_sPlayer.ubAttackCooldown = 25;
 			break;
 		case WEAPON_KIND_SAWOFF:
 			for(UBYTE i = 0; i < 10; ++i) {
-				playerShootProjectile(ubAimAngle - ANGLE_60/2 + randUwMax(&g_sRand, ANGLE_60), 3);
+				playerShootProjectile(ubAimAngle, s_pSpreadSide10, 3);
 			}
 			s_sPlayer.ubAttackCooldown = 25;
 			break;
@@ -631,6 +643,19 @@ static void gameGsCreate(void) {
 			);
 #endif
 		}
+	}
+
+	for(UBYTE i = 0; i < SPREAD_SIDE_COUNT; ++i) {
+		s_pSpreadSide1[i] = - 2/2 + randUwMax(&g_sRand, 2);
+	}
+	for(UBYTE i = 0; i < SPREAD_SIDE_COUNT; ++i) {
+		s_pSpreadSide2[i] = - 4/2 + randUwMax(&g_sRand, 4);
+	}
+	for(UBYTE i = 0; i < SPREAD_SIDE_COUNT; ++i) {
+		s_pSpreadSide3[i] = - 6/2 + randUwMax(&g_sRand, 6);
+	}
+	for(UBYTE i = 0; i < SPREAD_SIDE_COUNT; ++i) {
+		s_pSpreadSide10[i] = - 20/2 + randUwMax(&g_sRand, 20);
 	}
 
 	bobManagerCreate(
