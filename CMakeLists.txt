@@ -394,9 +394,9 @@ convertTileset(
 convertBitmaps(
 	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT}
 	INTERLEAVED SOURCES
-		${GEN_DIR}/tiles.png
+		${GEN_DIR}/tiles.png ${RES_DIR}/weapons.png
 	DESTINATIONS
-		${DATA_DIR}/tiles.bm
+		${DATA_DIR}/tiles.bm ${DATA_DIR}/weapons.bm
 )
 
 convertBitmaps(

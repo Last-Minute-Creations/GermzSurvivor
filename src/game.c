@@ -19,12 +19,19 @@
 // #define GAME_COLLISION_DEBUG
 
 #define HUD_SIZE_Y 16
+#define HUD_WEAPON_SIZE_X 48
+#define HUD_WEAPON_SIZE_Y 15
+
 #define MAP_TILES_X 32
 #define MAP_TILES_Y 32
 #define MAP_TILE_SHIFT 4
 #define MAP_TILE_SIZE  (1 << MAP_TILE_SHIFT)
 #define GAME_BPP 5
-#define SPRITE_CHANNEL_CURSOR 4
+#define SPRITE_CHANNEL_CURSOR 0
+
+#define COLOR_HUD_BG 6
+#define COLOR_BAR_BG 10
+#define COLOR_RED 16
 
 #define COLLISION_SIZE_X 8
 #define COLLISION_SIZE_Y 8
@@ -46,7 +53,7 @@
 #define ENEMY_HEALTH_MAX 20
 #define ENEMY_SPEED 1
 
-#define ENEMY_COUNT 30
+#define ENEMY_COUNT 5
 #define PROJECTILE_COUNT 20
 #define PROJECTILE_LIFETIME 25
 #define PROJECTILE_SPEED 5
@@ -123,6 +130,7 @@ static UBYTE *s_pBackPlanes;
 static tSimpleBufferManager *s_pBufferHud;
 static tBitMap *s_pTileset;
 static tBitMap *s_pBmCrosshair;
+static tBitMap *s_pHudWeapons;
 static tRandManager g_sRand;
 static tSprite *s_pSpriteCursor;
 
@@ -392,10 +400,10 @@ static void hudProcess(void) {
 	UWORD uwCurrentHealth = s_sPlayer.wHealth;
 	if(s_uwHudHealth != uwCurrentHealth) {
 		if(uwCurrentHealth > s_uwHudHealth) {
-			blitRect(s_pBufferHud->pBack, 200 + s_uwHudHealth, 10, uwCurrentHealth - s_uwHudHealth, 4, 26);
+			blitRect(s_pBufferHud->pBack, 200 + s_uwHudHealth, 10, uwCurrentHealth - s_uwHudHealth, 4, COLOR_RED);
 		}
 		else {
-			blitRect(s_pBufferHud->pBack, 200 + uwCurrentHealth, 10, s_uwHudHealth - uwCurrentHealth, 4, 3);
+			blitRect(s_pBufferHud->pBack, 200 + uwCurrentHealth, 10, s_uwHudHealth - uwCurrentHealth, 4, COLOR_BAR_BG);
 		}
 		s_uwHudHealth = uwCurrentHealth;
 	}
@@ -404,6 +412,7 @@ static void hudProcess(void) {
 static void playerSetWeapon(tWeaponKind eWeaponKind) {
 	s_sPlayer.eWeapon = eWeaponKind;
 	// TOOD: set ammo
+	blitCopyAligned(s_pHudWeapons, 0, eWeaponKind * HUD_WEAPON_SIZE_Y, s_pBufferHud->pBack, 0, 0, HUD_WEAPON_SIZE_X, HUD_WEAPON_SIZE_Y);
 }
 
 __attribute__((always_inline))
@@ -530,6 +539,7 @@ static void gameStart(void) {
 static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
+	s_pHudWeapons = bitmapCreateFromPath("data/weapons.bm", 0);
 
 	ULONG ulRawCopSize = 16 + simpleBufferGetRawCopperlistInstructionCount(GAME_BPP) * 2;
 	s_pView = viewCreate(0,
@@ -566,7 +576,7 @@ static void gameGsCreate(void) {
 		TAG_SIMPLEBUFFER_COPLIST_OFFSET, ulCopOffset,
 	TAG_END);
 
-	blitRect(s_pBufferHud->pBack, 0, 0, 320, HUD_SIZE_Y, 15);
+	blitRect(s_pBufferHud->pBack, 0, 0, 320, HUD_SIZE_Y, COLOR_HUD_BG);
 
 	s_pPristineBuffer = bitmapCreate(
 		bitmapGetByteWidth(s_pBufferMain->pBack) * 8,
@@ -907,6 +917,7 @@ static void gameGsDestroy(void) {
 
 	viewDestroy(s_pView);
 	bitmapDestroy(s_pPristineBuffer);
+	bitmapDestroy(s_pHudWeapons);
 	bitmapDestroy(s_pTileset);
 }
 

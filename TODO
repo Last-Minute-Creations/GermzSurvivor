@@ -25,7 +25,7 @@ Bare minimum:
 		✔ Sawed-off shotgun (large angle) @done(25-03-22)
 		✔ Assault rifle (slower, stronger, low spray) @done(25-03-22)
 		✔ Submachine gun (fastest, low dmg, high spray) @done(25-03-22)
-		☐ Display weapon on HUD
+		✔ Display weapon on HUD @done(25-03-23)
 	Add ammo system:
 		☐ Add reload on end of shooting
 		☐ Add reload on R
