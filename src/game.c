@@ -11,6 +11,7 @@
 #include <ace/managers/rand.h>
 #include <ace/managers/sprite.h>
 #include <ace/managers/ptplayer.h>
+#include <ace/contrib/managers/audio_mixer.h>
 #include <ace/utils/palette.h>
 #include <ace/utils/chunky.h>
 #include "survivor.h"
@@ -166,6 +167,13 @@ static BYTE s_pSpreadSide3[SPREAD_SIDE_COUNT];
 static BYTE s_pSpreadSide10[SPREAD_SIDE_COUNT];
 
 static UWORD s_uwHudHealth;
+
+static tPtplayerSfx *s_pSfxRifle[2];
+static tPtplayerSfx *s_pSfxAssault[2];
+static tPtplayerSfx *s_pSfxSmg[2];
+static tPtplayerSfx *s_pSfxShotgun[2];
+static tPtplayerSfx *s_pSfxImpact[2];
+static tPtplayerSfx *s_pSfxBite[2];
 
 //------------------------------------------------------------------ PRIVATE FNS
 
@@ -347,6 +355,7 @@ static inline void drawNextProjectile(void) {
 		) {
 			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
 			pEnemy->wHealth -= s_pCurrentProjectile->ubDamage;
+			audioMixerPlaySfx(s_pSfxImpact[0], 1, 0, 0);
 		}
 		else {
 			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
@@ -460,26 +469,31 @@ static void playerShootWeapon(UBYTE ubAimAngle) {
 	switch(s_sPlayer.eWeapon) {
 		case WEAPON_KIND_BASE_RIFLE:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide1, 5);
+			audioMixerPlaySfx(s_pSfxRifle[0], 0, 0, 0);
 			s_sPlayer.ubAttackCooldown = 20;
 			break;
 			case WEAPON_KIND_SMG:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide2, 3);
+			audioMixerPlaySfx(s_pSfxSmg[0], 0, 0, 0);
 			s_sPlayer.ubAttackCooldown = 5;
 			break;
 		case WEAPON_KIND_ASSAULT_RIFLE:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide1, 5);
+			audioMixerPlaySfx(s_pSfxAssault[0], 0, 0, 0);
 			s_sPlayer.ubAttackCooldown = 8;
 			break;
 		case WEAPON_KIND_SHOTGUN:
 			for(UBYTE i = 0; i < 10; ++i) {
 				playerShootProjectile(ubAimAngle, s_pSpreadSide3, 3);
 			}
+			audioMixerPlaySfx(s_pSfxShotgun[0], 0, 0, 0);
 			s_sPlayer.ubAttackCooldown = 25;
 			break;
 		case WEAPON_KIND_SAWOFF:
 			for(UBYTE i = 0; i < 10; ++i) {
 				playerShootProjectile(ubAimAngle, s_pSpreadSide10, 3);
 			}
+			audioMixerPlaySfx(s_pSfxShotgun[0], 0, 0, 0);
 			s_sPlayer.ubAttackCooldown = 25;
 			break;
 	}
@@ -654,6 +668,19 @@ static void gameGsCreate(void) {
 #endif
 		}
 	}
+
+	s_pSfxRifle[0] = ptplayerSfxCreateFromPath("data/sfx/rifle_shot_1.sfx", 1);
+	s_pSfxRifle[1] = ptplayerSfxCreateFromPath("data/sfx/rifle_shot_2.sfx", 1);
+	s_pSfxAssault[0] = ptplayerSfxCreateFromPath("data/sfx/assault_shot_1.sfx", 1);
+	s_pSfxAssault[1] = ptplayerSfxCreateFromPath("data/sfx/assault_shot_2.sfx", 1);
+	s_pSfxSmg[0] = ptplayerSfxCreateFromPath("data/sfx/smg_shot_1.sfx", 1);
+	s_pSfxSmg[1] = ptplayerSfxCreateFromPath("data/sfx/smg_shot_2.sfx", 1);
+	s_pSfxShotgun[0] = ptplayerSfxCreateFromPath("data/sfx/shotgun_shot_1.sfx", 1);
+	s_pSfxShotgun[1] = ptplayerSfxCreateFromPath("data/sfx/shotgun_shot_2.sfx", 1);
+	s_pSfxImpact[0] = ptplayerSfxCreateFromPath("data/sfx/impact_1.sfx", 1);
+	s_pSfxImpact[1] = ptplayerSfxCreateFromPath("data/sfx/impact_2.sfx", 1);
+	s_pSfxBite[0] = ptplayerSfxCreateFromPath("data/sfx/bite_1.sfx", 1);
+	s_pSfxBite[1] = ptplayerSfxCreateFromPath("data/sfx/bite_2.sfx", 1);
 
 	for(UBYTE i = 0; i < SPREAD_SIDE_COUNT; ++i) {
 		s_pSpreadSide1[i] = - 2/2 + randUwMax(&g_sRand, 2);
@@ -856,6 +883,7 @@ static void gameGsLoop(void) {
 			if(pEnemy->ubAttackCooldown == 0) {
 				if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
 					s_sPlayer.wHealth -= 5;
+					audioMixerPlaySfx(s_pSfxBite[0], 2, 0, 0);
 					pEnemy->ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
 				}
 			}
@@ -900,6 +928,19 @@ static void gameGsDestroy(void) {
 	viewLoad(0);
 	ptplayerStop();
 	systemUse();
+
+	ptplayerSfxDestroy(s_pSfxRifle[0]);
+	ptplayerSfxDestroy(s_pSfxRifle[1]);
+	ptplayerSfxDestroy(s_pSfxAssault[0]);
+	ptplayerSfxDestroy(s_pSfxAssault[1]);
+	ptplayerSfxDestroy(s_pSfxSmg[0]);
+	ptplayerSfxDestroy(s_pSfxSmg[1]);
+	ptplayerSfxDestroy(s_pSfxShotgun[0]);
+	ptplayerSfxDestroy(s_pSfxShotgun[1]);
+	ptplayerSfxDestroy(s_pSfxImpact[0]);
+	ptplayerSfxDestroy(s_pSfxImpact[1]);
+	ptplayerSfxDestroy(s_pSfxBite[0]);
+	ptplayerSfxDestroy(s_pSfxBite[1]);
 
 	ptplayerModDestroy(s_pMod);
 

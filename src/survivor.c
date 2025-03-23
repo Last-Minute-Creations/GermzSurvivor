@@ -8,6 +8,7 @@
 #include <ace/managers/key.h>
 #include <ace/managers/mouse.h>
 #include <ace/managers/ptplayer.h>
+#include <ace/contrib/managers/audio_mixer.h>
 #include "game.h"
 
 tStateManager *g_pGameStateManager;
@@ -21,6 +22,7 @@ void genericCreate(void) {
 	ptplayerCreate(1);
 	ptplayerSetChannelsForPlayer(0b0111);
 	ptplayerSetMasterVolume(32);
+	audioMixerCreate();
 
 	statePush(g_pGameStateManager, &g_sStateGame);
 }
@@ -33,6 +35,7 @@ void genericProcess(void) {
 }
 
 void genericDestroy(void) {
+	audioMixerDestroy();
 	ptplayerDestroy();
 
 	stateManagerDestroy(g_pGameStateManager);

@@ -52,6 +52,7 @@ Bare minimum:
 		☐ Dissipate after some time
 
 Nice to have:
+	☐ Add sound variations
 	Perks:
 		☐ Add level up curve
 		☐ Add perk selection
@@ -103,15 +104,15 @@ Perks to implement:
 	☐ Increase max hp by 10%
 
 Weapon audio:
-	☐ slow shot rifle - first weapon
-	☐ shotgun
-	☐ smg
-	☐ assault rifle
+	✔ slow shot rifle - first weapon @done(25-03-23)
+	✔ shotgun @done(25-03-23)
+	✔ smg @done(25-03-23)
+	✔ assault rifle @done(25-03-23)
 	☐ reload
 
 Misc audio:
-	☐ Hitting the meat with bullet
-	☐ Zombie bite
+	✔ Hitting the meat with bullet @done(25-03-23)
+	✔ Zombie bite @done(25-03-23)
 	☐ Death
 	☐ Level up
 	☐ UI selection

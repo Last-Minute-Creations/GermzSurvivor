@@ -62,6 +62,7 @@ set(DATA_DIR ${CMAKE_CURRENT_BINARY_DIR}/data)
 set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 file(MAKE_DIRECTORY ${DATA_DIR})
+file(MAKE_DIRECTORY ${DATA_DIR}/sfx)
 file(MAKE_DIRECTORY ${GEN_DIR})
 file(GLOB COPY_FILES ${RES_DIR}/copied/*)
 file(COPY ${COPY_FILES} DESTINATION ${DATA_DIR})
@@ -423,4 +424,71 @@ convertBitmaps(
 	MASKS
 		${DATA_DIR}/zombie_s_mask.bm ${DATA_DIR}/zombie_sw_mask.bm ${DATA_DIR}/zombie_nw_mask.bm
 		${DATA_DIR}/zombie_n_mask.bm ${DATA_DIR}/zombie_ne_mask.bm ${DATA_DIR}/zombie_se_mask.bm
+)
+
+#------------------------------------------------------------------------- AUDIO
+
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/bite_1.wav
+	DESTINATION ${DATA_DIR}/sfx/bite_1.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/bite_2.wav
+	DESTINATION ${DATA_DIR}/sfx/bite_2.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/impact_1.wav
+	DESTINATION ${DATA_DIR}/sfx/impact_1.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/impact_2.wav
+	DESTINATION ${DATA_DIR}/sfx/impact_2.sfx
+)
+
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/rifle_shot_1.wav
+	DESTINATION ${DATA_DIR}/sfx/rifle_shot_1.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/rifle_shot_2.wav
+	DESTINATION ${DATA_DIR}/sfx/rifle_shot_2.sfx
+)
+
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/assault_shot_1.wav
+	DESTINATION ${DATA_DIR}/sfx/assault_shot_1.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/assault_shot_2.wav
+	DESTINATION ${DATA_DIR}/sfx/assault_shot_2.sfx
+)
+
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/smg_shot_1.wav
+	DESTINATION ${DATA_DIR}/sfx/smg_shot_1.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/smg_shot_2.wav
+	DESTINATION ${DATA_DIR}/sfx/smg_shot_2.sfx
+)
+
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/shotgun_shot_1.wav
+	DESTINATION ${DATA_DIR}/sfx/shotgun_shot_1.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/shotgun_shot_2.wav
+	DESTINATION ${DATA_DIR}/sfx/shotgun_shot_2.sfx
 )
