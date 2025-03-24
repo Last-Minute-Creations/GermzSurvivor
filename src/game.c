@@ -19,9 +19,44 @@
 
 // #define GAME_COLLISION_DEBUG
 
+#define WEAPON_MAX_BULLETS_IN_MAGAZINE 30
+
+#define WEAPON_DAMAGE_BASE_RIFLE 5
+#define WEAPON_DAMAGE_SMG 4
+#define WEAPON_DAMAGE_ASSAULT_RIFLE 5
+#define WEAPON_DAMAGE_SHOTGUN 8
+#define WEAPON_DAMAGE_SAWOFF 10
+
+#define WEAPON_COOLDOWN_BASE_RIFLE 15
+#define WEAPON_COOLDOWN_SMG 5
+#define WEAPON_COOLDOWN_ASSAULT_RIFLE 5
+#define WEAPON_COOLDOWN_SHOTGUN 18
+#define WEAPON_COOLDOWN_SAWOFF 18
+
 #define HUD_SIZE_Y 16
 #define HUD_WEAPON_SIZE_X 48
 #define HUD_WEAPON_SIZE_Y 15
+#define HUD_AMMO_FIELD_OFFSET_X (HUD_WEAPON_SIZE_X + 2)
+#define HUD_AMMO_FIELD_OFFSET_Y 2
+#define HUD_AMMO_BULLET_COUNT_Y 2
+#define HUD_AMMO_BULLET_COUNT_X ((WEAPON_MAX_BULLETS_IN_MAGAZINE + HUD_AMMO_BULLET_COUNT_Y - 1) / HUD_AMMO_BULLET_COUNT_Y)
+#define HUD_AMMO_BULLET_SIZE_X 2
+#define HUD_AMMO_BULLET_SIZE_Y 6
+#define HUD_AMMO_FIELD_SIZE_X (HUD_AMMO_BULLET_COUNT_X * (HUD_AMMO_BULLET_SIZE_X + 1) - 1)
+#define HUD_AMMO_FIELD_SIZE_Y (HUD_AMMO_BULLET_COUNT_Y * (HUD_AMMO_BULLET_SIZE_Y + 1) - 1)
+#define HUD_AMMO_COUNT_FORCE_REDRAW 0xFF
+
+#define BULLET_OFFSET_Y_SHELL 0
+#define BULLET_OFFSET_Y_BULLET 6
+
+#define SFX_CHANNEL_SHOOT 0
+#define SFX_PRIORITY_SHOOT 0
+#define SFX_CHANNEL_RELOAD 0
+#define SFX_PRIORITY_RELOAD 1
+#define SFX_CHANNEL_BITE 2
+#define SFX_PRIORITY_BITE 0
+#define SFX_CHANNEL_IMPACT 1
+#define SFX_PRIORITY_IMPACT 0
 
 #define MAP_TILES_X 32
 #define MAP_TILES_Y 32
@@ -109,6 +144,8 @@ typedef struct tCharacter {
 	WORD wHealth;
 	UBYTE ubFrameCooldown;
 	UBYTE ubAttackCooldown;
+	UBYTE ubAmmo;
+	UBYTE ubReloadCooldown;
 } tCharacter;
 
 typedef struct tProjectile {
@@ -120,6 +157,13 @@ typedef struct tProjectile {
 	UBYTE ubLife;
 	UBYTE ubDamage;
 } tProjectile;
+
+typedef enum tHudState {
+	HUD_STATE_DRAW_HEALTH,
+	HUD_STATE_DRAW_WEAPON,
+	HUD_STATE_DRAW_BULLETS,
+	HUD_STATE_END,
+} tHudState;
 
 static tView *s_pView;
 static tVPort *s_pVpMain;
@@ -145,6 +189,9 @@ static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
 static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
 static tCharacter s_pEnemies[ENEMY_COUNT];
 
+static tBitMap *s_pBulletFrames;
+static tBitMap *s_pBulletMasks;
+
 static tPtplayerMod *s_pMod;
 static UBYTE s_ubBufferCurr;
 static tProjectile *s_pCurrentProjectile;
@@ -152,6 +199,20 @@ static tFix10p6 s_pSin10p6[GAME_MATH_ANGLE_COUNT];
 
 static const UBYTE s_pBulletMaskFromX[] = {
 	BV(7), BV(6), BV(5), BV(4), BV(3), BV(2), BV(1), BV(0)
+};
+static const UBYTE s_pWeaponAmmo[] = {
+	[WEAPON_KIND_BASE_RIFLE] = 10,
+	[WEAPON_KIND_SMG] = 30,
+	[WEAPON_KIND_ASSAULT_RIFLE] = 25,
+	[WEAPON_KIND_SHOTGUN] = 12,
+	[WEAPON_KIND_SAWOFF] = 12,
+};
+static const UBYTE s_pWeaponReloadCooldowns[] = {
+	[WEAPON_KIND_BASE_RIFLE] = 30,
+	[WEAPON_KIND_SMG] = 40,
+	[WEAPON_KIND_ASSAULT_RIFLE] = 40,
+	[WEAPON_KIND_SHOTGUN] = 80,
+	[WEAPON_KIND_SAWOFF] = 80,
 };
 
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
@@ -166,7 +227,10 @@ static BYTE s_pSpreadSide2[SPREAD_SIDE_COUNT];
 static BYTE s_pSpreadSide3[SPREAD_SIDE_COUNT];
 static BYTE s_pSpreadSide10[SPREAD_SIDE_COUNT];
 
+static tHudState s_eHudState;
 static UWORD s_uwHudHealth;
+static UBYTE s_ubHudAmmoCount;
+static tUbCoordYX s_pHudBulletOffsets[WEAPON_MAX_BULLETS_IN_MAGAZINE];
 
 static tPtplayerSfx *s_pSfxRifle[2];
 static tPtplayerSfx *s_pSfxAssault[2];
@@ -174,6 +238,7 @@ static tPtplayerSfx *s_pSfxSmg[2];
 static tPtplayerSfx *s_pSfxShotgun[2];
 static tPtplayerSfx *s_pSfxImpact[2];
 static tPtplayerSfx *s_pSfxBite[2];
+static tPtplayerSfx *s_pSfxReload;
 
 //------------------------------------------------------------------ PRIVATE FNS
 
@@ -355,7 +420,7 @@ static inline void drawNextProjectile(void) {
 		) {
 			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
 			pEnemy->wHealth -= s_pCurrentProjectile->ubDamage;
-			audioMixerPlaySfx(s_pSfxImpact[0], 1, 0, 0);
+			audioMixerPlaySfx(s_pSfxImpact[0], SFX_CHANNEL_IMPACT, SFX_PRIORITY_IMPACT, 0);
 		}
 		else {
 			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
@@ -406,22 +471,85 @@ static void cameraCenterAtOptimized(
 }
 
 static void hudProcess(void) {
-	UWORD uwCurrentHealth = s_sPlayer.wHealth;
-	if(s_uwHudHealth != uwCurrentHealth) {
-		if(uwCurrentHealth > s_uwHudHealth) {
-			blitRect(s_pBufferHud->pBack, 200 + s_uwHudHealth, 10, uwCurrentHealth - s_uwHudHealth, 4, COLOR_RED);
-		}
-		else {
-			blitRect(s_pBufferHud->pBack, 200 + uwCurrentHealth, 10, s_uwHudHealth - uwCurrentHealth, 4, COLOR_BAR_BG);
-		}
-		s_uwHudHealth = uwCurrentHealth;
+	switch(s_eHudState) {
+		case HUD_STATE_DRAW_HEALTH: {
+			UWORD uwCurrentHealth = s_sPlayer.wHealth;
+			if(s_uwHudHealth != uwCurrentHealth) {
+				if(uwCurrentHealth > s_uwHudHealth) {
+					blitRect(s_pBufferHud->pBack, 200 + s_uwHudHealth, 10, uwCurrentHealth - s_uwHudHealth, 4, COLOR_RED);
+				}
+				else {
+					blitRect(s_pBufferHud->pBack, 200 + uwCurrentHealth, 10, s_uwHudHealth - uwCurrentHealth, 4, COLOR_BAR_BG);
+				}
+				s_uwHudHealth = uwCurrentHealth;
+			}
+			++s_eHudState;
+		} break;
+		case HUD_STATE_DRAW_WEAPON: {
+			blitCopyAligned(
+				s_pHudWeapons, 0, s_sPlayer.eWeapon * HUD_WEAPON_SIZE_Y,
+				s_pBufferHud->pBack, 0, 0, HUD_WEAPON_SIZE_X, HUD_WEAPON_SIZE_Y
+			);
+			++s_eHudState;
+		} break;
+		case HUD_STATE_DRAW_BULLETS: {
+			if(s_ubHudAmmoCount != s_sPlayer.ubAmmo) {
+				if(s_ubHudAmmoCount == HUD_AMMO_COUNT_FORCE_REDRAW) {
+					s_ubHudAmmoCount = 0;
+					blitRect(
+						s_pBufferHud->pBack, HUD_AMMO_FIELD_OFFSET_X, HUD_AMMO_FIELD_OFFSET_Y,
+						HUD_AMMO_FIELD_SIZE_X, HUD_AMMO_FIELD_SIZE_Y, COLOR_HUD_BG
+					);
+				}
+				else if(s_ubHudAmmoCount < s_sPlayer.ubAmmo) {
+					UWORD uwSrcY;
+					switch(s_sPlayer.eWeapon) {
+						case WEAPON_KIND_SAWOFF:
+						case WEAPON_KIND_SHOTGUN:
+							uwSrcY = BULLET_OFFSET_Y_SHELL;
+							break;
+						default:
+							uwSrcY = BULLET_OFFSET_Y_BULLET;
+					}
+					blitCopyMask(
+						s_pBulletFrames, 0, uwSrcY, s_pBufferHud->pBack,
+						s_pHudBulletOffsets[s_ubHudAmmoCount].ubX,
+						s_pHudBulletOffsets[s_ubHudAmmoCount].ubY,
+						HUD_AMMO_BULLET_SIZE_X, HUD_AMMO_BULLET_SIZE_Y, s_pBulletMasks->Planes[0]
+					);
+					++s_ubHudAmmoCount;
+				}
+				else {
+					--s_ubHudAmmoCount;
+					blitRect(
+						s_pBufferHud->pBack,
+						s_pHudBulletOffsets[s_ubHudAmmoCount].ubX,
+						s_pHudBulletOffsets[s_ubHudAmmoCount].ubY,
+						HUD_AMMO_BULLET_SIZE_X, HUD_AMMO_BULLET_SIZE_Y, COLOR_HUD_BG
+					);
+				}
+			}
+			++s_eHudState;
+		} break;
+		case HUD_STATE_END:
+			s_eHudState = 0;
+			break;
 	}
 }
 
 static void playerSetWeapon(tWeaponKind eWeaponKind) {
 	s_sPlayer.eWeapon = eWeaponKind;
+	s_sPlayer.ubAmmo = s_pWeaponAmmo[eWeaponKind];
+
+	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
 	// TOOD: set ammo
-	blitCopyAligned(s_pHudWeapons, 0, eWeaponKind * HUD_WEAPON_SIZE_Y, s_pBufferHud->pBack, 0, 0, HUD_WEAPON_SIZE_X, HUD_WEAPON_SIZE_Y);
+}
+
+__attribute__((always_inline))
+static inline void playerStartReloadWeapon(void) {
+	s_sPlayer.ubReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.eWeapon];
+	s_sPlayer.ubAmmo = s_pWeaponAmmo[s_sPlayer.eWeapon];
+	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
 __attribute__((always_inline))
@@ -468,33 +596,33 @@ static void playerShootWeapon(UBYTE ubAimAngle) {
 	// TODO: precalculate random stuff
 	switch(s_sPlayer.eWeapon) {
 		case WEAPON_KIND_BASE_RIFLE:
-			playerShootProjectile(ubAimAngle, s_pSpreadSide1, 5);
-			audioMixerPlaySfx(s_pSfxRifle[0], 0, 0, 0);
-			s_sPlayer.ubAttackCooldown = 20;
+			playerShootProjectile(ubAimAngle, s_pSpreadSide1, WEAPON_DAMAGE_BASE_RIFLE);
+			audioMixerPlaySfx(s_pSfxRifle[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_BASE_RIFLE;
 			break;
 			case WEAPON_KIND_SMG:
-			playerShootProjectile(ubAimAngle, s_pSpreadSide2, 3);
-			audioMixerPlaySfx(s_pSfxSmg[0], 0, 0, 0);
-			s_sPlayer.ubAttackCooldown = 5;
+			playerShootProjectile(ubAimAngle, s_pSpreadSide3, WEAPON_DAMAGE_SMG);
+			audioMixerPlaySfx(s_pSfxSmg[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SMG;
 			break;
 		case WEAPON_KIND_ASSAULT_RIFLE:
-			playerShootProjectile(ubAimAngle, s_pSpreadSide1, 5);
-			audioMixerPlaySfx(s_pSfxAssault[0], 0, 0, 0);
-			s_sPlayer.ubAttackCooldown = 8;
+			playerShootProjectile(ubAimAngle, s_pSpreadSide2, WEAPON_DAMAGE_ASSAULT_RIFLE);
+			audioMixerPlaySfx(s_pSfxAssault[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_ASSAULT_RIFLE;
 			break;
 		case WEAPON_KIND_SHOTGUN:
 			for(UBYTE i = 0; i < 10; ++i) {
-				playerShootProjectile(ubAimAngle, s_pSpreadSide3, 3);
+				playerShootProjectile(ubAimAngle, s_pSpreadSide3, WEAPON_DAMAGE_SHOTGUN);
 			}
-			audioMixerPlaySfx(s_pSfxShotgun[0], 0, 0, 0);
-			s_sPlayer.ubAttackCooldown = 25;
+			audioMixerPlaySfx(s_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SHOTGUN;
 			break;
 		case WEAPON_KIND_SAWOFF:
 			for(UBYTE i = 0; i < 10; ++i) {
-				playerShootProjectile(ubAimAngle, s_pSpreadSide10, 3);
+				playerShootProjectile(ubAimAngle, s_pSpreadSide10, WEAPON_DAMAGE_SAWOFF);
 			}
-			audioMixerPlaySfx(s_pSfxShotgun[0], 0, 0, 0);
-			s_sPlayer.ubAttackCooldown = 25;
+			audioMixerPlaySfx(s_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SAWOFF;
 			break;
 	}
 	// TODO: remove ammo from magazine
@@ -523,6 +651,8 @@ static void gameStart(void) {
 	}
 
 	s_uwHudHealth = 0;
+	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
+	s_eHudState = 0;
 
 	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
 	s_sPlayer.sPos.uwX = 180;
@@ -669,6 +799,15 @@ static void gameGsCreate(void) {
 		}
 	}
 
+	s_pBulletFrames = bitmapCreateFromPath("data/bullets.bm", 0);
+	s_pBulletMasks = bitmapCreateFromPath("data/bullets_mask.bm", 0);
+	for(UBYTE i = 0; i < WEAPON_MAX_BULLETS_IN_MAGAZINE; ++i) {
+		s_pHudBulletOffsets[i] = (tUbCoordYX){
+			.ubX = HUD_AMMO_FIELD_OFFSET_X + (i % HUD_AMMO_BULLET_COUNT_X) * (HUD_AMMO_BULLET_SIZE_X + 1),
+			.ubY = HUD_AMMO_FIELD_OFFSET_Y + (i / HUD_AMMO_BULLET_COUNT_X) * (HUD_AMMO_BULLET_SIZE_Y + 1)
+		};
+	}
+
 	s_pSfxRifle[0] = ptplayerSfxCreateFromPath("data/sfx/rifle_shot_1.sfx", 1);
 	s_pSfxRifle[1] = ptplayerSfxCreateFromPath("data/sfx/rifle_shot_2.sfx", 1);
 	s_pSfxAssault[0] = ptplayerSfxCreateFromPath("data/sfx/assault_shot_1.sfx", 1);
@@ -681,6 +820,7 @@ static void gameGsCreate(void) {
 	s_pSfxImpact[1] = ptplayerSfxCreateFromPath("data/sfx/impact_2.sfx", 1);
 	s_pSfxBite[0] = ptplayerSfxCreateFromPath("data/sfx/bite_1.sfx", 1);
 	s_pSfxBite[1] = ptplayerSfxCreateFromPath("data/sfx/bite_2.sfx", 1);
+	s_pSfxReload = ptplayerSfxCreateFromPath("data/sfx/reload_1.sfx", 1);
 
 	for(UBYTE i = 0; i < SPREAD_SIDE_COUNT; ++i) {
 		s_pSpreadSide1[i] = - 2/2 + randUwMax(&g_sRand, 2);
@@ -797,9 +937,6 @@ static void gameGsLoop(void) {
 			s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
 			s_sPlayer.ubFrameCooldown = 0;
 		}
-		if(s_sPlayer.ubAttackCooldown) {
-			--s_sPlayer.ubAttackCooldown;
-		}
 
 		tDirection eDir;
 		if(ubAimAngle < ANGLE_45) {
@@ -826,8 +963,27 @@ static void gameGsLoop(void) {
 		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
 		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
 
-		if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB) && !s_sPlayer.ubAttackCooldown) {
-			playerShootWeapon(ubAimAngle);
+		if(!s_sPlayer.ubAttackCooldown) {
+			if(!s_sPlayer.ubReloadCooldown) {
+				if(!s_sPlayer.ubAmmo) {
+					playerStartReloadWeapon();
+				}
+				else {
+					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
+						--s_sPlayer.ubAmmo;
+						playerShootWeapon(ubAimAngle);
+					}
+					else if(keyUse(KEY_R) && s_sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.eWeapon]) {
+						playerStartReloadWeapon();
+					}
+				}
+			}
+			else {
+				--s_sPlayer.ubReloadCooldown;
+			}
+		}
+		else {
+			--s_sPlayer.ubAttackCooldown;
 		}
 	}
 	else {
@@ -883,7 +1039,7 @@ static void gameGsLoop(void) {
 			if(pEnemy->ubAttackCooldown == 0) {
 				if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
 					s_sPlayer.wHealth -= 5;
-					audioMixerPlaySfx(s_pSfxBite[0], 2, 0, 0);
+					audioMixerPlaySfx(s_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
 					pEnemy->ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
 				}
 			}
@@ -941,6 +1097,7 @@ static void gameGsDestroy(void) {
 	ptplayerSfxDestroy(s_pSfxImpact[1]);
 	ptplayerSfxDestroy(s_pSfxBite[0]);
 	ptplayerSfxDestroy(s_pSfxBite[1]);
+	ptplayerSfxDestroy(s_pSfxReload);
 
 	ptplayerModDestroy(s_pMod);
 
@@ -955,6 +1112,9 @@ static void gameGsDestroy(void) {
 		bitmapDestroy(s_pEnemyFrames[eDir]);
 		bitmapDestroy(s_pEnemyMasks[eDir]);
 	}
+
+	bitmapDestroy(s_pBulletFrames);
+	bitmapDestroy(s_pBulletMasks);
 
 	viewDestroy(s_pView);
 	bitmapDestroy(s_pPristineBuffer);

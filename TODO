@@ -27,11 +27,12 @@ Bare minimum:
 		✔ Submachine gun (fastest, low dmg, high spray) @done(25-03-22)
 		✔ Display weapon on HUD @done(25-03-23)
 	Add ammo system:
-		☐ Add reload on end of shooting
-		☐ Add reload on R
-		☐ Add ammo indicator on HUD
+		✔ Add reload on end of shooting @done(25-03-24)
+		✔ Add ammo indicator on HUD @done(25-03-24)
+		✔ Add reload on R @done(25-03-24)
 		☐ Add reload indicator on cursor
 	☐ Add bloodstains
+	☐ Add consistent 25fps
 	☐ Add zombie kill anim
 	Add basic menu:
 		☐ New game
@@ -52,6 +53,7 @@ Bare minimum:
 		☐ Dissipate after some time
 
 Nice to have:
+	☐ Draw 2 bullets on hud at once if possible
 	☐ Add sound variations
 	Perks:
 		☐ Add level up curve

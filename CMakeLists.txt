@@ -390,6 +390,25 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_SE_PATHS}
 )
 
+#----------------------------------------------------------------------- BULLETS
+
+file(MAKE_DIRECTORY ${GEN_DIR}/bullets)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
+	GENERATED_FILE_LIST "BULLET_PATHS"
+	DESTINATIONS
+	# Corners
+	${GEN_DIR}/bullets/0.png  134 147 16 6
+	${GEN_DIR}/bullets/1.png  134 154 16 6
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 6
+	SOURCE ${GEN_DIR}/bullets
+	INTERLEAVED DESTINATION ${GEN_DIR}/bullets.png
+	TILE_PATHS ${BULLET_PATHS}
+)
+
 #----------------------------------------------------------------- CONVERT TO BM
 
 convertBitmaps(
@@ -418,12 +437,15 @@ convertBitmaps(
 	INTERLEAVED SOURCES
 		${GEN_DIR}/zombie_s.png ${GEN_DIR}/zombie_sw.png ${GEN_DIR}/zombie_nw.png
 		${GEN_DIR}/zombie_n.png ${GEN_DIR}/zombie_ne.png ${GEN_DIR}/zombie_se.png
+		${GEN_DIR}/bullets.png
 	DESTINATIONS
 		${DATA_DIR}/zombie_s.bm ${DATA_DIR}/zombie_sw.bm ${DATA_DIR}/zombie_nw.bm
 		${DATA_DIR}/zombie_n.bm ${DATA_DIR}/zombie_ne.bm ${DATA_DIR}/zombie_se.bm
+		${DATA_DIR}/bullets.bm
 	MASKS
 		${DATA_DIR}/zombie_s_mask.bm ${DATA_DIR}/zombie_sw_mask.bm ${DATA_DIR}/zombie_nw_mask.bm
 		${DATA_DIR}/zombie_n_mask.bm ${DATA_DIR}/zombie_ne_mask.bm ${DATA_DIR}/zombie_se_mask.bm
+		${DATA_DIR}/bullets_mask.bm
 )
 
 #------------------------------------------------------------------------- AUDIO
@@ -491,4 +513,10 @@ convertAudio(
 	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
 	SOURCE ${RES_DIR}/sfx/shotgun_shot_2.wav
 	DESTINATION ${DATA_DIR}/sfx/shotgun_shot_2.sfx
+)
+
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/reload_1.wav
+	DESTINATION ${DATA_DIR}/sfx/reload_1.sfx
 )
