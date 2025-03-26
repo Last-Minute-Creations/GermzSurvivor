@@ -185,6 +185,8 @@ static tBitMap *s_pBmCrosshair;
 static tBitMap *s_pHudWeapons;
 static tRandManager g_sRand;
 static tSprite *s_pSpriteCursor;
+static volatile ULONG s_ulFrameCount;
+static ULONG s_ulFrameWaitCount;
 
 static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
@@ -711,6 +713,8 @@ static void gameStart(void) {
 		s_pFreeProjectiles[i] = &s_pProjectiles[i];
 	}
 	s_ubFreeProjectileCount = PROJECTILE_COUNT;
+	s_ulFrameCount = 0;
+	s_ulFrameWaitCount = 1;
 }
 
 static void blitUnsafeCopyStain(
@@ -748,6 +752,14 @@ static void blitUnsafeCopyStain(
 	g_pCustom->bltcpt = pCD;
 	g_pCustom->bltdpt = pCD;
 	g_pCustom->bltsize = ((STAIN_SIZE_Y * GAME_BPP) << HSIZEBITS) | uwBlitWords;
+}
+
+static void onVblank(
+	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"),
+	REGARG(volatile void *pData, "a1")
+) {
+	ULONG *pFrameCount = (ULONG*)pData;
+	*pFrameCount += 1;
 }
 
 static void gameGsCreate(void) {
@@ -946,6 +958,7 @@ static void gameGsCreate(void) {
 	mouseSetBounds(MOUSE_PORT_1, 0, HUD_SIZE_Y, 320, 256);
 
 	systemUnuse();
+	systemSetInt(INTB_VERTB, onVblank, (void*)&s_ulFrameCount);
 	gameStart();
 	viewLoad(s_pView);
 	viewProcessManagers(s_pView);
@@ -953,6 +966,15 @@ static void gameGsCreate(void) {
 	logBlockEnd("gameGsCreate()");
 	ptplayerLoadMod(s_pMod, 0, 0);
 	ptplayerEnableMusic(1);
+}
+
+__attribute__((always_inline))
+static inline void gameWaitForNextFrame(void) {
+	systemIdleBegin();
+	while(s_ulFrameCount < s_ulFrameWaitCount) continue;
+	s_ulFrameWaitCount += 2;
+	vPortWaitUntilEnd(s_pVpMain);
+	systemIdleEnd();
 }
 
 static void gameGsLoop(void) {
@@ -1192,9 +1214,7 @@ static void gameGsLoop(void) {
 	simpleBufferProcess(s_pBufferMain);
 	cameraProcess(s_pBufferMain->pCamera);
 	copSwapBuffers();
-	systemIdleBegin();
-	vPortWaitUntilEnd(s_pVpMain);
-	systemIdleEnd();
+	gameWaitForNextFrame();
 }
 
 static void gameGsDestroy(void) {

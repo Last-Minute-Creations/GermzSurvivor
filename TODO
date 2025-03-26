@@ -32,8 +32,8 @@ Bare minimum:
 		✔ Add reload on R @done(25-03-24)
 		☐ Add reload indicator on cursor
 	✔ Add bloodstains @done(25-03-26)
-	☐ Fix projectile collision
-	☐ Add consistent 25fps
+	✔ Fix projectile collision @done(25-03-26)
+	✔ Add consistent 25fps @done(25-03-26)
 	☐ Add zombie kill anim
 	Add basic menu:
 		☐ New game
