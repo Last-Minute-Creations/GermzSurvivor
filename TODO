@@ -31,7 +31,8 @@ Bare minimum:
 		✔ Add ammo indicator on HUD @done(25-03-24)
 		✔ Add reload on R @done(25-03-24)
 		☐ Add reload indicator on cursor
-	☐ Add bloodstains
+	✔ Add bloodstains @done(25-03-26)
+	☐ Fix projectile collision
 	☐ Add consistent 25fps
 	☐ Add zombie kill anim
 	Add basic menu:

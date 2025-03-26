@@ -395,7 +395,7 @@ convertTileset(
 file(MAKE_DIRECTORY ${GEN_DIR}/bullets)
 
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
-	GENERATED_FILE_LIST "BULLET_PATHS"
+	GENERATED_FILE_LIST "BULLETS_PATHS"
 	DESTINATIONS
 	# Corners
 	${GEN_DIR}/bullets/0.png  134 147 16 6
@@ -406,7 +406,27 @@ convertTileset(
 	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 6
 	SOURCE ${GEN_DIR}/bullets
 	INTERLEAVED DESTINATION ${GEN_DIR}/bullets.png
-	TILE_PATHS ${BULLET_PATHS}
+	TILE_PATHS ${BULLETS_PATHS}
+)
+
+#------------------------------------------------------------------------ STAINS
+
+file(MAKE_DIRECTORY ${GEN_DIR}/stains)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
+	GENERATED_FILE_LIST "STAINS_PATHS"
+	DESTINATIONS
+	# Corners
+	${GEN_DIR}/stains/0.png   35 141 16 16
+	${GEN_DIR}/stains/1.png   35 161 16 16
+	${GEN_DIR}/stains/2.png   33 179 16 16
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16
+	SOURCE ${GEN_DIR}/stains
+	INTERLEAVED DESTINATION ${GEN_DIR}/stains.png
+	TILE_PATHS ${STAINS_PATHS}
 )
 
 #----------------------------------------------------------------- CONVERT TO BM
@@ -437,15 +457,15 @@ convertBitmaps(
 	INTERLEAVED SOURCES
 		${GEN_DIR}/zombie_s.png ${GEN_DIR}/zombie_sw.png ${GEN_DIR}/zombie_nw.png
 		${GEN_DIR}/zombie_n.png ${GEN_DIR}/zombie_ne.png ${GEN_DIR}/zombie_se.png
-		${GEN_DIR}/bullets.png
+		${GEN_DIR}/bullets.png ${GEN_DIR}/stains.png
 	DESTINATIONS
 		${DATA_DIR}/zombie_s.bm ${DATA_DIR}/zombie_sw.bm ${DATA_DIR}/zombie_nw.bm
 		${DATA_DIR}/zombie_n.bm ${DATA_DIR}/zombie_ne.bm ${DATA_DIR}/zombie_se.bm
-		${DATA_DIR}/bullets.bm
+		${DATA_DIR}/bullets.bm ${DATA_DIR}/stains.bm
 	MASKS
 		${DATA_DIR}/zombie_s_mask.bm ${DATA_DIR}/zombie_sw_mask.bm ${DATA_DIR}/zombie_nw_mask.bm
 		${DATA_DIR}/zombie_n_mask.bm ${DATA_DIR}/zombie_ne_mask.bm ${DATA_DIR}/zombie_se_mask.bm
-		${DATA_DIR}/bullets_mask.bm
+		${DATA_DIR}/bullets_mask.bm ${DATA_DIR}/stains_mask.bm
 )
 
 #------------------------------------------------------------------------- AUDIO

@@ -20,6 +20,13 @@
 // #define GAME_COLLISION_DEBUG
 
 #define WEAPON_MAX_BULLETS_IN_MAGAZINE 30
+#define STAIN_FRAME_COUNT 3
+#define STAIN_FRAME_PRESET_COUNT 16
+#define STAINS_MAX 20
+#define STAIN_SIZE_X 16
+#define STAIN_SIZE_Y 16
+#define STAIN_BYTES_PER_BITPLANE_ROW (STAIN_SIZE_X / 8)
+#define STAIN_BYTES_PER_PIXEL_ROW (STAIN_BYTES_PER_BITPLANE_ROW * GAME_BPP)
 
 #define WEAPON_DAMAGE_BASE_RIFLE 5
 #define WEAPON_DAMAGE_SMG 4
@@ -192,6 +199,11 @@ static tCharacter s_pEnemies[ENEMY_COUNT];
 static tBitMap *s_pBulletFrames;
 static tBitMap *s_pBulletMasks;
 
+static tBitMap *s_pStainFrames;
+static tBitMap *s_pStainMasks;
+static tFrameOffset s_pStainFrameOffsets[STAIN_FRAME_PRESET_COUNT];
+static tFrameOffset *s_pNextStainOffset;
+
 static tPtplayerMod *s_pMod;
 static UBYTE s_ubBufferCurr;
 static tProjectile *s_pCurrentProjectile;
@@ -239,6 +251,14 @@ static tPtplayerSfx *s_pSfxShotgun[2];
 static tPtplayerSfx *s_pSfxImpact[2];
 static tPtplayerSfx *s_pSfxBite[2];
 static tPtplayerSfx *s_pSfxReload;
+
+static tBob s_pStainBobs[STAINS_MAX];
+static tBob *s_pFreeStains[STAINS_MAX];
+static tBob *s_pPushStains[STAINS_MAX];
+static tBob *s_pWaitStains[STAINS_MAX];
+static tBob **s_pNextFreeStain;
+static tBob **s_pNextPushStain;
+static tBob **s_pNextWaitStain;
 
 //------------------------------------------------------------------ PRIVATE FNS
 
@@ -368,7 +388,7 @@ static inline UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LON
 }
 
 __attribute__((always_inline))
-static inline void undrawNextProjectile(void) {
+static inline void projectileUndrawNext(void) {
 	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
 		return;
 	}
@@ -398,7 +418,7 @@ static inline void undrawNextProjectile(void) {
 }
 
 __attribute__((always_inline))
-static inline void drawNextProjectile(void) {
+static inline void projectileDrawNext(void) {
 	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
 		return;
 	}
@@ -418,6 +438,13 @@ static inline void drawNextProjectile(void) {
 			((pEnemy = characterGetNearPos(uwProjectileX, 0, uwProjectileY, -1)) && pEnemy != &s_sPlayer) ||
 			((pEnemy = characterGetNearPos(uwProjectileX, -1, uwProjectileY, -1)) && pEnemy != &s_sPlayer)
 		) {
+			if(s_pNextFreeStain != &s_pFreeStains[0]) {
+				tBob *pStain = *(--s_pNextFreeStain);
+				pStain->sPos.uwX = uwProjectileX;
+				pStain->sPos.uwY = uwProjectileY;
+				*(s_pNextPushStain++) = pStain;
+			}
+
 			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
 			pEnemy->wHealth -= s_pCurrentProjectile->ubDamage;
 			audioMixerPlaySfx(s_pSfxImpact[0], SFX_CHANNEL_IMPACT, SFX_PRIORITY_IMPACT, 0);
@@ -436,11 +463,11 @@ static inline void drawNextProjectile(void) {
 }
 
 void bobOnBegin(void) {
-	undrawNextProjectile();
+	projectileUndrawNext();
 }
 
 void bobOnEnd(void) {
-	drawNextProjectile();
+	projectileDrawNext();
 }
 
 static void setTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
@@ -680,6 +707,43 @@ static void gameStart(void) {
 	s_ubFreeProjectileCount = PROJECTILE_COUNT;
 }
 
+static void blitUnsafeCopyStain(
+	UBYTE *pSrc, UBYTE *pMsk, WORD wDstX, WORD wDstY
+) {
+	// Blitter register values
+	UBYTE ubDstDelta = wDstX & 0xF;
+	UWORD uwBlitWidth = (STAIN_SIZE_X + ubDstDelta + 15) & 0xFFF0;
+	UWORD uwBlitWords = uwBlitWidth >> 4;
+
+	UWORD uwFirstMask = 0xFFFF;
+	UWORD uwLastMask = 0xFFFF << (uwBlitWidth - STAIN_SIZE_X);
+
+	UBYTE ubShift = ubDstDelta;
+	UWORD uwBltCon1 = ubShift << BSHIFTSHIFT;
+
+	ULONG ulDstOffs = s_pRowOffsetFromY[wDstY] + (wDstX >> 3);
+	UBYTE *pCD = &s_pPristineBuffer->Planes[0][ulDstOffs];
+
+	UWORD uwBltCon0 = uwBltCon1 |USEA|USEB|USEC|USED | MINTERM_COOKIE;
+	WORD wSrcModulo = STAIN_BYTES_PER_BITPLANE_ROW - uwBlitWords * 2;
+	WORD wDstModulo = BG_BYTES_PER_BITPLANE_ROW - uwBlitWords * 2;
+
+	blitWait(); // Don't modify registers when other blit is in progress
+	g_pCustom->bltcon0 = uwBltCon0;
+	g_pCustom->bltcon1 = uwBltCon1;
+	g_pCustom->bltafwm = uwFirstMask;
+	g_pCustom->bltalwm = uwLastMask;
+	g_pCustom->bltamod = wSrcModulo;
+	g_pCustom->bltbmod = wSrcModulo;
+	g_pCustom->bltcmod = wDstModulo;
+	g_pCustom->bltdmod = wDstModulo;
+	g_pCustom->bltapt = pMsk;
+	g_pCustom->bltbpt = pSrc;
+	g_pCustom->bltcpt = pCD;
+	g_pCustom->bltdpt = pCD;
+	g_pCustom->bltsize = ((STAIN_SIZE_Y * GAME_BPP) << HSIZEBITS) | uwBlitWords;
+}
+
 static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
@@ -808,6 +872,9 @@ static void gameGsCreate(void) {
 		};
 	}
 
+	s_pStainFrames = bitmapCreateFromPath("data/stains.bm", 0);
+	s_pStainMasks = bitmapCreateFromPath("data/stains_mask.bm", 0);
+
 	s_pSfxRifle[0] = ptplayerSfxCreateFromPath("data/sfx/rifle_shot_1.sfx", 1);
 	s_pSfxRifle[1] = ptplayerSfxCreateFromPath("data/sfx/rifle_shot_2.sfx", 1);
 	s_pSfxAssault[0] = ptplayerSfxCreateFromPath("data/sfx/assault_shot_1.sfx", 1);
@@ -839,6 +906,21 @@ static void gameGsCreate(void) {
 		s_pBufferMain->pFront, s_pBufferMain->pBack,
 		s_pPristineBuffer, MAP_TILES_Y * MAP_TILE_SIZE
 	);
+
+	for(UBYTE i = 0; i < STAIN_FRAME_PRESET_COUNT; ++i) {
+		UWORD uwOffsY = STAIN_SIZE_Y * randUwMax(&g_sRand, STAIN_FRAME_COUNT - 1);
+		s_pStainFrameOffsets[i].pPixels = bobCalcFrameAddress(s_pStainFrames, uwOffsY);
+		s_pStainFrameOffsets[i].pMask = bobCalcFrameAddress(s_pStainMasks, uwOffsY);
+	}
+	s_pNextStainOffset = &s_pStainFrameOffsets[0];
+
+	for(UBYTE i = 0; i < STAINS_MAX; ++i) {
+		bobInit(&s_pStainBobs[i], STAIN_SIZE_X, STAIN_SIZE_Y, 1, 0, 0, 0, 0);
+		s_pFreeStains[i] = &s_pStainBobs[i];
+	}
+	s_pNextFreeStain = &s_pFreeStains[STAINS_MAX];
+	s_pNextPushStain = &s_pPushStains[0];
+	s_pNextWaitStain = &s_pWaitStains[0];
 
 	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
@@ -877,7 +959,7 @@ static void gameGsLoop(void) {
 	s_pCurrentProjectile = &s_pProjectiles[0];
 	bobBegin(s_pBufferMain->pBack);
 	while(s_pCurrentProjectile != &s_pProjectiles[PROJECTILE_COUNT]) {
-		undrawNextProjectile();
+		projectileUndrawNext();
 	}
 
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
@@ -1047,9 +1129,9 @@ static void gameGsLoop(void) {
 				--pEnemy->ubAttackCooldown;
 			}
 
-			if(0) {
+			// if(0) {
 				characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
-			}
+			// }
 			tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
 			bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
 		}
@@ -1066,8 +1148,27 @@ static void gameGsLoop(void) {
 	s_pCurrentProjectile = &s_pProjectiles[0];
 	bobEnd();
 	while(s_pCurrentProjectile != &s_pProjectiles[PROJECTILE_COUNT]) {
-		drawNextProjectile();
+		projectileDrawNext();
 	}
+
+	if(s_pNextWaitStain != &s_pWaitStains[0]) {
+		tBob *pStain = *(--s_pNextWaitStain);
+		*(s_pNextFreeStain++) = pStain;
+	}
+
+	if(s_pNextPushStain != &s_pPushStains[0]) {
+		tBob *pStain = *(--s_pNextPushStain);
+		blitUnsafeCopyStain(
+			s_pNextStainOffset->pPixels, s_pNextStainOffset->pMask,
+			pStain->sPos.uwX, pStain->sPos.uwY
+		);
+		bobForceUndraw(pStain);
+		*(s_pNextWaitStain++) = pStain;
+		if(++s_pNextStainOffset == &s_pStainFrameOffsets[STAIN_FRAME_PRESET_COUNT]) {
+			s_pNextStainOffset = &s_pStainFrameOffsets[0];
+		}
+	}
+
 	s_ubBufferCurr = !s_ubBufferCurr;
 
 	hudProcess();
@@ -1115,6 +1216,8 @@ static void gameGsDestroy(void) {
 
 	bitmapDestroy(s_pBulletFrames);
 	bitmapDestroy(s_pBulletMasks);
+	bitmapDestroy(s_pStainFrames);
+	bitmapDestroy(s_pStainMasks);
 
 	viewDestroy(s_pView);
 	bitmapDestroy(s_pPristineBuffer);
