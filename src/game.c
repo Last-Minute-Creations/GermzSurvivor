@@ -229,7 +229,9 @@ static const UBYTE s_pWeaponReloadCooldowns[] = {
 
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
 
-static tCharacter *s_pCollisionTiles[MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X][MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y];
+#define COLLISION_LOOKUP_SIZE_X (MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X)
+#define COLLISION_LOOKUP_SIZE_Y (MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y)
+static tCharacter *s_pCollisionTiles[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y];
 
 static tProjectile s_pProjectiles[PROJECTILE_COUNT];
 static tProjectile *s_pFreeProjectiles[PROJECTILE_COUNT];
@@ -286,6 +288,10 @@ static inline tCharacter *characterGetNearPos(
 ) {
 	UWORD uwLookupX = uwPosX / COLLISION_SIZE_X + bLookupAddX;
 	UWORD uwLookupY = uwPosY / COLLISION_SIZE_Y + bLookupAddY;
+	// Watch out for accessing underflowed -1
+	if(uwLookupX >= COLLISION_LOOKUP_SIZE_X || uwLookupY >= COLLISION_LOOKUP_SIZE_Y) {
+		return 0;
+	}
 	return s_pCollisionTiles[uwLookupX][uwLookupY];
 }
 
@@ -1136,9 +1142,19 @@ static void gameGsLoop(void) {
 			bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
 		}
 		else {
+			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
 			pEnemy->wHealth = ENEMY_HEALTH_MAX;
-			pEnemy->sPos.uwX = randUwMinMax(&g_sRand, 32, MAP_TILES_X * MAP_TILE_SIZE - 32);
-			pEnemy->sPos.uwY = randUwMinMax(&g_sRand, 32, MAP_TILES_Y * MAP_TILE_SIZE - 32);
+			while(1) {
+				UWORD uwX = randUwMinMax(&g_sRand, 32, MAP_TILES_X * MAP_TILE_SIZE - 32);
+				UWORD uwY = randUwMinMax(&g_sRand, 32, MAP_TILES_Y * MAP_TILE_SIZE - 32);
+				if(s_pCollisionTiles[uwX / COLLISION_SIZE_X][uwY / COLLISION_SIZE_Y]) {
+					continue;
+				}
+				s_pCollisionTiles[uwX / COLLISION_SIZE_X][uwY / COLLISION_SIZE_Y] = pEnemy;
+				pEnemy->sPos.uwX = uwX;
+				pEnemy->sPos.uwY = uwY;
+				break;
+			}
 		}
 		pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
 		pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
