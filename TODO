@@ -35,7 +35,9 @@ Bare minimum:
 	✔ Fix projectile collision @done(25-03-26)
 	✔ Add consistent 25fps @done(25-03-26)
 	✔ Sort zombies & player @done(25-03-27)
-	☐ Respawn zombies off-screen
+	Better zombie spawning:
+		✔ Add 32px margin on every side @done(25-03-27)
+		☐ Respawn zombies off-screen in vincity of player
 	☐ Add zombie anti-clumping
 	☐ Add zombie kill anim
 	Add basic menu:

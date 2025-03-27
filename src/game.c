@@ -67,10 +67,14 @@
 
 #define MAP_TILES_X 32
 #define MAP_TILES_Y 32
+#define MAP_MARGIN_TILES 2
 #define MAP_TILE_SHIFT 4
 #define MAP_TILE_SIZE  (1 << MAP_TILE_SHIFT)
 #define GAME_BPP 5
 #define SPRITE_CHANNEL_CURSOR 0
+
+#define MAIN_VPORT_SIZE_X 320
+#define MAIN_VPORT_SIZE_Y (256 - HUD_SIZE_Y)
 
 #define COLOR_HUD_BG 6
 #define COLOR_BAR_BG 10
@@ -503,10 +507,10 @@ void bobOnEnd(void) {
 static void cameraCenterAtOptimized(
 	tCameraManager *pManager, ULONG ulCenterX, ULONG ulCenterY
 ) {
-	LONG lTop = ulCenterX - 320 / 2;
-	LONG lLeft = ulCenterY - (256 - HUD_SIZE_Y) / 2;
-	pManager->uPos.uwX = CLAMP(lTop, 0, pManager->uMaxPos.uwX);
-	pManager->uPos.uwY = CLAMP(lLeft, 0, pManager->uMaxPos.uwY);
+	LONG lTop = ulCenterX - MAIN_VPORT_SIZE_X / 2;
+	LONG lLeft = ulCenterY - (MAIN_VPORT_SIZE_Y - HUD_SIZE_Y) / 2;
+	pManager->uPos.uwX = CLAMP(lTop, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_X - MAP_MARGIN_TILES) * MAP_TILE_SIZE - MAIN_VPORT_SIZE_X);
+	pManager->uPos.uwY = CLAMP(lLeft, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_Y - MAP_MARGIN_TILES) * MAP_TILE_SIZE - MAIN_VPORT_SIZE_Y);
 }
 
 static void hudProcess(void) {
@@ -669,23 +673,23 @@ static void playerShootWeapon(UBYTE ubAimAngle) {
 }
 
 static void gameStart(void) {
-	gameSetTile(0, 0, 0);
-	gameSetTile(1, MAP_TILES_X - 1, 0);
-	gameSetTile(2, 0, MAP_TILES_Y - 1);
-	gameSetTile(3, MAP_TILES_X - 1, MAP_TILES_Y - 1);
+	gameSetTile(0, MAP_MARGIN_TILES, MAP_MARGIN_TILES);
+	gameSetTile(1, MAP_TILES_X - 1 - MAP_MARGIN_TILES, MAP_MARGIN_TILES);
+	gameSetTile(2, MAP_MARGIN_TILES, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
+	gameSetTile(3, MAP_TILES_X - 1 - MAP_MARGIN_TILES, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
 
-	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
-		gameSetTile(randUwMinMax(&g_sRand, 4, 6), ubX, 0);
-		gameSetTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1);
+	for(UBYTE ubX = MAP_MARGIN_TILES + 1; ubX < MAP_TILES_X - 1 - MAP_MARGIN_TILES; ++ubX) {
+		gameSetTile(randUwMinMax(&g_sRand, 4, 6), ubX, MAP_MARGIN_TILES);
+		gameSetTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
 	}
 
-	for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
-		gameSetTile(randUwMinMax(&g_sRand, 7, 9), 0, ubY);
-		gameSetTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1, ubY);
+	for(UBYTE ubY = MAP_MARGIN_TILES + 1; ubY < MAP_TILES_Y - 1 - MAP_MARGIN_TILES; ++ubY) {
+		gameSetTile(randUwMinMax(&g_sRand, 7, 9), MAP_MARGIN_TILES, ubY);
+		gameSetTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1 - MAP_MARGIN_TILES, ubY);
 	}
 
-	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
-		for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
+	for(UBYTE ubX = MAP_MARGIN_TILES + 1; ubX < MAP_TILES_X - 1 - MAP_MARGIN_TILES; ++ubX) {
+		for(UBYTE ubY = MAP_MARGIN_TILES + 1; ubY < MAP_TILES_Y - 1 - MAP_MARGIN_TILES; ++ubY) {
 			gameSetTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
 		}
 	}
