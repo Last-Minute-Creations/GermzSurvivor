@@ -96,11 +96,13 @@
 #define ENEMY_HEALTH_MAX 20
 #define ENEMY_SPEED 1
 
-#define ENEMY_COUNT 5
+#define ENEMY_COUNT 25
 #define PROJECTILE_COUNT 20
 #define PROJECTILE_LIFETIME 25
 #define PROJECTILE_SPEED 5
 #define SPREAD_SIDE_COUNT 40
+
+#define SORTED_CHARS_COUNT (ENEMY_COUNT + 1)
 
 #define BG_BYTES_PER_BITPLANE_ROW (MAP_TILES_X * MAP_TILE_SIZE / 8)
 #define BG_BYTES_PER_PIXEL_ROW (BG_BYTES_PER_BITPLANE_ROW * GAME_BPP)
@@ -198,6 +200,8 @@ static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
 static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
 static tCharacter s_pEnemies[ENEMY_COUNT];
 
+static tCharacter *s_pSortedChars[SORTED_CHARS_COUNT];
+
 static tBitMap *s_pBulletFrames;
 static tBitMap *s_pBulletMasks;
 
@@ -271,6 +275,24 @@ static inline tFix10p6 fix10p6FromUword(UWORD x) {return x << 6; }
 static inline tFix10p6 fix10p6ToUword(UWORD x) {return x >> 6; }
 #define fix10p6Sin(x) s_pSin10p6[x]
 #define fix10p6Cos(x) (((x) < 3 * ANGLE_90) ? fix10p6Sin(ANGLE_90 + (x)) : fix10p6Sin((x) - (3 * ANGLE_90)))
+
+static void gameSetTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
+	blitCopyAligned(
+		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
+		s_pBufferMain->pBack, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		MAP_TILE_SIZE, MAP_TILE_SIZE
+	);
+	blitCopyAligned(
+		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
+		s_pBufferMain->pFront, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		MAP_TILE_SIZE, MAP_TILE_SIZE
+	);
+	blitCopyAligned(
+		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
+		s_pPristineBuffer, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		MAP_TILE_SIZE, MAP_TILE_SIZE
+	);
+}
 
 __attribute__((always_inline))
 static inline UBYTE isPositionCollidingWithCharacter(
@@ -478,24 +500,6 @@ void bobOnEnd(void) {
 	projectileDrawNext();
 }
 
-static void setTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
-	blitCopyAligned(
-		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		s_pBufferMain->pBack, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
-		MAP_TILE_SIZE, MAP_TILE_SIZE
-	);
-	blitCopyAligned(
-		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		s_pBufferMain->pFront, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
-		MAP_TILE_SIZE, MAP_TILE_SIZE
-	);
-	blitCopyAligned(
-		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		s_pPristineBuffer, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
-		MAP_TILE_SIZE, MAP_TILE_SIZE
-	);
-}
-
 static void cameraCenterAtOptimized(
 	tCameraManager *pManager, ULONG ulCenterX, ULONG ulCenterY
 ) {
@@ -583,6 +587,7 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 __attribute__((always_inline))
 static inline void playerStartReloadWeapon(void) {
 	s_sPlayer.ubReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.eWeapon];
+	s_sPlayer.ubReloadCooldown = 1;
 	s_sPlayer.ubAmmo = s_pWeaponAmmo[s_sPlayer.eWeapon];
 	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
@@ -664,24 +669,24 @@ static void playerShootWeapon(UBYTE ubAimAngle) {
 }
 
 static void gameStart(void) {
-	setTile(0, 0, 0);
-	setTile(1, MAP_TILES_X - 1, 0);
-	setTile(2, 0, MAP_TILES_Y - 1);
-	setTile(3, MAP_TILES_X - 1, MAP_TILES_Y - 1);
+	gameSetTile(0, 0, 0);
+	gameSetTile(1, MAP_TILES_X - 1, 0);
+	gameSetTile(2, 0, MAP_TILES_Y - 1);
+	gameSetTile(3, MAP_TILES_X - 1, MAP_TILES_Y - 1);
 
 	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
-		setTile(randUwMinMax(&g_sRand, 4, 6), ubX, 0);
-		setTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1);
+		gameSetTile(randUwMinMax(&g_sRand, 4, 6), ubX, 0);
+		gameSetTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1);
 	}
 
 	for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
-		setTile(randUwMinMax(&g_sRand, 7, 9), 0, ubY);
-		setTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1, ubY);
+		gameSetTile(randUwMinMax(&g_sRand, 7, 9), 0, ubY);
+		gameSetTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1, ubY);
 	}
 
 	for(UBYTE ubX = 1; ubX < MAP_TILES_X - 1; ++ubX) {
 		for(UBYTE ubY = 1; ubY < MAP_TILES_Y - 1; ++ubY) {
-			setTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
+			gameSetTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
 		}
 	}
 
@@ -706,7 +711,9 @@ static void gameStart(void) {
 		s_pEnemies[i].ubFrameCooldown = 0;
 		s_pEnemies[i].ubAttackCooldown = 0;
 		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
+		s_pSortedChars[i] = &s_pEnemies[i];
 	}
+	s_pSortedChars[ENEMY_COUNT] = &s_sPlayer;
 
 	for(UBYTE i = 0; i < PROJECTILE_COUNT; ++i) {
 		s_pProjectiles[i].ubLife = 0;
@@ -715,6 +722,197 @@ static void gameStart(void) {
 	s_ubFreeProjectileCount = PROJECTILE_COUNT;
 	s_ulFrameCount = 0;
 	s_ulFrameWaitCount = 1;
+}
+
+__attribute__((always_inline))
+static inline void playerProcess(void) {
+	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
+	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
+
+	if(s_sPlayer.wHealth > 0) {
+		if(keyUse(KEY_1)) {
+			playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
+		}
+		else if(keyUse(KEY_2)) {
+			playerSetWeapon(WEAPON_KIND_SMG);
+		}
+		else if(keyUse(KEY_3)) {
+			playerSetWeapon(WEAPON_KIND_ASSAULT_RIFLE);
+		}
+		else if(keyUse(KEY_4)) {
+			playerSetWeapon(WEAPON_KIND_SHOTGUN);
+		}
+		else if(keyUse(KEY_5)) {
+			playerSetWeapon(WEAPON_KIND_SAWOFF);
+		}
+
+		UBYTE ubAimAngle = getAngleBetweenPoints( // 0 is right, going clockwise
+			s_sPlayer.sPos.uwX - s_pBufferMain->pCamera->uPos.uwX,
+			s_sPlayer.sPos.uwY - s_pBufferMain->pCamera->uPos.uwY,
+			uwMouseX, uwMouseY - HUD_SIZE_Y
+		);
+
+		BYTE bDeltaX = 0;
+		BYTE bDeltaY = 0;
+		if(keyCheck(KEY_W)) {
+			bDeltaY = -3;
+		}
+		else if(keyCheck(KEY_S)) {
+			bDeltaY = 3;
+		}
+		if(keyCheck(KEY_A)) {
+			bDeltaX = -3;
+		}
+		else if(keyCheck(KEY_D)) {
+			bDeltaX = 3;
+		}
+		if(bDeltaX || bDeltaY) {
+			characterTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
+			if(s_sPlayer.ubFrameCooldown >= 1) {
+				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
+				if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
+					s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+				}
+				s_sPlayer.ubFrameCooldown = 0;
+			}
+			else {
+				++s_sPlayer.ubFrameCooldown;
+			}
+		}
+		else {
+			s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+			s_sPlayer.ubFrameCooldown = 0;
+		}
+
+		tDirection eDir;
+		if(ubAimAngle < ANGLE_45) {
+			eDir = DIRECTION_SE;
+		}
+		else if(ubAimAngle < ANGLE_45 + ANGLE_90) {
+			eDir = DIRECTION_S;
+		}
+		else if(ubAimAngle < ANGLE_180) {
+			eDir = DIRECTION_SW;
+		}
+		else if(ubAimAngle < ANGLE_180 + ANGLE_45) {
+			eDir = DIRECTION_NW;
+		}
+		else if(ubAimAngle < ANGLE_180 + ANGLE_45 + ANGLE_90) {
+			eDir = DIRECTION_N;
+		}
+		else {
+			eDir = DIRECTION_NE;
+		}
+
+		tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
+		bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
+		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
+		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
+
+		if(!s_sPlayer.ubAttackCooldown) {
+			if(!s_sPlayer.ubReloadCooldown) {
+				if(!s_sPlayer.ubAmmo) {
+					playerStartReloadWeapon();
+				}
+				else {
+					if(1 || mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
+						--s_sPlayer.ubAmmo;
+						playerShootWeapon(ubAimAngle);
+					}
+					else if(keyUse(KEY_R) && s_sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.eWeapon]) {
+						playerStartReloadWeapon();
+					}
+				}
+			}
+			else {
+				--s_sPlayer.ubReloadCooldown;
+			}
+		}
+		else {
+			--s_sPlayer.ubAttackCooldown;
+		}
+	}
+	else {
+		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
+	}
+	bobPush(&s_sPlayer.sBob);
+
+	s_pSpriteCursor->wX = uwMouseX - 4;
+	s_pSpriteCursor->wY = uwMouseY - 4;
+	spriteProcess(s_pSpriteCursor);
+	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
+
+	cameraCenterAtOptimized(s_pBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
+}
+
+__attribute__((always_inline))
+static inline void enemyProcess(tCharacter *pEnemy) {
+	BYTE bDeltaX, bDeltaY;
+	tDirection eDir;
+	if(pEnemy->wHealth > 0) {
+		WORD wDistanceToPlayerX = s_sPlayer.sPos.uwX - pEnemy->sPos.uwX;
+		WORD wDistanceToPlayerY = s_sPlayer.sPos.uwY - pEnemy->sPos.uwY;
+		if(wDistanceToPlayerX < 0) {
+			bDeltaX = -ENEMY_SPEED;
+			if(wDistanceToPlayerY < 0) {
+				bDeltaY = -ENEMY_SPEED;
+				eDir = DIRECTION_NW;
+				wDistanceToPlayerY = -wDistanceToPlayerY;
+			}
+			else {
+				bDeltaY = ENEMY_SPEED;
+				eDir = DIRECTION_SW;
+			}
+			wDistanceToPlayerX = -wDistanceToPlayerX;
+		}
+		else {
+			bDeltaX = ENEMY_SPEED;
+			if(wDistanceToPlayerY < 0) {
+				bDeltaY = -ENEMY_SPEED;
+				eDir = DIRECTION_NE;
+				wDistanceToPlayerX = -wDistanceToPlayerX;
+			}
+			else {
+				bDeltaY = ENEMY_SPEED;
+				eDir = DIRECTION_SE;
+			}
+	}
+
+		if(pEnemy->ubAttackCooldown == 0) {
+			if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
+				s_sPlayer.wHealth -= 5;
+				audioMixerPlaySfx(s_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
+				pEnemy->ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
+			}
+		}
+		else {
+			--pEnemy->ubAttackCooldown;
+		}
+
+		// if(0) {
+			characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
+		// }
+		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
+		bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
+	}
+	else {
+		s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
+		pEnemy->wHealth = ENEMY_HEALTH_MAX;
+		while(1) {
+			UWORD uwX = randUwMinMax(&g_sRand, 32, MAP_TILES_X * MAP_TILE_SIZE - 32);
+			UWORD uwY = randUwMinMax(&g_sRand, 32, MAP_TILES_Y * MAP_TILE_SIZE - 32);
+			if(s_pCollisionTiles[uwX / COLLISION_SIZE_X][uwY / COLLISION_SIZE_Y]) {
+				continue;
+			}
+			s_pCollisionTiles[uwX / COLLISION_SIZE_X][uwY / COLLISION_SIZE_Y] = pEnemy;
+			pEnemy->sPos.uwX = uwX;
+			pEnemy->sPos.uwY = uwY;
+			break;
+		}
+	}
+	pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
+	pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
+	bobPush(&pEnemy->sBob);
 }
 
 static void blitUnsafeCopyStain(
@@ -940,9 +1138,9 @@ static void gameGsCreate(void) {
 	s_pNextPushStain = &s_pPushStains[0];
 	s_pNextWaitStain = &s_pWaitStains[0];
 
-	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, 0, 0, 0, 0);
+	bobInit(&s_sPlayer.sBob, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, 1, s_pPlayerFrameOffsets[0][0].pPixels, s_pPlayerFrameOffsets[0][0].pMask, 32, 32);
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
-		bobInit(&s_pEnemies[i].sBob, ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_Y, 1, 0, 0, 0, 0);
+		bobInit(&s_pEnemies[i].sBob, ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_Y, 1, s_pEnemyFrameOffsets[0][0].pPixels, s_pEnemyFrameOffsets[0][0].pMask, 32, 32);
 	}
 
 	bobReallocateBuffers();
@@ -982,6 +1180,11 @@ static void gameGsLoop(void) {
 		statePop(g_pGameStateManager);
 		return;
 	}
+	if(keyUse(KEY_Q)) {
+		bobDiscardUndraw();
+		gameStart();
+		return;
+	}
 
 	s_pBackPlanes = s_pBufferMain->pBack->Planes[0];
 	s_pCurrentProjectile = &s_pProjectiles[0];
@@ -990,197 +1193,21 @@ static void gameGsLoop(void) {
 		projectileUndrawNext();
 	}
 
-	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
-	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
-
-	if(s_sPlayer.wHealth > 0) {
-		if(keyUse(KEY_1)) {
-			playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
-		}
-		else if(keyUse(KEY_2)) {
-			playerSetWeapon(WEAPON_KIND_SMG);
-		}
-		else if(keyUse(KEY_3)) {
-			playerSetWeapon(WEAPON_KIND_ASSAULT_RIFLE);
-		}
-		else if(keyUse(KEY_4)) {
-			playerSetWeapon(WEAPON_KIND_SHOTGUN);
-		}
-		else if(keyUse(KEY_5)) {
-			playerSetWeapon(WEAPON_KIND_SAWOFF);
-		}
-
-		UBYTE ubAimAngle = getAngleBetweenPoints( // 0 is right, going clockwise
-			s_sPlayer.sPos.uwX - s_pBufferMain->pCamera->uPos.uwX,
-			s_sPlayer.sPos.uwY - s_pBufferMain->pCamera->uPos.uwY,
-			uwMouseX, uwMouseY - HUD_SIZE_Y
-		);
-
-		BYTE bDeltaX = 0;
-		BYTE bDeltaY = 0;
-		if(keyCheck(KEY_W)) {
-			bDeltaY = -3;
-		}
-		else if(keyCheck(KEY_S)) {
-			bDeltaY = 3;
-		}
-		if(keyCheck(KEY_A)) {
-			bDeltaX = -3;
-		}
-		else if(keyCheck(KEY_D)) {
-			bDeltaX = 3;
-		}
-		if(bDeltaX || bDeltaY) {
-			characterTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
-			if(s_sPlayer.ubFrameCooldown >= 1) {
-				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
-				if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
-					s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
-				}
-				s_sPlayer.ubFrameCooldown = 0;
-			}
-			else {
-				++s_sPlayer.ubFrameCooldown;
-			}
+	tCharacter **pPrev = &s_pSortedChars[0];
+	for(UBYTE i = 0; i < SORTED_CHARS_COUNT; ++i) {
+		tCharacter *pChar = s_pSortedChars[i];
+		if(pChar == &s_sPlayer) {
+			playerProcess();
 		}
 		else {
-			s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
-			s_sPlayer.ubFrameCooldown = 0;
+			enemyProcess(pChar);
 		}
 
-		tDirection eDir;
-		if(ubAimAngle < ANGLE_45) {
-			eDir = DIRECTION_SE;
+		if(pChar->sPos.ulYX < (*pPrev)->sPos.ulYX) {
+			s_pSortedChars[i] = *pPrev;
+			*pPrev = pChar;
 		}
-		else if(ubAimAngle < ANGLE_45 + ANGLE_90) {
-			eDir = DIRECTION_S;
-		}
-		else if(ubAimAngle < ANGLE_180) {
-			eDir = DIRECTION_SW;
-		}
-		else if(ubAimAngle < ANGLE_180 + ANGLE_45) {
-			eDir = DIRECTION_NW;
-		}
-		else if(ubAimAngle < ANGLE_180 + ANGLE_45 + ANGLE_90) {
-			eDir = DIRECTION_N;
-		}
-		else {
-			eDir = DIRECTION_NE;
-		}
-
-		tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
-		bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
-		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
-		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
-
-		if(!s_sPlayer.ubAttackCooldown) {
-			if(!s_sPlayer.ubReloadCooldown) {
-				if(!s_sPlayer.ubAmmo) {
-					playerStartReloadWeapon();
-				}
-				else {
-					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-						--s_sPlayer.ubAmmo;
-						playerShootWeapon(ubAimAngle);
-					}
-					else if(keyUse(KEY_R) && s_sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.eWeapon]) {
-						playerStartReloadWeapon();
-					}
-				}
-			}
-			else {
-				--s_sPlayer.ubReloadCooldown;
-			}
-		}
-		else {
-			--s_sPlayer.ubAttackCooldown;
-		}
-	}
-	else {
-		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
-		if(keyUse(KEY_R)) {
-			bobDiscardUndraw();
-			gameStart();
-			return;
-		}
-	}
-	bobPush(&s_sPlayer.sBob);
-
-	s_pSpriteCursor->wX = uwMouseX - 4;
-	s_pSpriteCursor->wY = uwMouseY - 4;
-	spriteProcess(s_pSpriteCursor);
-	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
-
-	cameraCenterAtOptimized(s_pBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
-
-	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
-		BYTE bDeltaX, bDeltaY;
-		tDirection eDir;
-		tCharacter *pEnemy = &s_pEnemies[i];
-		if(pEnemy->wHealth > 0) {
-			WORD wDistanceToPlayerX = s_sPlayer.sPos.uwX - pEnemy->sPos.uwX;
-			WORD wDistanceToPlayerY = s_sPlayer.sPos.uwY - pEnemy->sPos.uwY;
-			if(wDistanceToPlayerX < 0) {
-				bDeltaX = -ENEMY_SPEED;
-				if(wDistanceToPlayerY < 0) {
-					bDeltaY = -ENEMY_SPEED;
-					eDir = DIRECTION_NW;
-					wDistanceToPlayerY = -wDistanceToPlayerY;
-				}
-				else {
-					bDeltaY = ENEMY_SPEED;
-					eDir = DIRECTION_SW;
-				}
-				wDistanceToPlayerX = -wDistanceToPlayerX;
-			}
-			else {
-				bDeltaX = ENEMY_SPEED;
-				if(wDistanceToPlayerY < 0) {
-					bDeltaY = -ENEMY_SPEED;
-					eDir = DIRECTION_NE;
-					wDistanceToPlayerX = -wDistanceToPlayerX;
-				}
-				else {
-					bDeltaY = ENEMY_SPEED;
-					eDir = DIRECTION_SE;
-				}
-			}
-
-			if(pEnemy->ubAttackCooldown == 0) {
-				if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
-					s_sPlayer.wHealth -= 5;
-					audioMixerPlaySfx(s_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
-					pEnemy->ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
-				}
-			}
-			else {
-				--pEnemy->ubAttackCooldown;
-			}
-
-			// if(0) {
-				characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
-			// }
-			tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
-			bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
-		}
-		else {
-			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
-			pEnemy->wHealth = ENEMY_HEALTH_MAX;
-			while(1) {
-				UWORD uwX = randUwMinMax(&g_sRand, 32, MAP_TILES_X * MAP_TILE_SIZE - 32);
-				UWORD uwY = randUwMinMax(&g_sRand, 32, MAP_TILES_Y * MAP_TILE_SIZE - 32);
-				if(s_pCollisionTiles[uwX / COLLISION_SIZE_X][uwY / COLLISION_SIZE_Y]) {
-					continue;
-				}
-				s_pCollisionTiles[uwX / COLLISION_SIZE_X][uwY / COLLISION_SIZE_Y] = pEnemy;
-				pEnemy->sPos.uwX = uwX;
-				pEnemy->sPos.uwY = uwY;
-				break;
-			}
-		}
-		pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
-		pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
-		bobPush(&pEnemy->sBob);
+		pPrev = &s_pSortedChars[i];
 	}
 
 	s_pCurrentProjectile = &s_pProjectiles[0];

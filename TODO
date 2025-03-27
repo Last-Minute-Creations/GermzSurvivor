@@ -34,6 +34,9 @@ Bare minimum:
 	✔ Add bloodstains @done(25-03-26)
 	✔ Fix projectile collision @done(25-03-26)
 	✔ Add consistent 25fps @done(25-03-26)
+	✔ Sort zombies & player @done(25-03-27)
+	☐ Respawn zombies off-screen
+	☐ Add zombie anti-clumping
 	☐ Add zombie kill anim
 	Add basic menu:
 		☐ New game
@@ -42,8 +45,6 @@ Bare minimum:
 		☐ About
 		☐ Exit
 		☐ In-game escape moves to main menu
-	☐ Sort zombies & player
-	☐ Respawn zombies off-screen
 	Add pickups:
 		☐ Medkit
 		☐ Instant reload
