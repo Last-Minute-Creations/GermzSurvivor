@@ -18,7 +18,6 @@ Bare minimum:
 		✔ Add HP bar on HUD @done(25-03-22)
 		✔ Damage the player @done(25-03-22)
 		✔ restart the game with R @done(25-03-22)
-		☐ Play death animation
 	Add weapons:
 		✔ Slow shot rifle (default weapon, small dmg, slow, low spray) @done(25-03-22)
 		✔ Shotgun (small angle) @done(25-03-22)
@@ -30,16 +29,22 @@ Bare minimum:
 		✔ Add reload on end of shooting @done(25-03-24)
 		✔ Add ammo indicator on HUD @done(25-03-24)
 		✔ Add reload on R @done(25-03-24)
-		☐ Add reload indicator on cursor
 	✔ Add bloodstains @done(25-03-26)
 	✔ Fix projectile collision @done(25-03-26)
 	✔ Add consistent 25fps @done(25-03-26)
 	✔ Sort zombies & player @done(25-03-27)
 	Better zombie spawning:
 		✔ Add 32px margin on every side @done(25-03-27)
-		☐ Respawn zombies off-screen in vincity of player
+		✔ Respawn zombies off-screen in vincity of player @done(25-03-27)
+	Movement speed ratio:
+		☐ Store speed with delta/delay ratio r=delta/(delay+1), player default 1/0
+		☐ Slow down on hit
+		☐ Slow down on shoot
+		☐ Slow down on reload?
 	☐ Add zombie anti-clumping
 	☐ Add zombie kill anim
+	☐ Add death animation
+	☐ Add reload indicator on cursor
 	Add basic menu:
 		☐ New game
 		☐ How to play
@@ -70,7 +75,7 @@ Nice to have:
 	☐ Add intro
 	☐ Scale zombies with exp
 		☐ Increase health
-		☐ Increase speed with delta/delay ratio r=delta/(delay+1), min 1/1 (r=0.5), max 2/0 (r=2.0)
+		☐ Increase speed, min 1/1 (r=0.5), max 2/0 (r=2.0)
 
 Optimizations:
 	✔ Precalculate weapon attack pattern randomization @done(25-03-22)

@@ -82,6 +82,9 @@
 
 #define COLLISION_SIZE_X 8
 #define COLLISION_SIZE_Y 8
+#define COLLISION_LOOKUP_SIZE_X (MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X)
+#define COLLISION_LOOKUP_SIZE_Y (MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y)
+#define RESPAWN_SLOTS_PER_POSITION 4
 
 #define PLAYER_BOB_SIZE_X 32
 #define PLAYER_BOB_SIZE_Y 32
@@ -239,9 +242,8 @@ static const UBYTE s_pWeaponReloadCooldowns[] = {
 
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
 
-#define COLLISION_LOOKUP_SIZE_X (MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X)
-#define COLLISION_LOOKUP_SIZE_Y (MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y)
 static tCharacter *s_pCollisionTiles[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y];
+static tUwCoordYX s_pRespawnSlots[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y][RESPAWN_SLOTS_PER_POSITION];
 
 static tProjectile s_pProjectiles[PROJECTILE_COUNT];
 static tProjectile *s_pFreeProjectiles[PROJECTILE_COUNT];
@@ -591,7 +593,7 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 __attribute__((always_inline))
 static inline void playerStartReloadWeapon(void) {
 	s_sPlayer.ubReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.eWeapon];
-	s_sPlayer.ubReloadCooldown = 1;
+	// s_sPlayer.ubReloadCooldown = 1;
 	s_sPlayer.ubAmmo = s_pWeaponAmmo[s_sPlayer.eWeapon];
 	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
@@ -819,7 +821,7 @@ static inline void playerProcess(void) {
 					playerStartReloadWeapon();
 				}
 				else {
-					if(1 || mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
+					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
 						--s_sPlayer.ubAmmo;
 						playerShootWeapon(ubAimAngle);
 					}
@@ -898,25 +900,28 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 		// }
 		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
 		bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
+		pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
+		pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
+		bobPush(&pEnemy->sBob);
 	}
 	else {
+		// Try respawn
+		static UBYTE ubSpawnIndex = 0;
 		s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
-		pEnemy->wHealth = ENEMY_HEALTH_MAX;
-		while(1) {
-			UWORD uwX = randUwMinMax(&g_sRand, 32, MAP_TILES_X * MAP_TILE_SIZE - 32);
-			UWORD uwY = randUwMinMax(&g_sRand, 32, MAP_TILES_Y * MAP_TILE_SIZE - 32);
-			if(s_pCollisionTiles[uwX / COLLISION_SIZE_X][uwY / COLLISION_SIZE_Y]) {
-				continue;
+		for(UBYTE i = 0; i < RESPAWN_SLOTS_PER_POSITION; ++i) {
+			tUwCoordYX sSpawn = s_pRespawnSlots[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y][ubSpawnIndex];
+			ubSpawnIndex = (ubSpawnIndex + 1) & 3;
+			if(!s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y]) {
+				pEnemy->wHealth = ENEMY_HEALTH_MAX;
+				s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y] = pEnemy;
+				pEnemy->sPos = sSpawn;
+				return;
 			}
-			s_pCollisionTiles[uwX / COLLISION_SIZE_X][uwY / COLLISION_SIZE_Y] = pEnemy;
-			pEnemy->sPos.uwX = uwX;
-			pEnemy->sPos.uwY = uwY;
-			break;
 		}
+		// Failsafe to prevent trashing collision map
+		pEnemy->sPos.uwX = 0;
+		pEnemy->sPos.uwY = 0;
 	}
-	pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
-	pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
-	bobPush(&pEnemy->sBob);
 }
 
 static void blitUnsafeCopyStain(
@@ -1151,6 +1156,34 @@ static void gameGsCreate(void) {
 	gameMathInit();
 	for(UBYTE ubAngle = 0; ubAngle < GAME_MATH_ANGLE_COUNT; ++ubAngle) {
 		s_pSin10p6[ubAngle] = csin(ubAngle) >> 10;
+	}
+
+	for(UBYTE ubX = 0; ubX < COLLISION_LOOKUP_SIZE_X; ++ubX) {
+		for(UBYTE ubY = 0; ubY < COLLISION_LOOKUP_SIZE_Y; ++ubY) {
+			ULONG ulCenterX = ubX * COLLISION_SIZE_X;
+			ULONG ulCenterY = ubY * COLLISION_SIZE_Y;
+			LONG lLeft = ulCenterX - MAIN_VPORT_SIZE_X / 2;
+			LONG lTop = ulCenterY - (MAIN_VPORT_SIZE_Y - HUD_SIZE_Y) / 2;
+			lLeft = CLAMP(lLeft, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_X - MAP_MARGIN_TILES) * MAP_TILE_SIZE - MAIN_VPORT_SIZE_X);
+			lTop = CLAMP(lTop, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_Y - MAP_MARGIN_TILES) * MAP_TILE_SIZE - MAIN_VPORT_SIZE_Y);
+
+			s_pRespawnSlots[ubX][ubY][0] = (tUwCoordYX) {
+				.uwX = CLAMP(lLeft - ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_X, MAP_TILES_X * MAP_TILE_SIZE - ENEMY_BOB_SIZE_X),
+				.uwY = ulCenterY,
+			};
+			s_pRespawnSlots[ubX][ubY][1] = (tUwCoordYX) {
+				.uwX = CLAMP(lLeft + MAIN_VPORT_SIZE_X + ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_X, MAP_TILES_X * MAP_TILE_SIZE - ENEMY_BOB_SIZE_X),
+				.uwY = ulCenterY,
+			};
+			s_pRespawnSlots[ubX][ubY][2] = (tUwCoordYX) {
+				.uwX = ulCenterX,
+				.uwY = CLAMP(lTop - ENEMY_BOB_SIZE_Y, ENEMY_BOB_SIZE_Y, MAP_TILES_Y * MAP_TILE_SIZE - ENEMY_BOB_SIZE_Y),
+			};
+			s_pRespawnSlots[ubX][ubY][3] = (tUwCoordYX) {
+				.uwX = ulCenterX,
+				.uwY = CLAMP(lTop + MAIN_VPORT_SIZE_Y + ENEMY_BOB_SIZE_Y, ENEMY_BOB_SIZE_Y, MAP_TILES_Y * MAP_TILE_SIZE - ENEMY_BOB_SIZE_Y),
+			};
+		}
 	}
 
 	s_pBmCrosshair = bitmapCreateFromPath("data/cursor_crosshair.bm", 0);
