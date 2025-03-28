@@ -14,6 +14,7 @@
 #include <ace/contrib/managers/audio_mixer.h>
 #include <ace/utils/palette.h>
 #include <ace/utils/chunky.h>
+#include <ace/utils/string.h>
 #include "survivor.h"
 #include "game_math.h"
 
@@ -40,6 +41,7 @@
 #define WEAPON_COOLDOWN_SHOTGUN 18
 #define WEAPON_COOLDOWN_SAWOFF 18
 
+#define DIGIT_WIDTH_MAX 5
 #define HUD_SIZE_Y 16
 #define HUD_WEAPON_SIZE_X 48
 #define HUD_WEAPON_SIZE_Y 15
@@ -52,6 +54,24 @@
 #define HUD_AMMO_FIELD_SIZE_X (HUD_AMMO_BULLET_COUNT_X * (HUD_AMMO_BULLET_SIZE_X + 1) - 1)
 #define HUD_AMMO_FIELD_SIZE_Y (HUD_AMMO_BULLET_COUNT_Y * (HUD_AMMO_BULLET_SIZE_Y + 1) - 1)
 #define HUD_AMMO_COUNT_FORCE_REDRAW 0xFF
+#define HUD_HEALTH_BAR_OFFSET_X 200
+#define HUD_HEALTH_BAR_OFFSET_Y 12
+#define HUD_HEALTH_BAR_SIZE_X PLAYER_HEALTH_MAX
+#define HUD_HEALTH_BAR_SIZE_Y 3
+#define HUD_SCORE_DIGITS 10
+#define HUD_SCORE_TEXT_X 200
+#define HUD_SCORE_TEXT_Y 0
+#define HUD_SCORE_TEXT_SIZE_X (HUD_SCORE_DIGITS * (DIGIT_WIDTH_MAX + 1) - 1)
+#define HUD_SCORE_TEXT_SIZE_Y 8
+#define HUD_SCORE_BAR_OFFSET_X 200
+#define HUD_SCORE_BAR_OFFSET_Y 8
+#define HUD_SCORE_BAR_SIZE_X 100
+#define HUD_SCORE_BAR_SIZE_Y 3
+#define HUD_LEVEL_DIGITS 3
+#define HUD_LEVEL_TEXT_X (HUD_SCORE_TEXT_X + HUD_SCORE_TEXT_SIZE_X + 10)
+#define HUD_LEVEL_TEXT_Y HUD_SCORE_TEXT_Y
+#define HUD_LEVEL_TEXT_SIZE_X (HUD_LEVEL_DIGITS * (DIGIT_WIDTH_MAX + 1) - 1)
+#define HUD_LEVEL_TEXT_SIZE_Y HUD_SCORE_TEXT_SIZE_Y
 
 #define BULLET_OFFSET_Y_SHELL 0
 #define BULLET_OFFSET_Y_BULLET 6
@@ -79,12 +99,16 @@
 #define COLOR_HUD_BG 6
 #define COLOR_BAR_BG 10
 #define COLOR_RED 16
+#define COLOR_HUD_HP 23
+#define COLOR_HUD_SCORE 20
 
 #define COLLISION_SIZE_X 8
 #define COLLISION_SIZE_Y 8
 #define COLLISION_LOOKUP_SIZE_X (MAP_TILES_X * MAP_TILE_SIZE / COLLISION_SIZE_X)
 #define COLLISION_LOOKUP_SIZE_Y (MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y)
 #define RESPAWN_SLOTS_PER_POSITION 4
+
+#define HEALTH_DEAD (-32768)
 
 #define PLAYER_BOB_SIZE_X 32
 #define PLAYER_BOB_SIZE_Y 32
@@ -102,6 +126,7 @@
 #define ENEMY_ATTACK_COOLDOWN 15
 #define ENEMY_HEALTH_MAX 20
 #define ENEMY_SPEED 1
+#define ENEMY_SCORE 25
 
 #define ENEMY_COUNT 25
 #define PROJECTILE_COUNT 20
@@ -175,10 +200,14 @@ typedef struct tProjectile {
 } tProjectile;
 
 typedef enum tHudState {
-	HUD_STATE_DRAW_HEALTH,
+	HUD_STATE_DRAW_HEALTH_BAR,
 	HUD_STATE_DRAW_WEAPON,
 	HUD_STATE_DRAW_BULLETS,
-	HUD_STATE_END,
+	HUD_STATE_PREPARE_EXP_POINTS,
+	HUD_STATE_DRAW_EXP_POINTS,
+	HUD_STATE_DRAW_EXP_BAR,
+	HUD_STATE_PREPARE_LEVEL_NUM,
+	HUD_STATE_DRAW_LEVEL_NUM,
 } tHudState;
 
 static tView *s_pView;
@@ -196,11 +225,17 @@ static tRandManager g_sRand;
 static tSprite *s_pSpriteCursor;
 static volatile ULONG s_ulFrameCount;
 static ULONG s_ulFrameWaitCount;
+static tFont *s_pFont;
+static tTextBitMap *s_pLineBitmap;
 
 static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
 static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
 static tCharacter s_sPlayer;
+static ULONG s_ulScore;
+static ULONG s_ulPrevLevelScore;
+static ULONG s_ulNextLevelScore;
+static UBYTE s_ubScoreLevel;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
@@ -256,6 +291,9 @@ static BYTE s_pSpreadSide10[SPREAD_SIDE_COUNT];
 static tHudState s_eHudState;
 static UWORD s_uwHudHealth;
 static UBYTE s_ubHudAmmoCount;
+static ULONG s_ulHudScore;
+static ULONG s_ubHudBarPixel;
+static UBYTE s_ubHudLevel;
 static tUbCoordYX s_pHudBulletOffsets[WEAPON_MAX_BULLETS_IN_MAGAZINE];
 
 static tPtplayerSfx *s_pSfxRifle[2];
@@ -517,27 +555,29 @@ static void cameraCenterAtOptimized(
 
 static void hudProcess(void) {
 	switch(s_eHudState) {
-		case HUD_STATE_DRAW_HEALTH: {
+		case HUD_STATE_DRAW_HEALTH_BAR:
+			++s_eHudState;
 			UWORD uwCurrentHealth = s_sPlayer.wHealth;
 			if(s_uwHudHealth != uwCurrentHealth) {
 				if(uwCurrentHealth > s_uwHudHealth) {
-					blitRect(s_pBufferHud->pBack, 200 + s_uwHudHealth, 10, uwCurrentHealth - s_uwHudHealth, 4, COLOR_RED);
+					blitRect(s_pBufferHud->pBack, HUD_HEALTH_BAR_OFFSET_X + s_uwHudHealth, HUD_HEALTH_BAR_OFFSET_Y, uwCurrentHealth - s_uwHudHealth, HUD_HEALTH_BAR_SIZE_Y, COLOR_HUD_HP);
 				}
 				else {
-					blitRect(s_pBufferHud->pBack, 200 + uwCurrentHealth, 10, s_uwHudHealth - uwCurrentHealth, 4, COLOR_BAR_BG);
+					blitRect(s_pBufferHud->pBack, HUD_HEALTH_BAR_OFFSET_X + uwCurrentHealth, HUD_HEALTH_BAR_OFFSET_Y, s_uwHudHealth - uwCurrentHealth, HUD_HEALTH_BAR_SIZE_Y, COLOR_BAR_BG);
 				}
 				s_uwHudHealth = uwCurrentHealth;
+				break;
 			}
+			// fallthrough
+		case HUD_STATE_DRAW_WEAPON:
 			++s_eHudState;
-		} break;
-		case HUD_STATE_DRAW_WEAPON: {
 			blitCopyAligned(
 				s_pHudWeapons, 0, s_sPlayer.eWeapon * HUD_WEAPON_SIZE_Y,
 				s_pBufferHud->pBack, 0, 0, HUD_WEAPON_SIZE_X, HUD_WEAPON_SIZE_Y
 			);
+			// fallthrough
+		case HUD_STATE_DRAW_BULLETS:
 			++s_eHudState;
-		} break;
-		case HUD_STATE_DRAW_BULLETS: {
 			if(s_ubHudAmmoCount != s_sPlayer.ubAmmo) {
 				if(s_ubHudAmmoCount == HUD_AMMO_COUNT_FORCE_REDRAW) {
 					s_ubHudAmmoCount = 0;
@@ -573,12 +613,78 @@ static void hudProcess(void) {
 						HUD_AMMO_BULLET_SIZE_X, HUD_AMMO_BULLET_SIZE_Y, COLOR_HUD_BG
 					);
 				}
+				break;
 			}
+			// fallthrough
+		case HUD_STATE_PREPARE_EXP_POINTS:
+			if(s_ulHudScore != s_ulScore) {
+				s_ulHudScore = s_ulScore;
+				++s_eHudState;
+				char szScore[sizeof("4294967295")];
+				stringDecimalFromULong(s_ulScore, szScore);
+				fontFillTextBitMap(s_pFont, s_pLineBitmap, szScore);
+				break;
+			}
+			else {
+				s_eHudState = 0; // skip to beginning
+				break;
+			}
+			// fallthrough
+		case HUD_STATE_DRAW_EXP_POINTS:
 			++s_eHudState;
-		} break;
-		case HUD_STATE_END:
-			s_eHudState = 0;
+			blitRect(
+				s_pBufferHud->pBack,
+				HUD_SCORE_TEXT_X, HUD_SCORE_TEXT_Y,
+				HUD_SCORE_TEXT_SIZE_X, HUD_SCORE_TEXT_SIZE_Y, COLOR_HUD_BG
+			);
+			fontDrawTextBitMap(
+				s_pBufferHud->pBack, s_pLineBitmap, HUD_SCORE_TEXT_X, HUD_SCORE_TEXT_Y,
+				COLOR_HUD_SCORE, FONT_COOKIE
+			);
 			break;
+		case HUD_STATE_DRAW_EXP_BAR:
+			++s_eHudState;
+			UBYTE ubNewHudBarPixel = (s_ulScore - s_ulPrevLevelScore) * HUD_SCORE_BAR_SIZE_X / (s_ulNextLevelScore - s_ulPrevLevelScore);
+			if(ubNewHudBarPixel > s_ubHudBarPixel) {
+				blitRect(
+					s_pBufferHud->pBack,
+					HUD_SCORE_BAR_OFFSET_X + s_ubHudBarPixel, HUD_SCORE_BAR_OFFSET_Y,
+					ubNewHudBarPixel - s_ubHudBarPixel, HUD_SCORE_BAR_SIZE_Y, COLOR_HUD_SCORE
+				);
+			}
+			else if(ubNewHudBarPixel < s_ubHudBarPixel) {
+				blitRect(
+					s_pBufferHud->pBack,
+					HUD_SCORE_BAR_OFFSET_X + ubNewHudBarPixel, HUD_SCORE_BAR_OFFSET_Y,
+					s_ubHudBarPixel - ubNewHudBarPixel, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
+				);
+			}
+			s_ubHudBarPixel = ubNewHudBarPixel;
+			break;
+		case HUD_STATE_PREPARE_LEVEL_NUM:
+			if(s_ubHudLevel != s_ubScoreLevel) {
+				++s_eHudState;
+				s_ubHudLevel = s_ubScoreLevel;
+				char szScore[sizeof("255")];
+				stringDecimalFromULong(s_ubScoreLevel, szScore);
+				fontFillTextBitMap(s_pFont, s_pLineBitmap, szScore);
+			}
+			else {
+				s_eHudState = 0; // skip to beginning
+			}
+			break;
+		case HUD_STATE_DRAW_LEVEL_NUM: {
+			s_eHudState = 0; // HUD_STATE_END
+			blitRect(
+				s_pBufferHud->pBack,
+				HUD_LEVEL_TEXT_X, HUD_LEVEL_TEXT_Y,
+				HUD_LEVEL_TEXT_SIZE_X, HUD_LEVEL_TEXT_SIZE_Y, COLOR_HUD_BG
+			);
+			fontDrawTextBitMap(
+				s_pBufferHud->pBack, s_pLineBitmap, HUD_LEVEL_TEXT_X, HUD_LEVEL_TEXT_Y,
+				COLOR_HUD_SCORE, FONT_COOKIE
+			);
+		}
 	}
 }
 
@@ -698,8 +804,20 @@ static void gameStart(void) {
 
 	s_uwHudHealth = 0;
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
-	s_eHudState = 0;
+	s_ulHudScore = 0;
+	s_ubHudLevel = 255;
+	s_ubHudBarPixel = 0;
+	s_eHudState = HUD_STATE_PREPARE_LEVEL_NUM;
+	blitRect(
+		s_pBufferHud->pBack,
+		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
+		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
+	);
 
+	s_ulScore = 0;
+	s_ulPrevLevelScore = 0;
+	s_ulNextLevelScore = 1024;
+	s_ubScoreLevel = 0;
 	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
 	s_sPlayer.sPos.uwX = 180;
 	s_sPlayer.sPos.uwY = 180;
@@ -905,22 +1023,34 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 		bobPush(&pEnemy->sBob);
 	}
 	else {
-		// Try respawn
-		static UBYTE ubSpawnIndex = 0;
-		s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
-		for(UBYTE i = 0; i < RESPAWN_SLOTS_PER_POSITION; ++i) {
-			tUwCoordYX sSpawn = s_pRespawnSlots[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y][ubSpawnIndex];
-			ubSpawnIndex = (ubSpawnIndex + 1) & 3;
-			if(!s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y]) {
-				pEnemy->wHealth = ENEMY_HEALTH_MAX;
-				s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y] = pEnemy;
-				pEnemy->sPos = sSpawn;
-				return;
+		if(pEnemy->wHealth != HEALTH_DEAD) {
+			pEnemy->wHealth = HEALTH_DEAD;
+			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
+			// Failsafe to prevent trashing collision map
+			pEnemy->sPos.uwX = 0;
+			pEnemy->sPos.uwY = 0;
+			s_ulScore += ENEMY_SCORE;
+			if(s_ulScore > s_ulNextLevelScore) {
+				s_ulPrevLevelScore = s_ulNextLevelScore;
+				s_ulNextLevelScore *= 2;
+				++s_ubScoreLevel;
 			}
 		}
-		// Failsafe to prevent trashing collision map
-		pEnemy->sPos.uwX = 0;
-		pEnemy->sPos.uwY = 0;
+		else {
+			// Try respawn
+			static UBYTE ubSpawnIndex = 0;
+
+			for(UBYTE i = 0; i < RESPAWN_SLOTS_PER_POSITION; ++i) {
+				tUwCoordYX sSpawn = s_pRespawnSlots[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y][ubSpawnIndex];
+				ubSpawnIndex = (ubSpawnIndex + 1) & 3;
+				if(!s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y]) {
+					pEnemy->wHealth = ENEMY_HEALTH_MAX;
+					s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y] = pEnemy;
+					pEnemy->sPos = sSpawn;
+					return;
+				}
+			}
+		}
 	}
 }
 
@@ -973,6 +1103,8 @@ static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
 	s_pHudWeapons = bitmapCreateFromPath("data/weapons.bm", 0);
+	s_pFont = fontCreateFromPath("data/uni54.fnt");
+	s_pLineBitmap = fontCreateTextBitMap(MAIN_VPORT_SIZE_X, s_pFont->uwHeight);
 
 	ULONG ulRawCopSize = 16 + simpleBufferGetRawCopperlistInstructionCount(GAME_BPP) * 2;
 	s_pView = viewCreate(0,
@@ -1323,6 +1455,8 @@ static void gameGsDestroy(void) {
 	bitmapDestroy(s_pPristineBuffer);
 	bitmapDestroy(s_pHudWeapons);
 	bitmapDestroy(s_pTileset);
+	fontDestroy(s_pFont);
+	fontDestroyTextBitMap(s_pLineBitmap);
 }
 
 tState g_sStateGame = {

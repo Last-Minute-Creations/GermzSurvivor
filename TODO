@@ -36,6 +36,13 @@ Bare minimum:
 	Better zombie spawning:
 		✔ Add 32px margin on every side @done(25-03-27)
 		✔ Respawn zombies off-screen in vincity of player @done(25-03-27)
+	Add score:
+		✔ Add exp @done(25-03-28)
+		✔ Display score on HUD @done(25-03-28)
+		✔ Add exp per enemy @done(25-03-28)
+		✔ Add level up curve @done(25-03-28)
+		✔ Display level count on HUD @done(25-03-28)
+		✔ Display level progress on HUD @done(25-03-28)
 	Movement speed ratio:
 		☐ Store speed with delta/delay ratio r=delta/(delay+1), player default 1/0
 		☐ Slow down on hit
@@ -43,7 +50,11 @@ Bare minimum:
 		☐ Slow down on reload?
 	☐ Add zombie anti-clumping
 	☐ Add zombie kill anim
-	☐ Add death animation
+	Animations, second pass:
+		☐ Add death animation
+		☐ Add zombie movement animation
+		☐ Add running while aiming animation
+		☐ Add shooting while aiming animation
 	☐ Add reload indicator on cursor
 	Add basic menu:
 		☐ New game
@@ -52,10 +63,12 @@ Bare minimum:
 		☐ About
 		☐ Exit
 		☐ In-game escape moves to main menu
+		☐ Add game over screen
+		☐ Add hi score entering
 	Add pickups:
 		☐ Medkit
 		☐ Instant reload
-		☐ Exp
+		☐ Exp points
 		☐ Weapons
 		☐ Display hover text
 		☐ Display beneath all monsters
@@ -65,7 +78,6 @@ Nice to have:
 	☐ Draw 2 bullets on hud at once if possible
 	☐ Add sound variations
 	Perks:
-		☐ Add level up curve
 		☐ Add perk selection
 		☐ Implement at least 10 perks
 	More pickups:
@@ -79,14 +91,10 @@ Nice to have:
 
 Optimizations:
 	✔ Precalculate weapon attack pattern randomization @done(25-03-22)
+	✘ Skip zombie draw when offscreen? @cancelled(25-03-28)
 	☐ Simplify projectile collision - remove check with edges in favor of dummy tiles
 	☐ Process two bullet undraws in one bob undraw and do something else in remaining calls?
-	☐ Skip zombie draw when offscreen?
-
-Score:
-	☐ Add exp
-	☐ Add game over screen
-	☐ Add hi score entering
+	☐ Low-height font for HUD score draw
 
 Perks to implement:
 	☐ Fast loader
