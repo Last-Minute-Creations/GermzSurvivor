@@ -44,15 +44,19 @@ Bare minimum:
 		✔ Display level count on HUD @done(25-03-28)
 		✔ Display level progress on HUD @done(25-03-28)
 	Movement speed ratio:
-		☐ Store speed with delta/delay ratio r=delta/(delay+1), player default 1/0
-		☐ Slow down on hit
-		☐ Slow down on shoot
-		☐ Slow down on reload?
+		✘ Store speed with delta/delay ratio r=delta/(delay+1), player default 1/0 @cancelled(25-03-28)
+		✘ Slowdown on hit @cancelled(25-03-28)
+		✘ Slowdown on shoot @cancelled(25-03-28)
+		✘ Slowdown cooldown for player @cancelled(25-03-28)
+		✘ Slowdown on reload? @cancelled(25-03-28)
+		✔ Speed up zombies after some levels @done(25-03-28)
+		✔ Increase zombie hp with each level @done(25-03-28)
 	☐ Add zombie anti-clumping
 	☐ Add zombie kill anim
 	Animations, second pass:
 		☐ Add death animation
 		☐ Add zombie movement animation
+		☐ Add zombie explode animation
 		☐ Add running while aiming animation
 		☐ Add shooting while aiming animation
 	☐ Add reload indicator on cursor

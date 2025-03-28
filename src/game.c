@@ -124,9 +124,11 @@
 #define ENEMY_BOB_OFFSET_X 4
 #define ENEMY_BOB_OFFSET_Y 15
 #define ENEMY_ATTACK_COOLDOWN 15
-#define ENEMY_HEALTH_MAX 20
-#define ENEMY_SPEED 1
+#define ENEMY_HEALTH_BASE 20
+#define ENEMY_HEALTH_ADD_PER_LEVEL 5
 #define ENEMY_SCORE 25
+#define ENEMY_SPEEDY_CHANCE_MAX 127
+#define ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL 10
 
 #define ENEMY_COUNT 25
 #define PROJECTILE_COUNT 20
@@ -187,6 +189,7 @@ typedef struct tCharacter {
 	UBYTE ubAttackCooldown;
 	UBYTE ubAmmo;
 	UBYTE ubReloadCooldown;
+	UBYTE ubSpeed;
 } tCharacter;
 
 typedef struct tProjectile {
@@ -236,6 +239,8 @@ static ULONG s_ulScore;
 static ULONG s_ulPrevLevelScore;
 static ULONG s_ulNextLevelScore;
 static UBYTE s_ubScoreLevel;
+static UBYTE s_ubHiSpeedChance;
+static UWORD s_uwEnemySpawnHealth;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
@@ -319,6 +324,18 @@ static inline tFix10p6 fix10p6FromUword(UWORD x) {return x << 6; }
 static inline tFix10p6 fix10p6ToUword(UWORD x) {return x >> 6; }
 #define fix10p6Sin(x) s_pSin10p6[x]
 #define fix10p6Cos(x) (((x) < 3 * ANGLE_90) ? fix10p6Sin(ANGLE_90 + (x)) : fix10p6Sin((x) - (3 * ANGLE_90)))
+
+__attribute__((always_inline))
+static inline void scoreAdd(ULONG ulScore) {
+	s_ulScore += ulScore;
+	if(s_ulScore > s_ulNextLevelScore) {
+		s_ulPrevLevelScore = s_ulNextLevelScore;
+		s_ulNextLevelScore *= 2;
+		++s_ubScoreLevel;
+		s_ubHiSpeedChance = MIN(s_ubHiSpeedChance + ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL, ENEMY_SPEEDY_CHANCE_MAX);
+		s_uwEnemySpawnHealth += ENEMY_HEALTH_ADD_PER_LEVEL;
+	}
+}
 
 static void gameSetTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
 	blitCopyAligned(
@@ -818,6 +835,8 @@ static void gameStart(void) {
 	s_ulPrevLevelScore = 0;
 	s_ulNextLevelScore = 1024;
 	s_ubScoreLevel = 0;
+	s_ubHiSpeedChance = 0;
+
 	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
 	s_sPlayer.sPos.uwX = 180;
 	s_sPlayer.sPos.uwY = 180;
@@ -827,13 +846,15 @@ static void gameStart(void) {
 	playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
 	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
 
+	s_uwEnemySpawnHealth = ENEMY_HEALTH_BASE;
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
-		s_pEnemies[i].wHealth = ENEMY_HEALTH_MAX;
+		s_pEnemies[i].wHealth = s_uwEnemySpawnHealth;
 		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
 		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
 		s_pEnemies[i].eFrame = 0;
 		s_pEnemies[i].ubFrameCooldown = 0;
 		s_pEnemies[i].ubAttackCooldown = 0;
+		s_pEnemies[i].ubSpeed = 1;
 		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
 		s_pSortedChars[i] = &s_pEnemies[i];
 	}
@@ -977,27 +998,27 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 		WORD wDistanceToPlayerX = s_sPlayer.sPos.uwX - pEnemy->sPos.uwX;
 		WORD wDistanceToPlayerY = s_sPlayer.sPos.uwY - pEnemy->sPos.uwY;
 		if(wDistanceToPlayerX < 0) {
-			bDeltaX = -ENEMY_SPEED;
+			bDeltaX = -pEnemy->ubSpeed;
 			if(wDistanceToPlayerY < 0) {
-				bDeltaY = -ENEMY_SPEED;
+				bDeltaY = -pEnemy->ubSpeed;
 				eDir = DIRECTION_NW;
 				wDistanceToPlayerY = -wDistanceToPlayerY;
 			}
 			else {
-				bDeltaY = ENEMY_SPEED;
+				bDeltaY = pEnemy->ubSpeed;
 				eDir = DIRECTION_SW;
 			}
 			wDistanceToPlayerX = -wDistanceToPlayerX;
 		}
 		else {
-			bDeltaX = ENEMY_SPEED;
+			bDeltaX = pEnemy->ubSpeed;
 			if(wDistanceToPlayerY < 0) {
-				bDeltaY = -ENEMY_SPEED;
+				bDeltaY = -pEnemy->ubSpeed;
 				eDir = DIRECTION_NE;
 				wDistanceToPlayerX = -wDistanceToPlayerX;
 			}
 			else {
-				bDeltaY = ENEMY_SPEED;
+				bDeltaY = pEnemy->ubSpeed;
 				eDir = DIRECTION_SE;
 			}
 	}
@@ -1029,12 +1050,7 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 			// Failsafe to prevent trashing collision map
 			pEnemy->sPos.uwX = 0;
 			pEnemy->sPos.uwY = 0;
-			s_ulScore += ENEMY_SCORE;
-			if(s_ulScore > s_ulNextLevelScore) {
-				s_ulPrevLevelScore = s_ulNextLevelScore;
-				s_ulNextLevelScore *= 2;
-				++s_ubScoreLevel;
-			}
+			scoreAdd(ENEMY_SCORE);
 		}
 		else {
 			// Try respawn
@@ -1044,9 +1060,10 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 				tUwCoordYX sSpawn = s_pRespawnSlots[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y][ubSpawnIndex];
 				ubSpawnIndex = (ubSpawnIndex + 1) & 3;
 				if(!s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y]) {
-					pEnemy->wHealth = ENEMY_HEALTH_MAX;
+					pEnemy->wHealth = s_uwEnemySpawnHealth;
 					s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y] = pEnemy;
 					pEnemy->sPos = sSpawn;
+					pEnemy->ubSpeed = (randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) ? 2 : 1;
 					return;
 				}
 			}
