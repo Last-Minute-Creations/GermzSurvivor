@@ -1037,6 +1037,17 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 		// if(0) {
 			characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
 		// }
+		if(!pEnemy->ubFrameCooldown) {
+			pEnemy->ubFrameCooldown = 1;
+		}
+		else {
+			pEnemy->ubFrameCooldown = 0;
+			pEnemy->eFrame = (pEnemy->eFrame + 1);
+			if(pEnemy->eFrame > PLAYER_FRAME_WALK_8) {
+				pEnemy->eFrame = PLAYER_FRAME_WALK_1;
+			}
+		}
+
 		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
 		bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
 		pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;

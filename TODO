@@ -49,17 +49,18 @@ Bare minimum:
 		✘ Slowdown on shoot @cancelled(25-03-28)
 		✘ Slowdown cooldown for player @cancelled(25-03-28)
 		✘ Slowdown on reload? @cancelled(25-03-28)
+	Scale zombies with exp:
 		✔ Speed up zombies after some levels @done(25-03-28)
 		✔ Increase zombie hp with each level @done(25-03-28)
-	☐ Add zombie anti-clumping
-	☐ Add zombie kill anim
 	Animations, second pass:
+		✔ Add zombie movement animation @done(25-03-28)
 		☐ Add death animation
-		☐ Add zombie movement animation
 		☐ Add zombie explode animation
 		☐ Add running while aiming animation
 		☐ Add shooting while aiming animation
-	☐ Add reload indicator on cursor
+	Cursor refinements:
+		☐ Improve visibility of cursor
+		☐ Add reload indicator on cursor
 	Add basic menu:
 		☐ New game
 		☐ How to play
@@ -79,6 +80,7 @@ Bare minimum:
 		☐ Dissipate after some time
 
 Nice to have:
+	☐ Add zombie anti-clumping
 	☐ Draw 2 bullets on hud at once if possible
 	☐ Add sound variations
 	Perks:
@@ -89,9 +91,6 @@ Nice to have:
 		☐ Stronger bullets
 	☐ Add pause screen - resume, exit to main menu
 	☐ Add intro
-	☐ Scale zombies with exp
-		☐ Increase health
-		☐ Increase speed, min 1/1 (r=0.5), max 2/0 (r=2.0)
 
 Optimizations:
 	✔ Precalculate weapon attack pattern randomization @done(25-03-22)
@@ -99,6 +98,7 @@ Optimizations:
 	☐ Simplify projectile collision - remove check with edges in favor of dummy tiles
 	☐ Process two bullet undraws in one bob undraw and do something else in remaining calls?
 	☐ Low-height font for HUD score draw
+	☐ Speed chance rand table
 
 Perks to implement:
 	☐ Fast loader
