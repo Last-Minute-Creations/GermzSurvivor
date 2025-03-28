@@ -67,6 +67,13 @@ file(MAKE_DIRECTORY ${GEN_DIR})
 file(GLOB COPY_FILES ${RES_DIR}/copied/*)
 file(COPY ${COPY_FILES} DESTINATION ${DATA_DIR})
 
+#-------------------------------------------------------------------------- FONT
+
+convertFont(
+	TARGET ${GAME_EXECUTABLE}
+	SOURCE ${RES_DIR}/uni54 DESTINATION ${DATA_DIR}/uni54.fnt
+)
+
 #----------------------------------------------------------------------- PALETTE
 
 file(GLOB PALETTE_SPRITE ${RES_DIR}/sprite.plt)
