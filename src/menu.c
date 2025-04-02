@@ -6,6 +6,7 @@
 #include <ace/managers/mouse.h>
 #include <ace/managers/game.h>
 #include <ace/managers/key.h>
+#include <ace/utils/string.h>
 #include "comm/comm.h"
 #include "comm/button.h"
 #include "survivor.h"
@@ -20,6 +21,51 @@ typedef enum tMenuButton {
 	MENU_BUTTON_CREDITS,
 	MENU_BUTTON_QUIT,
 } tMenuButton;
+
+static void menuCreditsGsCreate(void);
+static void menuCreditsGsLoop(void);
+static tState s_sStateMenuCredits = {.cbCreate = menuCreditsGsCreate, .cbLoop = menuCreditsGsLoop};
+
+static const char * const s_pCreditsLines[] = {
+	"GermZ Survivor by Last Minute Creations",
+	"lastminutecreations.itch.io/germz-survivor",
+	"",
+	"Created for RAM#3 Gamedev Competition",
+	"",
+	"Beorning: sounds",
+	"Luc3k: music",
+	"KaiN: code, game design",
+	"Softiron: graphics",
+	"",
+	"Made with Amiga C Engine",
+	"github.com/AmigaPorts/ACE",
+	"",
+	"Thanks for playing!"
+};
+
+static void menuCreditsGsCreate(void) {
+	commEraseAll();
+	UWORD uwOffsY = 0;
+	UBYTE ubLineHeight = commGetLineHeight() - 2;
+	for(UBYTE i = 0; i < ARRAY_SIZE(s_pCreditsLines); ++i) {
+		if(stringIsEmpty(s_pCreditsLines[i])) {
+			uwOffsY += ubLineHeight;
+		}
+		else {
+			uwOffsY += commDrawMultilineText(s_pCreditsLines[i], 0, uwOffsY) * ubLineHeight;
+		}
+	}
+}
+
+static void menuCreditsGsLoop(void) {
+	if(mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
+		statePop(g_pGameStateManager);
+		return;
+	}
+
+	gameProcessCursor(mouseGetX(MOUSE_PORT_1), mouseGetY(MOUSE_PORT_1));
+	vPortWaitForEnd(g_pGameBufferMain->sCommon.pVPort);
+}
 
 //-------------------------------------------------------------------- GAMESTATE
 
@@ -57,6 +103,7 @@ static void menuGsLoop(void) {
 			case MENU_BUTTON_SCORES:
 				break;
 			case MENU_BUTTON_CREDITS:
+				statePush(g_pGameStateManager, &s_sStateMenuCredits);
 				break;
 			case MENU_BUTTON_QUIT:
 				gameExit();
@@ -78,6 +125,12 @@ static void menuGsDestroy(void) {
 	copProcessBlocks();
 }
 
+static void menuGsResume(void) {
+	commEraseAll();
+	buttonDrawAll(commGetDisplayBuffer());
+}
+
 tState g_sStateMenu = {
-	.cbCreate = menuGsCreate, .cbLoop = menuGsLoop, .cbDestroy = menuGsDestroy
+	.cbCreate = menuGsCreate, .cbLoop = menuGsLoop, .cbDestroy = menuGsDestroy,
+	.cbResume = menuGsResume,
 };

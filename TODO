@@ -65,7 +65,7 @@ Bare minimum:
 		✔ New game @done(25-04-02)
 		☐ How to play
 		☐ High scores
-		☐ About
+		✔ Credits @done(25-04-02)
 		✔ Exit @done(25-04-02)
 		✔ In-game escape moves to main menu @done(25-04-02)
 		☐ Add game over screen
