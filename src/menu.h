@@ -9,4 +9,6 @@
 
 extern tState g_sStateMenu;
 
+void menuPush(UBYTE isDead);
+
 #endif // SURVIVOR_MENNU_H

@@ -25,6 +25,14 @@ extern tBitMap *g_pGamePristineBuffer;
 
 void gameStart(void);
 
+ULONG gameGetSurviveTime(void);
+
+ULONG gameGetKills(void);
+
+UBYTE gameGetLevel(void);
+
+ULONG gameGetExp(void);
+
 void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY);
 
 #endif // SURVIVOR_GAME_H

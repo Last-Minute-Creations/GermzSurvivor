@@ -21,6 +21,7 @@
 #include "menu.h"
 #include "hi_score.h"
 
+#define GAME_PLAYER_DEATH_COOLDOWN 50
 #define WEAPON_MAX_BULLETS_IN_MAGAZINE 30
 #define STAIN_FRAME_COUNT 3
 #define STAIN_FRAME_PRESET_COUNT 16
@@ -228,6 +229,7 @@ static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
 static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
 static tCharacter s_sPlayer;
 static ULONG s_ulScore;
+static ULONG s_ulKills;
 static ULONG s_ulPrevLevelScore;
 static ULONG s_ulNextLevelScore;
 static UBYTE s_ubScoreLevel;
@@ -253,6 +255,7 @@ static tPtplayerMod *s_pMod;
 static UBYTE s_ubBufferCurr;
 static tProjectile *s_pCurrentProjectile;
 static tFix10p6 s_pSin10p6[GAME_MATH_ANGLE_COUNT];
+static UBYTE s_ubDeathCooldown;
 
 static const UBYTE s_pBulletMaskFromX[] = {
 	BV(7), BV(6), BV(5), BV(4), BV(3), BV(2), BV(1), BV(0)
@@ -865,6 +868,7 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 			pEnemy->sPos.uwX = 0;
 			pEnemy->sPos.uwY = 0;
 			scoreAdd(ENEMY_SCORE);
+			++s_ulKills;
 		}
 		else {
 			// Try respawn
@@ -932,6 +936,23 @@ static void onVblank(
 
 //------------------------------------------------------------------- PUBLIC FNS
 
+ULONG gameGetSurviveTime(void) {
+	return s_ulFrameCount;
+}
+
+ULONG gameGetKills(void) {
+	return s_ulKills;
+}
+
+UBYTE gameGetLevel(void) {
+	return s_ubScoreLevel;
+}
+
+ULONG gameGetExp(void) {
+	return s_ulScore;
+}
+
+
 void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY) {
 	s_pSpriteCursor->wX = uwMouseX - GAME_CURSOR_OFFSET_X;
 	s_pSpriteCursor->wY = uwMouseY - GAME_CURSOR_OFFSET_Y;
@@ -960,6 +981,7 @@ void gameStart(void) {
 		}
 	}
 
+	s_ubDeathCooldown = GAME_PLAYER_DEATH_COOLDOWN;
 	s_uwHudHealth = 0;
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
 	s_ulHudScore = 0;
@@ -972,6 +994,7 @@ void gameStart(void) {
 		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
 	);
 
+	s_ulKills = 0;
 	s_ulScore = 0;
 	s_ulPrevLevelScore = 0;
 	s_ulNextLevelScore = 1024;
@@ -1017,7 +1040,7 @@ void gameStart(void) {
 }
 
 __attribute__((always_inline))
-static inline void playerProcess(void) {
+static inline UBYTE playerProcess(void) {
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
 
@@ -1126,12 +1149,20 @@ static inline void playerProcess(void) {
 	}
 	else {
 		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
+		if(s_ubDeathCooldown) {
+			--s_ubDeathCooldown;
+		}
+		else {
+			menuPush(1);
+			return 1;
+		}
 	}
 	bobPush(&s_sPlayer.sBob);
 
 	gameProcessCursor(uwMouseX, uwMouseY);
 
 	cameraCenterAtOptimized(g_pGameBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
+	return 0;
 }
 
 //-------------------------------------------------------------------- GAMESTATE
@@ -1385,7 +1416,7 @@ static void gameGsCreate(void) {
 	ptplayerLoadMod(s_pMod, 0, 0);
 	ptplayerEnableMusic(1);
 	logBlockEnd("gameGsCreate()");
-	statePush(g_pGameStateManager, &g_sStateMenu);
+	menuPush(0);
 }
 
 __attribute__((always_inline))
@@ -1415,7 +1446,9 @@ static void gameGsLoop(void) {
 	for(UBYTE i = 0; i < SORTED_CHARS_COUNT; ++i) {
 		tCharacter *pChar = s_pSortedChars[i];
 		if(pChar == &s_sPlayer) {
-			playerProcess();
+			if(playerProcess()) {
+				return;
+			}
 		}
 		else {
 			enemyProcess(pChar);

@@ -19,23 +19,23 @@
 #define SCORE_RESULT_MSG_MAX 40
 
 typedef struct tHiScore {
-	LONG lScore;
+	ULONG ulScore;
 	char szName[SCORE_NAME_LENGTH];
 } tHiScore;
 
 static tHiScore s_pScores[SCORE_COUNT];
 
 static tHiScore s_pPrevScores[SCORE_COUNT] = {
-	{.lScore = 10000, .szName = "Bestest"},
-	{.lScore = 9000,  .szName = "Best"},
-	{.lScore = 8000,  .szName = "Better"},
-	{.lScore = 7000,  .szName = "Good"},
-	{.lScore = 6000,  .szName = "Moderate"},
-	{.lScore = 5000,  .szName = "Bad"},
-	{.lScore = 4000,  .szName = "Awful"},
-	{.lScore = 3000,  .szName = "Too"},
-	{.lScore = 2000,  .szName = "Small"},
-	{.lScore = 1000,  .szName = "Score"},
+	{.ulScore = 100, .szName = "Bestest"},
+	{.ulScore = 90,  .szName = "Best"},
+	{.ulScore = 80,  .szName = "Better"},
+	{.ulScore = 70,  .szName = "Good"},
+	{.ulScore = 60,  .szName = "Moderate"},
+	{.ulScore = 50,  .szName = "Bad"},
+	{.ulScore = 40,  .szName = "Awful"},
+	{.ulScore = 30,  .szName = "Too"},
+	{.ulScore = 20,  .szName = "Small"},
+	{.ulScore = 10,  .szName = "Score"},
 };
 
 static UBYTE s_ubNewNameLength;
@@ -92,7 +92,7 @@ static void hiScoreDrawPosition(UBYTE ubPos) {
 	);
 
 	// Score count
-	stringDecimalFromULong(s_pScores[ubPos].lScore, szBfr);
+	stringDecimalFromULong(s_pScores[ubPos].ulScore, szBfr);
 	commDrawText(
 		COMM_DISPLAY_WIDTH - 16, uwY, szBfr,
 		FONT_LAZY | FONT_COOKIE | FONT_RIGHT | FONT_SHADOW, ubColor
@@ -191,14 +191,11 @@ UBYTE hiScoreIsEnteringNew(void) {
 	return s_isEnteringHiScore;
 }
 
-void hiScoreSetup(LONG lScore, const char *szResult) {
-	if(szResult) {
-		stringCopyLimited(szResult, s_szResultMsg, SCORE_RESULT_MSG_MAX);
-	}
+void hiScoreSetup(ULONG ulScore, UBYTE isPostGame) {
 	s_isEnteringHiScore = 0;
 	s_ubNewNameLength = 0;
 	for(UBYTE i = 0; i < SCORE_COUNT; ++i) {
-		if(s_pScores[i].lScore < lScore) {
+		if(s_pScores[i].ulScore < ulScore) {
 			s_isEnteringHiScore = 1;
 			s_isShift = 0;
 			s_isCursor = 0;
@@ -208,12 +205,23 @@ void hiScoreSetup(LONG lScore, const char *szResult) {
 			// Move worse score down
 			for(BYTE j = SCORE_COUNT-2; j >= s_ubNewScorePos; --j) {
 				stringCopy(s_pScores[j].szName, s_pScores[j+1].szName);
-				s_pScores[j+1].lScore = s_pScores[j].lScore;
+				s_pScores[j+1].ulScore = s_pScores[j].ulScore;
 			}
 			// Make room for new score
-			s_pScores[s_ubNewScorePos].lScore = lScore;
+			s_pScores[s_ubNewScorePos].ulScore = ulScore;
 			memset(s_pScores[s_ubNewScorePos].szName, '\0', SCORE_NAME_LENGTH);
 			break;
 		}
+	}
+	if(isPostGame) {
+		if(s_isEnteringHiScore) {
+			sprintf(s_szResultMsg, "New record!");
+		}
+		else {
+			sprintf(s_szResultMsg, "Score: %lu", ulScore);
+		}
+	}
+	else {
+		s_szResultMsg[0] = '\0';
 	}
 }

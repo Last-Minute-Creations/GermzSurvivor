@@ -68,8 +68,8 @@ Bare minimum:
 		✔ Credits @done(25-04-02)
 		✔ Exit @done(25-04-02)
 		✔ In-game escape moves to main menu @done(25-04-02)
-		☐ Add game over screen
-		☐ Add hi score entering
+		✔ Add game over screen @done(25-04-02)
+		✔ Add hi score entering @done(25-04-02)
 	Add pickups:
 		☐ Medkit
 		☐ Instant reload

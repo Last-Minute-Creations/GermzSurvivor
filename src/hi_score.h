@@ -11,7 +11,7 @@ void hiScoreEnteringProcess(void);
 
 UBYTE hiScoreIsEnteringNew(void);
 
-void hiScoreSetup(LONG lScore, const char *szResult);
+void hiScoreSetup(ULONG ulScore, UBYTE isPostGame);
 
 void hiScoreLoad(void);
 

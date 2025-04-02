@@ -47,6 +47,7 @@ static const char * const s_pCreditsLines[] = {
 };
 
 static void menuCreditsGsCreate(void) {
+	logBlockBegin("menuCreditsGsCreate()");
 	commEraseAll();
 	UWORD uwOffsY = 0;
 	UBYTE ubLineHeight = commGetLineHeight() - 2;
@@ -58,6 +59,7 @@ static void menuCreditsGsCreate(void) {
 			uwOffsY += commDrawMultilineText(s_pCreditsLines[i], 0, uwOffsY) * ubLineHeight;
 		}
 	}
+	logBlockEnd("menuCreditsGsCreate()");
 }
 
 static void menuCreditsGsLoop(void) {
@@ -87,6 +89,7 @@ static const char * const s_pHowtoLines[] = {
 };
 
 static void menuHowtoGsCreate(void) {
+	logBlockBegin("menuHowtoGsCreate()");
 	commEraseAll();
 	UWORD uwOffsY = 0;
 	UBYTE ubLineHeight = commGetLineHeight() - 2;
@@ -98,6 +101,7 @@ static void menuHowtoGsCreate(void) {
 			uwOffsY += commDrawMultilineText(s_pHowtoLines[i], 0, uwOffsY) * ubLineHeight;
 		}
 	}
+	logBlockEnd("menuHowtoGsBegin()");
 }
 
 static void menuHowtoGsLoop(void) {
@@ -117,9 +121,10 @@ static void menuScoreGsLoop(void);
 static tState s_sStateMenuScore = {.cbCreate = menuScoreGsCreate, .cbLoop = menuScoreGsLoop};
 
 static void menuScoreGsCreate(void) {
+	logBlockBegin("menuScoreGsCreate()");
 	commEraseAll();
-	hiScoreSetup(0, 0);
 	hiScoreDrawAll();
+	logBlockEnd("menuScoreGsCreate()");
 }
 
 static void menuScoreGsLoop(void) {
@@ -137,9 +142,91 @@ static void menuScoreGsLoop(void) {
 	vPortWaitForEnd(g_pGameBufferMain->sCommon.pVPort);
 }
 
+//---------------------------------------------------------------------- SUMMARY
+
+#define SUMMARY_LEFT_COLUMN_SIZE_X 80
+#define SUMMARY_LEFT_COLUMN_X (COMM_DISPLAY_WIDTH / 2 - SUMMARY_LEFT_COLUMN_SIZE_X)
+#define SUMMARY_RIGHT_COLUMN_SIZE_X 80
+#define SUMMARY_RIGHT_COLUMN_X (COMM_DISPLAY_WIDTH - SUMMARY_RIGHT_COLUMN_SIZE_X)
+
+static void menuSummaryGsCreate(void);
+static void menuSummaryGsLoop(void);
+static tState s_sStateMenuSummary = {.cbCreate = menuSummaryGsCreate, .cbLoop = menuSummaryGsLoop};
+
+static void menuSummaryGsCreate(void) {
+	logBlockBegin("menuSummaryGsCreate()");
+	commEraseAll();
+	UWORD uwOffsY = 0;
+	UBYTE ubLineHeight = commGetLineHeight() - 2;
+	commDrawText(
+		COMM_DISPLAY_WIDTH / 2, uwOffsY, "YOU WILL SERVE.",
+		FONT_COOKIE | FONT_HCENTER, COMM_DISPLAY_COLOR_TEXT_HOVER
+	);
+	uwOffsY += 2 * ubLineHeight;
+
+	char szBuffer[20];
+	ULONG ulTicks = gameGetSurviveTime();
+	ulTicks /= 50;
+	UBYTE ubMinutes = ulTicks / 60;
+	UBYTE ubSeconds = ulTicks % 60;
+	sprintf(szBuffer, "%0hu:%02hu", ubMinutes, ubSeconds);
+	commDrawText(SUMMARY_LEFT_COLUMN_X, uwOffsY, "Time survived:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(SUMMARY_RIGHT_COLUMN_X, uwOffsY, szBuffer, FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	uwOffsY += 2 * ubLineHeight;
+
+	stringDecimalFromULong(gameGetKills(), szBuffer);
+	commDrawText(SUMMARY_LEFT_COLUMN_X, uwOffsY, "Kills:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(SUMMARY_RIGHT_COLUMN_X, uwOffsY, szBuffer, FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	uwOffsY += 2 * ubLineHeight;
+
+	stringDecimalFromULong(gameGetLevel() + 1, szBuffer);
+	commDrawText(SUMMARY_LEFT_COLUMN_X, uwOffsY, "Level:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(SUMMARY_RIGHT_COLUMN_X, uwOffsY, szBuffer, FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	uwOffsY += 2 * ubLineHeight;
+
+	stringDecimalFromULong(gameGetExp(), szBuffer);
+	commDrawText(SUMMARY_LEFT_COLUMN_X, uwOffsY, "EXP gained:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(SUMMARY_RIGHT_COLUMN_X, uwOffsY, szBuffer, FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	uwOffsY += 2 * ubLineHeight;
+
+	hiScoreSetup(gameGetExp(), 1);
+	if(hiScoreIsEnteringNew()) {
+		commDrawText(
+			COMM_DISPLAY_WIDTH / 2, uwOffsY, "New record!",
+			FONT_COOKIE | FONT_HCENTER, COMM_DISPLAY_COLOR_TEXT
+		);
+		uwOffsY += ubLineHeight;
+	}
+	commDrawText(
+		COMM_DISPLAY_WIDTH / 2, uwOffsY, "Click to continue",
+		FONT_COOKIE | FONT_HCENTER, COMM_DISPLAY_COLOR_TEXT_HOVER
+	);
+	logBlockEnd("menuSummaryGsCreate()");
+}
+
+static void menuSummaryGsLoop(void) {
+	if(mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
+		stateChange(g_pGameStateManager, &s_sStateMenuScore);
+		return;
+	}
+
+	gameProcessCursor(mouseGetX(MOUSE_PORT_1), mouseGetY(MOUSE_PORT_1));
+	vPortWaitForEnd(g_pGameBufferMain->sCommon.pVPort);
+}
+
+//------------------------------------------------------------------- PUBLIC FNS
+
+void menuPush(UBYTE isDead) {
+	statePush(g_pGameStateManager, &g_sStateMenu);
+	if(isDead) {
+		statePush(g_pGameStateManager, &s_sStateMenuSummary);
+	}
+}
+
 //-------------------------------------------------------------------- GAMESTATE
 
 static void menuGsCreate(void) {
+	logBlockBegin("menuGsCreate()");
 	commShow();
 
 	buttonReset();
@@ -153,6 +240,7 @@ static void menuGsCreate(void) {
 
 	viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
 	copProcessBlocks();
+	logBlockEnd("menuGsCreate()");
 }
 
 static void menuGsLoop(void) {
@@ -172,6 +260,7 @@ static void menuGsLoop(void) {
 				statePush(g_pGameStateManager, &s_sStateMenuHowto);
 				break;
 			case MENU_BUTTON_SCORES:
+				hiScoreSetup(0, 0);
 				statePush(g_pGameStateManager, &s_sStateMenuScore);
 				break;
 			case MENU_BUTTON_CREDITS:
