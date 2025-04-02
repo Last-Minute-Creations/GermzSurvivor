@@ -106,6 +106,7 @@
 #define RESPAWN_SLOTS_PER_POSITION 4
 
 #define HEALTH_DEAD (-32768)
+#define HEALTH_DEAD_NON_PLAYER_CAUSE (-32767)
 
 #define PLAYER_BOB_SIZE_X 32
 #define PLAYER_BOB_SIZE_Y 32
@@ -121,11 +122,12 @@
 #define ENEMY_BOB_OFFSET_X 4
 #define ENEMY_BOB_OFFSET_Y 15
 #define ENEMY_ATTACK_COOLDOWN 15
-#define ENEMY_HEALTH_BASE 20
+#define ENEMY_HEALTH_BASE 5
 #define ENEMY_HEALTH_ADD_PER_LEVEL 5
 #define ENEMY_SCORE 25
 #define ENEMY_SPEEDY_CHANCE_MAX 127
 #define ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL 10
+#define ENEMY_PREFERRED_SPAWN_NONE 0xFF
 
 #define ENEMY_COUNT 25
 #define PROJECTILE_COUNT 20
@@ -187,6 +189,7 @@ typedef struct tCharacter {
 	UBYTE ubAmmo;
 	UBYTE ubReloadCooldown;
 	UBYTE ubSpeed;
+	UBYTE ubPreferredSpawn;
 } tCharacter;
 
 typedef struct tProjectile {
@@ -278,7 +281,7 @@ static const UBYTE s_pWeaponReloadCooldowns[] = {
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
 
 static tCharacter *s_pCollisionTiles[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y];
-static tUwCoordYX s_pRespawnSlots[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y][RESPAWN_SLOTS_PER_POSITION];
+static tUwCoordYX s_pRespawnSlots[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y][RESPAWN_SLOTS_PER_POSITION]; // left, right, up, down
 
 static tProjectile s_pProjectiles[PROJECTILE_COUNT];
 static tProjectile *s_pFreeProjectiles[PROJECTILE_COUNT];
@@ -801,6 +804,27 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 	BYTE bDeltaX, bDeltaY;
 	tDirection eDir;
 	if(pEnemy->wHealth > 0) {
+		// Despawn if enemy is too far
+		if(pEnemy->sPos.uwX < g_pGameBufferMain->pCamera->uPos.uwX - 32) {
+			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
+			pEnemy->ubPreferredSpawn = 1;
+			return;
+		}
+		else if(g_pGameBufferMain->pCamera->uPos.uwX + GAME_MAIN_VPORT_SIZE_X + 32 < pEnemy->sPos.uwX) {
+			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
+			pEnemy->ubPreferredSpawn = 0;
+			return;
+		}
+		else if(pEnemy->sPos.uwY < g_pGameBufferMain->pCamera->uPos.uwY - 32) {
+			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
+			pEnemy->ubPreferredSpawn = 3;
+			return;
+		}
+		else if(g_pGameBufferMain->pCamera->uPos.uwY + GAME_MAIN_VPORT_SIZE_Y + 32 < pEnemy->sPos.uwY) {
+			pEnemy->ubPreferredSpawn = 2;
+			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
+			return;
+		}
 		WORD wDistanceToPlayerX = s_sPlayer.sPos.uwX - pEnemy->sPos.uwX;
 		WORD wDistanceToPlayerY = s_sPlayer.sPos.uwY - pEnemy->sPos.uwY;
 		if(wDistanceToPlayerX < 0) {
@@ -862,21 +886,43 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 	}
 	else {
 		if(pEnemy->wHealth != HEALTH_DEAD) {
+			if(pEnemy->wHealth != HEALTH_DEAD_NON_PLAYER_CAUSE) {
+				scoreAdd(ENEMY_SCORE);
+				++s_ulKills;
+				pEnemy->ubPreferredSpawn = ENEMY_PREFERRED_SPAWN_NONE;
+			}
 			pEnemy->wHealth = HEALTH_DEAD;
 			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
 			// Failsafe to prevent trashing collision map
 			pEnemy->sPos.uwX = 0;
 			pEnemy->sPos.uwY = 0;
-			scoreAdd(ENEMY_SCORE);
-			++s_ulKills;
 		}
 		else {
 			// Try respawn
-			static UBYTE ubSpawnIndex = 0;
+			if(pEnemy->ubPreferredSpawn == ENEMY_PREFERRED_SPAWN_NONE) {
+				tUwCoordYX sClosest;
+				UWORD uwClosestDistance = 0xFFFF;
+				for(UBYTE i = 0; i < RESPAWN_SLOTS_PER_POSITION; ++i) {
+					tUwCoordYX sSpawn = s_pRespawnSlots[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y][i];
+					WORD wDx = sSpawn.uwX - s_sPlayer.sPos.uwX;
+					WORD wDy = sSpawn.uwY - s_sPlayer.sPos.uwY;
 
-			for(UBYTE i = 0; i < RESPAWN_SLOTS_PER_POSITION; ++i) {
-				tUwCoordYX sSpawn = s_pRespawnSlots[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y][ubSpawnIndex];
-				ubSpawnIndex = (ubSpawnIndex + 1) & 3;
+					UWORD uwDistance = fastMagnitude(ABS(wDx), ABS(wDy));
+					if(uwDistance < uwClosestDistance) {
+						uwClosestDistance = uwDistance;
+						sClosest = sSpawn;
+					}
+				}
+				if(!s_pCollisionTiles[sClosest.uwX / COLLISION_SIZE_X][sClosest.uwY / COLLISION_SIZE_Y]) {
+					pEnemy->wHealth = s_uwEnemySpawnHealth;
+					s_pCollisionTiles[sClosest.uwX / COLLISION_SIZE_X][sClosest.uwY / COLLISION_SIZE_Y] = pEnemy;
+					pEnemy->sPos = sClosest;
+					pEnemy->ubSpeed = (randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) ? 2 : 1;
+					return;
+				}
+			}
+			else {
+				tUwCoordYX sSpawn = s_pRespawnSlots[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y][pEnemy->ubPreferredSpawn];
 				if(!s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y]) {
 					pEnemy->wHealth = s_uwEnemySpawnHealth;
 					s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y] = pEnemy;

@@ -71,10 +71,10 @@ Bare minimum:
 		✔ Add game over screen @done(25-04-02)
 		✔ Add hi score entering @done(25-04-02)
 	Add pickups:
-		☐ Medkit
+		✘ Medkit @cancelled(25-04-02)
 		☐ Instant reload
 		☐ Exp points
-		☐ Weapons
+		☐ Random weapon
 		☐ Display hover text
 		☐ Display beneath all monsters
 		☐ Dissipate after some time
