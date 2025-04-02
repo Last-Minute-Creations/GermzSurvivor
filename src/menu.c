@@ -144,10 +144,7 @@ static void menuScoreGsLoop(void) {
 
 //---------------------------------------------------------------------- SUMMARY
 
-#define SUMMARY_LEFT_COLUMN_SIZE_X 80
-#define SUMMARY_LEFT_COLUMN_X (COMM_DISPLAY_WIDTH / 2 - SUMMARY_LEFT_COLUMN_SIZE_X)
-#define SUMMARY_RIGHT_COLUMN_SIZE_X 80
-#define SUMMARY_RIGHT_COLUMN_X (COMM_DISPLAY_WIDTH - SUMMARY_RIGHT_COLUMN_SIZE_X)
+#define SUMMARY_COLUMN_OFFSET_X 40
 
 static void menuSummaryGsCreate(void);
 static void menuSummaryGsLoop(void);
@@ -170,23 +167,23 @@ static void menuSummaryGsCreate(void) {
 	UBYTE ubMinutes = ulTicks / 60;
 	UBYTE ubSeconds = ulTicks % 60;
 	sprintf(szBuffer, "%0hu:%02hu", ubMinutes, ubSeconds);
-	commDrawText(SUMMARY_LEFT_COLUMN_X, uwOffsY, "Time survived:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
-	commDrawText(SUMMARY_RIGHT_COLUMN_X, uwOffsY, szBuffer, FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(SUMMARY_COLUMN_OFFSET_X, uwOffsY, "Time survived:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(COMM_DISPLAY_WIDTH - SUMMARY_COLUMN_OFFSET_X, uwOffsY, szBuffer, FONT_COOKIE | FONT_RIGHT, COMM_DISPLAY_COLOR_TEXT);
 	uwOffsY += 2 * ubLineHeight;
 
 	stringDecimalFromULong(gameGetKills(), szBuffer);
-	commDrawText(SUMMARY_LEFT_COLUMN_X, uwOffsY, "Kills:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
-	commDrawText(SUMMARY_RIGHT_COLUMN_X, uwOffsY, szBuffer, FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(SUMMARY_COLUMN_OFFSET_X, uwOffsY, "Kills:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(COMM_DISPLAY_WIDTH - SUMMARY_COLUMN_OFFSET_X, uwOffsY, szBuffer, FONT_COOKIE | FONT_RIGHT, COMM_DISPLAY_COLOR_TEXT);
 	uwOffsY += 2 * ubLineHeight;
 
 	stringDecimalFromULong(gameGetLevel() + 1, szBuffer);
-	commDrawText(SUMMARY_LEFT_COLUMN_X, uwOffsY, "Level:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
-	commDrawText(SUMMARY_RIGHT_COLUMN_X, uwOffsY, szBuffer, FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(SUMMARY_COLUMN_OFFSET_X, uwOffsY, "Level:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(COMM_DISPLAY_WIDTH - SUMMARY_COLUMN_OFFSET_X, uwOffsY, szBuffer, FONT_COOKIE | FONT_RIGHT, COMM_DISPLAY_COLOR_TEXT);
 	uwOffsY += 2 * ubLineHeight;
 
 	stringDecimalFromULong(gameGetExp(), szBuffer);
-	commDrawText(SUMMARY_LEFT_COLUMN_X, uwOffsY, "EXP gained:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
-	commDrawText(SUMMARY_RIGHT_COLUMN_X, uwOffsY, szBuffer, FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(SUMMARY_COLUMN_OFFSET_X, uwOffsY, "EXP gained:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
+	commDrawText(COMM_DISPLAY_WIDTH - SUMMARY_COLUMN_OFFSET_X, uwOffsY, szBuffer, FONT_COOKIE | FONT_RIGHT, COMM_DISPLAY_COLOR_TEXT);
 	uwOffsY += 2 * ubLineHeight;
 
 	hiScoreSetup(gameGetExp(), 1);
@@ -201,6 +198,9 @@ static void menuSummaryGsCreate(void) {
 		COMM_DISPLAY_WIDTH / 2, uwOffsY, "Click to continue",
 		FONT_COOKIE | FONT_HCENTER, COMM_DISPLAY_COLOR_TEXT_HOVER
 	);
+	while(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
+		mouseProcess();
+	}
 	logBlockEnd("menuSummaryGsCreate()");
 }
 
