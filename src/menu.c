@@ -11,6 +11,7 @@
 #include "comm/button.h"
 #include "survivor.h"
 #include "game.h"
+#include "hi_score.h"
 
 #define MENU_BUTTON_MARGIN_Y 5
 
@@ -67,6 +68,31 @@ static void menuCreditsGsLoop(void) {
 	vPortWaitForEnd(g_pGameBufferMain->sCommon.pVPort);
 }
 
+static void menuScoreGsCreate(void);
+static void menuScoreGsLoop(void);
+static tState s_sStateMenuScore = {.cbCreate = menuScoreGsCreate, .cbLoop = menuScoreGsLoop};
+
+static void menuScoreGsCreate(void) {
+	commEraseAll();
+	hiScoreSetup(0, 0);
+	hiScoreDrawAll();
+}
+
+static void menuScoreGsLoop(void) {
+	if(hiScoreIsEnteringNew()) {
+		hiScoreEnteringProcess();
+	}
+	else {
+		if(mouseUse(MOUSE_PORT_1, MOUSE_LMB) || keyUse(KEY_RETURN)) {
+			statePop(g_pGameStateManager);
+			return;
+		}
+	}
+
+	gameProcessCursor(mouseGetX(MOUSE_PORT_1), mouseGetY(MOUSE_PORT_1));
+	vPortWaitForEnd(g_pGameBufferMain->sCommon.pVPort);
+}
+
 //-------------------------------------------------------------------- GAMESTATE
 
 static void menuGsCreate(void) {
@@ -101,6 +127,7 @@ static void menuGsLoop(void) {
 			case MENU_BUTTON_HOWTO:
 				break;
 			case MENU_BUTTON_SCORES:
+				statePush(g_pGameStateManager, &s_sStateMenuScore);
 				break;
 			case MENU_BUTTON_CREDITS:
 				statePush(g_pGameStateManager, &s_sStateMenuCredits);

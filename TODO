@@ -64,7 +64,7 @@ Bare minimum:
 	Add basic menu:
 		✔ New game @done(25-04-02)
 		☐ How to play
-		☐ High scores
+		✔ High scores @done(25-04-02)
 		✔ Credits @done(25-04-02)
 		✔ Exit @done(25-04-02)
 		✔ In-game escape moves to main menu @done(25-04-02)

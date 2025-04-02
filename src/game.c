@@ -19,6 +19,7 @@
 #include "game_math.h"
 #include "assets.h"
 #include "menu.h"
+#include "hi_score.h"
 
 #define WEAPON_MAX_BULLETS_IN_MAGAZINE 30
 #define STAIN_FRAME_COUNT 3
@@ -1365,6 +1366,7 @@ static void gameGsCreate(void) {
 	systemSetDmaBit(DMAB_SPRITE, 1);
 	mouseSetBounds(MOUSE_PORT_1, 0, GAME_HUD_VPORT_SIZE_Y, 320, 256);
 
+	hiScoreLoad();
 	commCreate();
 
 	systemUnuse();
