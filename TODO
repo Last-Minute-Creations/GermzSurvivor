@@ -62,12 +62,12 @@ Bare minimum:
 		☐ Improve visibility of cursor
 		☐ Add reload indicator on cursor
 	Add basic menu:
-		☐ New game
+		✔ New game @done(25-04-02)
 		☐ How to play
 		☐ High scores
 		☐ About
-		☐ Exit
-		☐ In-game escape moves to main menu
+		✔ Exit @done(25-04-02)
+		✔ In-game escape moves to main menu @done(25-04-02)
 		☐ Add game over screen
 		☐ Add hi score entering
 	Add pickups:

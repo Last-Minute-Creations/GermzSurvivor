@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "survivor.h"
-#define GENERIC_MAIN_LOOP_CONDITION g_pGameStateManager->pCurrent
 #include <ace/generic/main.h>
 #include <ace/managers/key.h>
 #include <ace/managers/mouse.h>
@@ -28,7 +27,6 @@ void genericCreate(void) {
 }
 
 void genericProcess(void) {
-	gameExit();
 	keyProcess();
 	mouseProcess();
 	stateProcess(g_pGameStateManager);

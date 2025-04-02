@@ -93,6 +93,14 @@ convertBitmaps(
 		${DATA_DIR}/cursor_crosshair.bm
 )
 
+#-------------------------------------------------------------------------- MENU
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
+	GENERATED_FILE_LIST "KILLFRIEND_PATH"
+	DESTINATIONS
+	${GEN_DIR}/killfriend.png 384 0 256 192
+)
+
 #------------------------------------------------------------------------- TILES
 file(MAKE_DIRECTORY ${GEN_DIR}/tiles)
 
@@ -441,9 +449,9 @@ convertTileset(
 convertBitmaps(
 	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT}
 	INTERLEAVED SOURCES
-		${GEN_DIR}/tiles.png ${RES_DIR}/weapons.png
+		${GEN_DIR}/tiles.png ${RES_DIR}/weapons.png ${GEN_DIR}/killfriend.png
 	DESTINATIONS
-		${DATA_DIR}/tiles.bm ${DATA_DIR}/weapons.bm
+		${DATA_DIR}/tiles.bm ${DATA_DIR}/weapons.bm ${DATA_DIR}/killfriend.bm
 )
 
 convertBitmaps(
@@ -464,15 +472,15 @@ convertBitmaps(
 	INTERLEAVED SOURCES
 		${GEN_DIR}/zombie_s.png ${GEN_DIR}/zombie_sw.png ${GEN_DIR}/zombie_nw.png
 		${GEN_DIR}/zombie_n.png ${GEN_DIR}/zombie_ne.png ${GEN_DIR}/zombie_se.png
-		${GEN_DIR}/bullets.png ${GEN_DIR}/stains.png
+		${GEN_DIR}/bullets.png ${GEN_DIR}/stains.png ${RES_DIR}/edges.png
 	DESTINATIONS
 		${DATA_DIR}/zombie_s.bm ${DATA_DIR}/zombie_sw.bm ${DATA_DIR}/zombie_nw.bm
 		${DATA_DIR}/zombie_n.bm ${DATA_DIR}/zombie_ne.bm ${DATA_DIR}/zombie_se.bm
-		${DATA_DIR}/bullets.bm ${DATA_DIR}/stains.bm
+		${DATA_DIR}/bullets.bm ${DATA_DIR}/stains.bm NONE
 	MASKS
 		${DATA_DIR}/zombie_s_mask.bm ${DATA_DIR}/zombie_sw_mask.bm ${DATA_DIR}/zombie_nw_mask.bm
 		${DATA_DIR}/zombie_n_mask.bm ${DATA_DIR}/zombie_ne_mask.bm ${DATA_DIR}/zombie_se_mask.bm
-		${DATA_DIR}/bullets_mask.bm ${DATA_DIR}/stains_mask.bm
+		${DATA_DIR}/bullets_mask.bm ${DATA_DIR}/stains_mask.bm ${DATA_DIR}/killfriend_edges.bm
 )
 
 #------------------------------------------------------------------------- AUDIO

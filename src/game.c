@@ -7,7 +7,6 @@
 #include <ace/managers/key.h>
 #include <ace/managers/mouse.h>
 #include <ace/managers/system.h>
-#include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/rand.h>
 #include <ace/managers/sprite.h>
 #include <ace/managers/ptplayer.h>
@@ -15,10 +14,11 @@
 #include <ace/utils/palette.h>
 #include <ace/utils/chunky.h>
 #include <ace/utils/string.h>
+#include "comm/comm.h"
 #include "survivor.h"
 #include "game_math.h"
-
-// #define GAME_COLLISION_DEBUG
+#include "assets.h"
+#include "menu.h"
 
 #define WEAPON_MAX_BULLETS_IN_MAGAZINE 30
 #define STAIN_FRAME_COUNT 3
@@ -42,7 +42,6 @@
 #define WEAPON_COOLDOWN_SAWOFF 18
 
 #define DIGIT_WIDTH_MAX 5
-#define HUD_SIZE_Y 16
 #define HUD_WEAPON_SIZE_X 48
 #define HUD_WEAPON_SIZE_Y 15
 #define HUD_AMMO_FIELD_OFFSET_X (HUD_WEAPON_SIZE_X + 2)
@@ -90,11 +89,7 @@
 #define MAP_MARGIN_TILES 2
 #define MAP_TILE_SHIFT 4
 #define MAP_TILE_SIZE  (1 << MAP_TILE_SHIFT)
-#define GAME_BPP 5
-#define SPRITE_CHANNEL_CURSOR 0
-
-#define MAIN_VPORT_SIZE_X 320
-#define MAIN_VPORT_SIZE_Y (256 - HUD_SIZE_Y)
+#define SPRITE_CHANNEL_CURSOR 6
 
 #define COLOR_HUD_BG 6
 #define COLOR_BAR_BG 10
@@ -216,8 +211,6 @@ typedef enum tHudState {
 static tView *s_pView;
 static tVPort *s_pVpMain;
 static tVPort *s_pVpHud;
-static tSimpleBufferManager *s_pBufferMain;
-static tBitMap *s_pPristineBuffer;
 static UBYTE *s_pPristinePlanes;
 static UBYTE *s_pBackPlanes;
 static tSimpleBufferManager *s_pBufferHud;
@@ -228,8 +221,6 @@ static tRandManager g_sRand;
 static tSprite *s_pSpriteCursor;
 static volatile ULONG s_ulFrameCount;
 static ULONG s_ulFrameWaitCount;
-static tFont *s_pFont;
-static tTextBitMap *s_pLineBitmap;
 
 static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
@@ -317,6 +308,10 @@ static tBob **s_pNextFreeStain;
 static tBob **s_pNextPushStain;
 static tBob **s_pNextWaitStain;
 
+tSimpleBufferManager *g_pGameBufferMain;
+tTextBitMap *g_pGameLineBuffer;
+tBitMap *g_pGamePristineBuffer;
+
 //------------------------------------------------------------------ PRIVATE FNS
 
 static inline tFix10p6 fix10p6Add(tFix10p6 a, tFix10p6 b) {return a + b; }
@@ -340,17 +335,17 @@ static inline void scoreAdd(ULONG ulScore) {
 static void gameSetTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
 	blitCopyAligned(
 		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		s_pBufferMain->pBack, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		g_pGameBufferMain->pBack, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
 		MAP_TILE_SIZE, MAP_TILE_SIZE
 	);
 	blitCopyAligned(
 		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		s_pBufferMain->pFront, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		g_pGameBufferMain->pFront, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
 		MAP_TILE_SIZE, MAP_TILE_SIZE
 	);
 	blitCopyAligned(
 		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		s_pPristineBuffer, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
+		g_pGamePristineBuffer, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
 		MAP_TILE_SIZE, MAP_TILE_SIZE
 	);
 }
@@ -564,10 +559,10 @@ void bobOnEnd(void) {
 static void cameraCenterAtOptimized(
 	tCameraManager *pManager, ULONG ulCenterX, ULONG ulCenterY
 ) {
-	LONG lTop = ulCenterX - MAIN_VPORT_SIZE_X / 2;
-	LONG lLeft = ulCenterY - (MAIN_VPORT_SIZE_Y - HUD_SIZE_Y) / 2;
-	pManager->uPos.uwX = CLAMP(lTop, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_X - MAP_MARGIN_TILES) * MAP_TILE_SIZE - MAIN_VPORT_SIZE_X);
-	pManager->uPos.uwY = CLAMP(lLeft, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_Y - MAP_MARGIN_TILES) * MAP_TILE_SIZE - MAIN_VPORT_SIZE_Y);
+	LONG lTop = ulCenterX - GAME_MAIN_VPORT_SIZE_X / 2;
+	LONG lLeft = ulCenterY - (GAME_MAIN_VPORT_SIZE_Y - GAME_HUD_VPORT_SIZE_Y) / 2;
+	pManager->uPos.uwX = CLAMP(lTop, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_X - MAP_MARGIN_TILES) * MAP_TILE_SIZE - GAME_MAIN_VPORT_SIZE_X);
+	pManager->uPos.uwY = CLAMP(lLeft, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_Y - MAP_MARGIN_TILES) * MAP_TILE_SIZE - GAME_MAIN_VPORT_SIZE_Y);
 }
 
 static void hudProcess(void) {
@@ -639,7 +634,7 @@ static void hudProcess(void) {
 				++s_eHudState;
 				char szScore[sizeof("4294967295")];
 				stringDecimalFromULong(s_ulScore, szScore);
-				fontFillTextBitMap(s_pFont, s_pLineBitmap, szScore);
+				fontFillTextBitMap(g_pFont, g_pGameLineBuffer, szScore);
 				break;
 			}
 			else {
@@ -655,7 +650,7 @@ static void hudProcess(void) {
 				HUD_SCORE_TEXT_SIZE_X, HUD_SCORE_TEXT_SIZE_Y, COLOR_HUD_BG
 			);
 			fontDrawTextBitMap(
-				s_pBufferHud->pBack, s_pLineBitmap, HUD_SCORE_TEXT_X, HUD_SCORE_TEXT_Y,
+				s_pBufferHud->pBack, g_pGameLineBuffer, HUD_SCORE_TEXT_X, HUD_SCORE_TEXT_Y,
 				COLOR_HUD_SCORE, FONT_COOKIE
 			);
 			break;
@@ -684,7 +679,7 @@ static void hudProcess(void) {
 				s_ubHudLevel = s_ubScoreLevel;
 				char szScore[sizeof("255")];
 				stringDecimalFromULong(s_ubScoreLevel, szScore);
-				fontFillTextBitMap(s_pFont, s_pLineBitmap, szScore);
+				fontFillTextBitMap(g_pFont, g_pGameLineBuffer, szScore);
 			}
 			else {
 				s_eHudState = 0; // skip to beginning
@@ -698,7 +693,7 @@ static void hudProcess(void) {
 				HUD_LEVEL_TEXT_SIZE_X, HUD_LEVEL_TEXT_SIZE_Y, COLOR_HUD_BG
 			);
 			fontDrawTextBitMap(
-				s_pBufferHud->pBack, s_pLineBitmap, HUD_LEVEL_TEXT_X, HUD_LEVEL_TEXT_Y,
+				s_pBufferHud->pBack, g_pGameLineBuffer, HUD_LEVEL_TEXT_X, HUD_LEVEL_TEXT_Y,
 				COLOR_HUD_SCORE, FONT_COOKIE
 			);
 		}
@@ -795,199 +790,6 @@ static void playerShootWeapon(UBYTE ubAimAngle) {
 			break;
 	}
 	// TODO: remove ammo from magazine
-}
-
-static void gameStart(void) {
-	gameSetTile(0, MAP_MARGIN_TILES, MAP_MARGIN_TILES);
-	gameSetTile(1, MAP_TILES_X - 1 - MAP_MARGIN_TILES, MAP_MARGIN_TILES);
-	gameSetTile(2, MAP_MARGIN_TILES, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
-	gameSetTile(3, MAP_TILES_X - 1 - MAP_MARGIN_TILES, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
-
-	for(UBYTE ubX = MAP_MARGIN_TILES + 1; ubX < MAP_TILES_X - 1 - MAP_MARGIN_TILES; ++ubX) {
-		gameSetTile(randUwMinMax(&g_sRand, 4, 6), ubX, MAP_MARGIN_TILES);
-		gameSetTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
-	}
-
-	for(UBYTE ubY = MAP_MARGIN_TILES + 1; ubY < MAP_TILES_Y - 1 - MAP_MARGIN_TILES; ++ubY) {
-		gameSetTile(randUwMinMax(&g_sRand, 7, 9), MAP_MARGIN_TILES, ubY);
-		gameSetTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1 - MAP_MARGIN_TILES, ubY);
-	}
-
-	for(UBYTE ubX = MAP_MARGIN_TILES + 1; ubX < MAP_TILES_X - 1 - MAP_MARGIN_TILES; ++ubX) {
-		for(UBYTE ubY = MAP_MARGIN_TILES + 1; ubY < MAP_TILES_Y - 1 - MAP_MARGIN_TILES; ++ubY) {
-			gameSetTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
-		}
-	}
-
-	s_uwHudHealth = 0;
-	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
-	s_ulHudScore = 0;
-	s_ubHudLevel = 255;
-	s_ubHudBarPixel = 0;
-	s_eHudState = HUD_STATE_PREPARE_LEVEL_NUM;
-	blitRect(
-		s_pBufferHud->pBack,
-		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
-		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
-	);
-
-	s_ulScore = 0;
-	s_ulPrevLevelScore = 0;
-	s_ulNextLevelScore = 1024;
-	s_ubScoreLevel = 0;
-	s_ubHiSpeedChance = 0;
-
-	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
-	s_sPlayer.sPos.uwX = 180;
-	s_sPlayer.sPos.uwY = 180;
-	s_sPlayer.eFrame = 0;
-	s_sPlayer.ubFrameCooldown = 0;
-	s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
-	playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
-	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
-
-	s_uwEnemySpawnHealth = ENEMY_HEALTH_BASE;
-	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
-		s_pEnemies[i].wHealth = s_uwEnemySpawnHealth;
-		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
-		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
-		s_pEnemies[i].eFrame = 0;
-		s_pEnemies[i].ubFrameCooldown = 0;
-		s_pEnemies[i].ubAttackCooldown = 0;
-		s_pEnemies[i].ubSpeed = 1;
-		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
-		s_pSortedChars[i] = &s_pEnemies[i];
-	}
-	s_pSortedChars[ENEMY_COUNT] = &s_sPlayer;
-
-	for(UBYTE i = 0; i < PROJECTILE_COUNT; ++i) {
-		s_pProjectiles[i].ubLife = 0;
-		s_pFreeProjectiles[i] = &s_pProjectiles[i];
-	}
-	s_ubFreeProjectileCount = PROJECTILE_COUNT;
-	s_ulFrameCount = 0;
-	s_ulFrameWaitCount = 1;
-}
-
-__attribute__((always_inline))
-static inline void playerProcess(void) {
-	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
-	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
-
-	if(s_sPlayer.wHealth > 0) {
-		if(keyUse(KEY_1)) {
-			playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
-		}
-		else if(keyUse(KEY_2)) {
-			playerSetWeapon(WEAPON_KIND_SMG);
-		}
-		else if(keyUse(KEY_3)) {
-			playerSetWeapon(WEAPON_KIND_ASSAULT_RIFLE);
-		}
-		else if(keyUse(KEY_4)) {
-			playerSetWeapon(WEAPON_KIND_SHOTGUN);
-		}
-		else if(keyUse(KEY_5)) {
-			playerSetWeapon(WEAPON_KIND_SAWOFF);
-		}
-
-		UBYTE ubAimAngle = getAngleBetweenPoints( // 0 is right, going clockwise
-			s_sPlayer.sPos.uwX - s_pBufferMain->pCamera->uPos.uwX,
-			s_sPlayer.sPos.uwY - s_pBufferMain->pCamera->uPos.uwY,
-			uwMouseX, uwMouseY - HUD_SIZE_Y
-		);
-
-		BYTE bDeltaX = 0;
-		BYTE bDeltaY = 0;
-		if(keyCheck(KEY_W)) {
-			bDeltaY = -3;
-		}
-		else if(keyCheck(KEY_S)) {
-			bDeltaY = 3;
-		}
-		if(keyCheck(KEY_A)) {
-			bDeltaX = -3;
-		}
-		else if(keyCheck(KEY_D)) {
-			bDeltaX = 3;
-		}
-		if(bDeltaX || bDeltaY) {
-			characterTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
-			if(s_sPlayer.ubFrameCooldown >= 1) {
-				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
-				if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
-					s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
-				}
-				s_sPlayer.ubFrameCooldown = 0;
-			}
-			else {
-				++s_sPlayer.ubFrameCooldown;
-			}
-		}
-		else {
-			s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
-			s_sPlayer.ubFrameCooldown = 0;
-		}
-
-		tDirection eDir;
-		if(ubAimAngle < ANGLE_45) {
-			eDir = DIRECTION_SE;
-		}
-		else if(ubAimAngle < ANGLE_45 + ANGLE_90) {
-			eDir = DIRECTION_S;
-		}
-		else if(ubAimAngle < ANGLE_180) {
-			eDir = DIRECTION_SW;
-		}
-		else if(ubAimAngle < ANGLE_180 + ANGLE_45) {
-			eDir = DIRECTION_NW;
-		}
-		else if(ubAimAngle < ANGLE_180 + ANGLE_45 + ANGLE_90) {
-			eDir = DIRECTION_N;
-		}
-		else {
-			eDir = DIRECTION_NE;
-		}
-
-		tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
-		bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
-		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
-		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
-
-		if(!s_sPlayer.ubAttackCooldown) {
-			if(!s_sPlayer.ubReloadCooldown) {
-				if(!s_sPlayer.ubAmmo) {
-					playerStartReloadWeapon();
-				}
-				else {
-					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-						--s_sPlayer.ubAmmo;
-						playerShootWeapon(ubAimAngle);
-					}
-					else if(keyUse(KEY_R) && s_sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.eWeapon]) {
-						playerStartReloadWeapon();
-					}
-				}
-			}
-			else {
-				--s_sPlayer.ubReloadCooldown;
-			}
-		}
-		else {
-			--s_sPlayer.ubAttackCooldown;
-		}
-	}
-	else {
-		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
-	}
-	bobPush(&s_sPlayer.sBob);
-
-	s_pSpriteCursor->wX = uwMouseX - 4;
-	s_pSpriteCursor->wY = uwMouseY - 4;
-	spriteProcess(s_pSpriteCursor);
-	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
-
-	cameraCenterAtOptimized(s_pBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
 }
 
 __attribute__((always_inline))
@@ -1097,7 +899,7 @@ static void blitUnsafeCopyStain(
 	UWORD uwBltCon1 = ubShift << BSHIFTSHIFT;
 
 	ULONG ulDstOffs = s_pRowOffsetFromY[wDstY] + (wDstX >> 3);
-	UBYTE *pCD = &s_pPristineBuffer->Planes[0][ulDstOffs];
+	UBYTE *pCD = &g_pGamePristineBuffer->Planes[0][ulDstOffs];
 
 	UWORD uwBltCon0 = uwBltCon1 |USEA|USEB|USEC|USED | MINTERM_COOKIE;
 	WORD wSrcModulo = STAIN_BYTES_PER_BITPLANE_ROW - uwBlitWords * 2;
@@ -1127,12 +929,218 @@ static void onVblank(
 	*pFrameCount += 1;
 }
 
+//------------------------------------------------------------------- PUBLIC FNS
+
+void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY) {
+	s_pSpriteCursor->wX = uwMouseX - GAME_CURSOR_OFFSET_X;
+	s_pSpriteCursor->wY = uwMouseY - GAME_CURSOR_OFFSET_Y;
+	spriteProcess(s_pSpriteCursor);
+}
+
+void gameStart(void) {
+	gameSetTile(0, MAP_MARGIN_TILES, MAP_MARGIN_TILES);
+	gameSetTile(1, MAP_TILES_X - 1 - MAP_MARGIN_TILES, MAP_MARGIN_TILES);
+	gameSetTile(2, MAP_MARGIN_TILES, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
+	gameSetTile(3, MAP_TILES_X - 1 - MAP_MARGIN_TILES, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
+
+	for(UBYTE ubX = MAP_MARGIN_TILES + 1; ubX < MAP_TILES_X - 1 - MAP_MARGIN_TILES; ++ubX) {
+		gameSetTile(randUwMinMax(&g_sRand, 4, 6), ubX, MAP_MARGIN_TILES);
+		gameSetTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
+	}
+
+	for(UBYTE ubY = MAP_MARGIN_TILES + 1; ubY < MAP_TILES_Y - 1 - MAP_MARGIN_TILES; ++ubY) {
+		gameSetTile(randUwMinMax(&g_sRand, 7, 9), MAP_MARGIN_TILES, ubY);
+		gameSetTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1 - MAP_MARGIN_TILES, ubY);
+	}
+
+	for(UBYTE ubX = MAP_MARGIN_TILES + 1; ubX < MAP_TILES_X - 1 - MAP_MARGIN_TILES; ++ubX) {
+		for(UBYTE ubY = MAP_MARGIN_TILES + 1; ubY < MAP_TILES_Y - 1 - MAP_MARGIN_TILES; ++ubY) {
+			gameSetTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
+		}
+	}
+
+	s_uwHudHealth = 0;
+	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
+	s_ulHudScore = 0;
+	s_ubHudLevel = 255;
+	s_ubHudBarPixel = 0;
+	s_eHudState = HUD_STATE_PREPARE_LEVEL_NUM;
+	blitRect(
+		s_pBufferHud->pBack,
+		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
+		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
+	);
+
+	s_ulScore = 0;
+	s_ulPrevLevelScore = 0;
+	s_ulNextLevelScore = 1024;
+	s_ubScoreLevel = 0;
+	s_ubHiSpeedChance = 0;
+
+	for(UBYTE ubX = 0; ubX < COLLISION_LOOKUP_SIZE_X; ++ubX) {
+		for(UBYTE ubY = 0; ubY < COLLISION_LOOKUP_SIZE_Y; ++ubY) {
+			s_pCollisionTiles[ubX][ubY] = 0;
+		}
+	}
+
+	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
+	s_sPlayer.sPos.uwX = 180;
+	s_sPlayer.sPos.uwY = 180;
+	s_sPlayer.eFrame = 0;
+	s_sPlayer.ubFrameCooldown = 0;
+	s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
+	playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
+	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
+
+	s_uwEnemySpawnHealth = ENEMY_HEALTH_BASE;
+	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
+		s_pEnemies[i].wHealth = s_uwEnemySpawnHealth;
+		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
+		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
+		s_pEnemies[i].eFrame = 0;
+		s_pEnemies[i].ubFrameCooldown = 0;
+		s_pEnemies[i].ubAttackCooldown = 0;
+		s_pEnemies[i].ubSpeed = 1;
+		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
+		s_pSortedChars[i] = &s_pEnemies[i];
+	}
+	s_pSortedChars[ENEMY_COUNT] = &s_sPlayer;
+
+	for(UBYTE i = 0; i < PROJECTILE_COUNT; ++i) {
+		s_pProjectiles[i].ubLife = 0;
+		s_pFreeProjectiles[i] = &s_pProjectiles[i];
+	}
+	s_ubFreeProjectileCount = PROJECTILE_COUNT;
+	s_ulFrameCount = 0;
+	s_ulFrameWaitCount = 1;
+}
+
+__attribute__((always_inline))
+static inline void playerProcess(void) {
+	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
+	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
+
+	if(s_sPlayer.wHealth > 0) {
+		if(keyUse(KEY_1)) {
+			playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
+		}
+		else if(keyUse(KEY_2)) {
+			playerSetWeapon(WEAPON_KIND_SMG);
+		}
+		else if(keyUse(KEY_3)) {
+			playerSetWeapon(WEAPON_KIND_ASSAULT_RIFLE);
+		}
+		else if(keyUse(KEY_4)) {
+			playerSetWeapon(WEAPON_KIND_SHOTGUN);
+		}
+		else if(keyUse(KEY_5)) {
+			playerSetWeapon(WEAPON_KIND_SAWOFF);
+		}
+
+		UBYTE ubAimAngle = getAngleBetweenPoints( // 0 is right, going clockwise
+			s_sPlayer.sPos.uwX - g_pGameBufferMain->pCamera->uPos.uwX,
+			s_sPlayer.sPos.uwY - g_pGameBufferMain->pCamera->uPos.uwY,
+			uwMouseX, uwMouseY - GAME_HUD_VPORT_SIZE_Y
+		);
+
+		BYTE bDeltaX = 0;
+		BYTE bDeltaY = 0;
+		if(keyCheck(KEY_W)) {
+			bDeltaY = -3;
+		}
+		else if(keyCheck(KEY_S)) {
+			bDeltaY = 3;
+		}
+		if(keyCheck(KEY_A)) {
+			bDeltaX = -3;
+		}
+		else if(keyCheck(KEY_D)) {
+			bDeltaX = 3;
+		}
+		if(bDeltaX || bDeltaY) {
+			characterTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
+			if(s_sPlayer.ubFrameCooldown >= 1) {
+				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
+				if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
+					s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+				}
+				s_sPlayer.ubFrameCooldown = 0;
+			}
+			else {
+				++s_sPlayer.ubFrameCooldown;
+			}
+		}
+		else {
+			s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+			s_sPlayer.ubFrameCooldown = 0;
+		}
+
+		tDirection eDir;
+		if(ubAimAngle < ANGLE_45) {
+			eDir = DIRECTION_SE;
+		}
+		else if(ubAimAngle < ANGLE_45 + ANGLE_90) {
+			eDir = DIRECTION_S;
+		}
+		else if(ubAimAngle < ANGLE_180) {
+			eDir = DIRECTION_SW;
+		}
+		else if(ubAimAngle < ANGLE_180 + ANGLE_45) {
+			eDir = DIRECTION_NW;
+		}
+		else if(ubAimAngle < ANGLE_180 + ANGLE_45 + ANGLE_90) {
+			eDir = DIRECTION_N;
+		}
+		else {
+			eDir = DIRECTION_NE;
+		}
+
+		tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
+		bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
+		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
+		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
+
+		if(!s_sPlayer.ubAttackCooldown) {
+			if(!s_sPlayer.ubReloadCooldown) {
+				if(!s_sPlayer.ubAmmo) {
+					playerStartReloadWeapon();
+				}
+				else {
+					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
+						--s_sPlayer.ubAmmo;
+						playerShootWeapon(ubAimAngle);
+					}
+					else if(keyUse(KEY_R) && s_sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.eWeapon]) {
+						playerStartReloadWeapon();
+					}
+				}
+			}
+			else {
+				--s_sPlayer.ubReloadCooldown;
+			}
+		}
+		else {
+			--s_sPlayer.ubAttackCooldown;
+		}
+	}
+	else {
+		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
+	}
+	bobPush(&s_sPlayer.sBob);
+
+	gameProcessCursor(uwMouseX, uwMouseY);
+
+	cameraCenterAtOptimized(g_pGameBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
+}
+
+//-------------------------------------------------------------------- GAMESTATE
+
 static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
 	s_pHudWeapons = bitmapCreateFromPath("data/weapons.bm", 0);
-	s_pFont = fontCreateFromPath("data/uni54.fnt");
-	s_pLineBitmap = fontCreateTextBitMap(MAIN_VPORT_SIZE_X, s_pFont->uwHeight);
+	assetsGlobalCreate();
+	g_pGameLineBuffer = fontCreateTextBitMap(GAME_MAIN_VPORT_SIZE_X, g_pFont->uwHeight);
 
 	ULONG ulRawCopSize = 16 + simpleBufferGetRawCopperlistInstructionCount(GAME_BPP) * 2;
 	s_pView = viewCreate(0,
@@ -1142,7 +1150,7 @@ static void gameGsCreate(void) {
 
 	s_pVpHud = vPortCreate(0,
 		TAG_VPORT_BPP, GAME_BPP,
-		TAG_VPORT_HEIGHT, HUD_SIZE_Y,
+		TAG_VPORT_HEIGHT, GAME_HUD_VPORT_SIZE_Y,
 		TAG_VPORT_VIEW, s_pView,
 	TAG_END);
 
@@ -1160,7 +1168,7 @@ static void gameGsCreate(void) {
 	TAG_END);
 
 	ulCopOffset += simpleBufferGetRawCopperlistInstructionCount(GAME_BPP);
-	s_pBufferMain = simpleBufferCreate(0,
+	g_pGameBufferMain = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
 		TAG_SIMPLEBUFFER_BOUND_WIDTH, MAP_TILES_X * MAP_TILE_SIZE,
 		TAG_SIMPLEBUFFER_BOUND_HEIGHT, MAP_TILES_Y * MAP_TILE_SIZE,
@@ -1168,14 +1176,19 @@ static void gameGsCreate(void) {
 		TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
 		TAG_SIMPLEBUFFER_COPLIST_OFFSET, ulCopOffset,
 	TAG_END);
-
-	blitRect(s_pBufferHud->pBack, 0, 0, 320, HUD_SIZE_Y, COLOR_HUD_BG);
-
-	s_pPristineBuffer = bitmapCreate(
-		bitmapGetByteWidth(s_pBufferMain->pBack) * 8,
-		s_pBufferMain->pBack->Rows, GAME_BPP, BMF_INTERLEAVED
+	cameraCenterAtOptimized(
+		g_pGameBufferMain->pCamera,
+		MAP_TILES_X * MAP_TILE_SIZE / 2,
+		MAP_TILES_Y * MAP_TILE_SIZE / 2
 	);
-	s_pPristinePlanes = s_pPristineBuffer->Planes[0];
+
+	blitRect(s_pBufferHud->pBack, 0, 0, 320, GAME_HUD_VPORT_SIZE_Y, COLOR_HUD_BG);
+
+	g_pGamePristineBuffer = bitmapCreate(
+		bitmapGetByteWidth(g_pGameBufferMain->pBack) * 8,
+		g_pGameBufferMain->pBack->Rows, GAME_BPP, BMF_INTERLEAVED
+	);
+	s_pPristinePlanes = g_pGamePristineBuffer->Planes[0];
 
 	paletteLoadFromPath("data/game.plt", s_pVpHud->pPalette, 1 << GAME_BPP);
 
@@ -1288,8 +1301,8 @@ static void gameGsCreate(void) {
 	}
 
 	bobManagerCreate(
-		s_pBufferMain->pFront, s_pBufferMain->pBack,
-		s_pPristineBuffer, MAP_TILES_Y * MAP_TILE_SIZE
+		g_pGameBufferMain->pFront, g_pGameBufferMain->pBack,
+		g_pGamePristineBuffer, MAP_TILES_Y * MAP_TILE_SIZE
 	);
 
 	for(UBYTE i = 0; i < STAIN_FRAME_PRESET_COUNT; ++i) {
@@ -1322,17 +1335,17 @@ static void gameGsCreate(void) {
 		for(UBYTE ubY = 0; ubY < COLLISION_LOOKUP_SIZE_Y; ++ubY) {
 			ULONG ulCenterX = ubX * COLLISION_SIZE_X;
 			ULONG ulCenterY = ubY * COLLISION_SIZE_Y;
-			LONG lLeft = ulCenterX - MAIN_VPORT_SIZE_X / 2;
-			LONG lTop = ulCenterY - (MAIN_VPORT_SIZE_Y - HUD_SIZE_Y) / 2;
-			lLeft = CLAMP(lLeft, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_X - MAP_MARGIN_TILES) * MAP_TILE_SIZE - MAIN_VPORT_SIZE_X);
-			lTop = CLAMP(lTop, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_Y - MAP_MARGIN_TILES) * MAP_TILE_SIZE - MAIN_VPORT_SIZE_Y);
+			LONG lLeft = ulCenterX - GAME_MAIN_VPORT_SIZE_X / 2;
+			LONG lTop = ulCenterY - (GAME_MAIN_VPORT_SIZE_Y - GAME_HUD_VPORT_SIZE_Y) / 2;
+			lLeft = CLAMP(lLeft, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_X - MAP_MARGIN_TILES) * MAP_TILE_SIZE - GAME_MAIN_VPORT_SIZE_X);
+			lTop = CLAMP(lTop, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_Y - MAP_MARGIN_TILES) * MAP_TILE_SIZE - GAME_MAIN_VPORT_SIZE_Y);
 
 			s_pRespawnSlots[ubX][ubY][0] = (tUwCoordYX) {
 				.uwX = CLAMP(lLeft - ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_X, MAP_TILES_X * MAP_TILE_SIZE - ENEMY_BOB_SIZE_X),
 				.uwY = ulCenterY,
 			};
 			s_pRespawnSlots[ubX][ubY][1] = (tUwCoordYX) {
-				.uwX = CLAMP(lLeft + MAIN_VPORT_SIZE_X + ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_X, MAP_TILES_X * MAP_TILE_SIZE - ENEMY_BOB_SIZE_X),
+				.uwX = CLAMP(lLeft + GAME_MAIN_VPORT_SIZE_X + ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_X, MAP_TILES_X * MAP_TILE_SIZE - ENEMY_BOB_SIZE_X),
 				.uwY = ulCenterY,
 			};
 			s_pRespawnSlots[ubX][ubY][2] = (tUwCoordYX) {
@@ -1341,7 +1354,7 @@ static void gameGsCreate(void) {
 			};
 			s_pRespawnSlots[ubX][ubY][3] = (tUwCoordYX) {
 				.uwX = ulCenterX,
-				.uwY = CLAMP(lTop + MAIN_VPORT_SIZE_Y + ENEMY_BOB_SIZE_Y, ENEMY_BOB_SIZE_Y, MAP_TILES_Y * MAP_TILE_SIZE - ENEMY_BOB_SIZE_Y),
+				.uwY = CLAMP(lTop + GAME_MAIN_VPORT_SIZE_Y + ENEMY_BOB_SIZE_Y, ENEMY_BOB_SIZE_Y, MAP_TILES_Y * MAP_TILE_SIZE - ENEMY_BOB_SIZE_Y),
 			};
 		}
 	}
@@ -1350,17 +1363,27 @@ static void gameGsCreate(void) {
 	spriteManagerCreate(s_pView, 0, 0);
 	s_pSpriteCursor = spriteAdd(SPRITE_CHANNEL_CURSOR, s_pBmCrosshair);
 	systemSetDmaBit(DMAB_SPRITE, 1);
-	mouseSetBounds(MOUSE_PORT_1, 0, HUD_SIZE_Y, 320, 256);
+	mouseSetBounds(MOUSE_PORT_1, 0, GAME_HUD_VPORT_SIZE_Y, 320, 256);
+
+	commCreate();
 
 	systemUnuse();
 	systemSetInt(INTB_VERTB, onVblank, (void*)&s_ulFrameCount);
 	gameStart();
+
 	viewLoad(s_pView);
+	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
 	viewProcessManagers(s_pView);
+	copSwapBuffers();
+
+	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
 	viewProcessManagers(s_pView);
-	logBlockEnd("gameGsCreate()");
+	copSwapBuffers();
+
 	ptplayerLoadMod(s_pMod, 0, 0);
 	ptplayerEnableMusic(1);
+	logBlockEnd("gameGsCreate()");
+	statePush(g_pGameStateManager, &g_sStateMenu);
 }
 
 __attribute__((always_inline))
@@ -1374,18 +1397,14 @@ static inline void gameWaitForNextFrame(void) {
 
 static void gameGsLoop(void) {
 	if(keyUse(KEY_ESCAPE)) {
-		statePop(g_pGameStateManager);
-		return;
-	}
-	if(keyUse(KEY_Q)) {
 		bobDiscardUndraw();
-		gameStart();
+		statePush(g_pGameStateManager, &g_sStateMenu);
 		return;
 	}
 
-	s_pBackPlanes = s_pBufferMain->pBack->Planes[0];
+	s_pBackPlanes = g_pGameBufferMain->pBack->Planes[0];
 	s_pCurrentProjectile = &s_pProjectiles[0];
-	bobBegin(s_pBufferMain->pBack);
+	bobBegin(g_pGameBufferMain->pBack);
 	while(s_pCurrentProjectile != &s_pProjectiles[PROJECTILE_COUNT]) {
 		projectileUndrawNext();
 	}
@@ -1435,8 +1454,8 @@ static void gameGsLoop(void) {
 
 	hudProcess();
 
-	simpleBufferProcess(s_pBufferMain);
-	cameraProcess(s_pBufferMain->pCamera);
+	simpleBufferProcess(g_pGameBufferMain);
+	cameraProcess(g_pGameBufferMain->pCamera);
 	copSwapBuffers();
 	gameWaitForNextFrame();
 }
@@ -1445,6 +1464,8 @@ static void gameGsDestroy(void) {
 	viewLoad(0);
 	ptplayerStop();
 	systemUse();
+
+	commDestroy();
 
 	ptplayerSfxDestroy(s_pSfxRifle[0]);
 	ptplayerSfxDestroy(s_pSfxRifle[1]);
@@ -1480,11 +1501,11 @@ static void gameGsDestroy(void) {
 	bitmapDestroy(s_pStainMasks);
 
 	viewDestroy(s_pView);
-	bitmapDestroy(s_pPristineBuffer);
+	bitmapDestroy(g_pGamePristineBuffer);
 	bitmapDestroy(s_pHudWeapons);
 	bitmapDestroy(s_pTileset);
-	fontDestroy(s_pFont);
-	fontDestroyTextBitMap(s_pLineBitmap);
+	assetsGlobalDestroy();
+	fontDestroyTextBitMap(g_pGameLineBuffer);
 }
 
 tState g_sStateGame = {
