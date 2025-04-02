@@ -23,6 +23,8 @@ typedef enum tMenuButton {
 	MENU_BUTTON_QUIT,
 } tMenuButton;
 
+//---------------------------------------------------------------------- CREDITS
+
 static void menuCreditsGsCreate(void);
 static void menuCreditsGsLoop(void);
 static tState s_sStateMenuCredits = {.cbCreate = menuCreditsGsCreate, .cbLoop = menuCreditsGsLoop};
@@ -67,6 +69,48 @@ static void menuCreditsGsLoop(void) {
 	gameProcessCursor(mouseGetX(MOUSE_PORT_1), mouseGetY(MOUSE_PORT_1));
 	vPortWaitForEnd(g_pGameBufferMain->sCommon.pVPort);
 }
+
+//----------------------------------------------------------------------- HOW TO
+
+static void menuHowtoGsCreate(void);
+static void menuHowtoGsLoop(void);
+static tState s_sStateMenuHowto = {.cbCreate = menuHowtoGsCreate, .cbLoop = menuHowtoGsLoop};
+
+static const char * const s_pHowtoLines[] = {
+	"Move with WSAD, aim with mouse, shoot with Left Mouse Button",
+	"",
+	"Killing enemies gives you exp, filling exp bar gives you levels",
+	"",
+	"After level up, select perks after pressing Right Mouse Button",
+	"",
+	"Watch out: as you level up, enemies get stronger and faster"
+};
+
+static void menuHowtoGsCreate(void) {
+	commEraseAll();
+	UWORD uwOffsY = 0;
+	UBYTE ubLineHeight = commGetLineHeight() - 2;
+	for(UBYTE i = 0; i < ARRAY_SIZE(s_pHowtoLines); ++i) {
+		if(stringIsEmpty(s_pHowtoLines[i])) {
+			uwOffsY += ubLineHeight;
+		}
+		else {
+			uwOffsY += commDrawMultilineText(s_pHowtoLines[i], 0, uwOffsY) * ubLineHeight;
+		}
+	}
+}
+
+static void menuHowtoGsLoop(void) {
+	if(mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
+		statePop(g_pGameStateManager);
+		return;
+	}
+
+	gameProcessCursor(mouseGetX(MOUSE_PORT_1), mouseGetY(MOUSE_PORT_1));
+	vPortWaitForEnd(g_pGameBufferMain->sCommon.pVPort);
+}
+
+//----------------------------------------------------------------------- SCORES
 
 static void menuScoreGsCreate(void);
 static void menuScoreGsLoop(void);
@@ -125,6 +169,7 @@ static void menuGsLoop(void) {
 				statePop(g_pGameStateManager);
 				break;
 			case MENU_BUTTON_HOWTO:
+				statePush(g_pGameStateManager, &s_sStateMenuHowto);
 				break;
 			case MENU_BUTTON_SCORES:
 				statePush(g_pGameStateManager, &s_sStateMenuScore);

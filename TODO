@@ -63,7 +63,7 @@ Bare minimum:
 		☐ Add reload indicator on cursor
 	Add basic menu:
 		✔ New game @done(25-04-02)
-		☐ How to play
+		✔ How to play @done(25-04-02)
 		✔ High scores @done(25-04-02)
 		✔ Credits @done(25-04-02)
 		✔ Exit @done(25-04-02)
