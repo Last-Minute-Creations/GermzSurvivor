@@ -51,7 +51,7 @@ endif()
 
 target_include_directories(${GAME_EXECUTABLE} PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_compile_options(${GAME_EXECUTABLE} PUBLIC -Wall -Wextra -Wimplicit-fallthrough=2)
-target_compile_options(${GAME_EXECUTABLE} PRIVATE -Werror -Wno-error=unused-parameter -Wimplicit-fallthrough=2)
+target_compile_options(${GAME_EXECUTABLE} PRIVATE -Werror)
 target_link_libraries(${GAME_EXECUTABLE} ace_audio_mixer ace)
 if(GAME_DEBUG)
   target_compile_definitions(${GAME_EXECUTABLE} PRIVATE GAME_DEBUG)
@@ -405,6 +405,14 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_SE_PATHS}
 )
 
+#----------------------------------------------------------------------- PICKUPS
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
+	GENERATED_FILE_LIST "PICKUPS_PATH"
+	DESTINATIONS
+	${GEN_DIR}/pickups.png 80 230 16 40
+)
+
 #----------------------------------------------------------------------- BULLETS
 
 file(MAKE_DIRECTORY ${GEN_DIR}/bullets)
@@ -412,7 +420,6 @@ file(MAKE_DIRECTORY ${GEN_DIR}/bullets)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
 	GENERATED_FILE_LIST "BULLETS_PATHS"
 	DESTINATIONS
-	# Corners
 	${GEN_DIR}/bullets/0.png  134 147 16 6
 	${GEN_DIR}/bullets/1.png  134 154 16 6
 )
@@ -431,7 +438,6 @@ file(MAKE_DIRECTORY ${GEN_DIR}/stains)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
 	GENERATED_FILE_LIST "STAINS_PATHS"
 	DESTINATIONS
-	# Corners
 	${GEN_DIR}/stains/0.png   35 141 16 16
 	${GEN_DIR}/stains/1.png   35 161 16 16
 	${GEN_DIR}/stains/2.png   33 179 16 16
@@ -472,15 +478,15 @@ convertBitmaps(
 	INTERLEAVED SOURCES
 		${GEN_DIR}/zombie_s.png ${GEN_DIR}/zombie_sw.png ${GEN_DIR}/zombie_nw.png
 		${GEN_DIR}/zombie_n.png ${GEN_DIR}/zombie_ne.png ${GEN_DIR}/zombie_se.png
-		${GEN_DIR}/bullets.png ${GEN_DIR}/stains.png ${RES_DIR}/edges.png
+		${GEN_DIR}/bullets.png ${GEN_DIR}/stains.png ${RES_DIR}/edges.png ${GEN_DIR}/pickups.png
 	DESTINATIONS
 		${DATA_DIR}/zombie_s.bm ${DATA_DIR}/zombie_sw.bm ${DATA_DIR}/zombie_nw.bm
 		${DATA_DIR}/zombie_n.bm ${DATA_DIR}/zombie_ne.bm ${DATA_DIR}/zombie_se.bm
-		${DATA_DIR}/bullets.bm ${DATA_DIR}/stains.bm NONE
+		${DATA_DIR}/bullets.bm ${DATA_DIR}/stains.bm NONE ${DATA_DIR}/pickups.bm
 	MASKS
 		${DATA_DIR}/zombie_s_mask.bm ${DATA_DIR}/zombie_sw_mask.bm ${DATA_DIR}/zombie_nw_mask.bm
 		${DATA_DIR}/zombie_n_mask.bm ${DATA_DIR}/zombie_ne_mask.bm ${DATA_DIR}/zombie_se_mask.bm
-		${DATA_DIR}/bullets_mask.bm ${DATA_DIR}/stains_mask.bm ${DATA_DIR}/killfriend_edges.bm
+		${DATA_DIR}/bullets_mask.bm ${DATA_DIR}/stains_mask.bm ${DATA_DIR}/killfriend_edges.bm ${DATA_DIR}/pickups_mask.bm
 )
 
 #------------------------------------------------------------------------- AUDIO

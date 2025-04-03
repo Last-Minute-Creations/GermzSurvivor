@@ -71,13 +71,14 @@ Bare minimum:
 		✔ Add game over screen @done(25-04-02)
 		✔ Add hi score entering @done(25-04-02)
 	Add pickups:
+		✔ Spawn pickups @done(25-04-02)
+		✔ Make player pick up the pickup @done(25-04-03)
 		✘ Medkit @cancelled(25-04-02)
-		☐ Instant reload
-		☐ Exp points
-		☐ Random weapon
-		☐ Display hover text
-		☐ Display beneath all monsters
-		☐ Dissipate after some time
+		✔ Weapons @done(25-04-03)
+		✘ Display hover text @cancelled(25-04-03)
+		✔ Sort the bob @done(25-04-03)
+		✔ Dissipate after some time @done(25-04-03)
+		☐ Blink in last 3 seconds
 
 Nice to have:
 	☐ Add zombie anti-clumping
@@ -89,6 +90,8 @@ Nice to have:
 	More pickups:
 		☐ Fast move
 		☐ Stronger bullets
+		☐ Instant reload
+		☐ Exp points
 	☐ Add pause screen - resume, exit to main menu
 	☐ Add intro
 

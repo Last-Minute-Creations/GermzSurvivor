@@ -107,6 +107,8 @@
 
 #define HEALTH_DEAD (-32768)
 #define HEALTH_DEAD_NON_PLAYER_CAUSE (-32767)
+#define HEALTH_PICKUP_INACTIVE (-32766)
+#define HEALTH_PICKUP_READY_TO_SPAWN (-32765)
 
 #define PLAYER_BOB_SIZE_X 32
 #define PLAYER_BOB_SIZE_Y 32
@@ -135,12 +137,29 @@
 #define PROJECTILE_SPEED 5
 #define SPREAD_SIDE_COUNT 40
 
-#define SORTED_CHARS_COUNT (ENEMY_COUNT + 1)
+#define PICKUP_BOB_SIZE_X 16
+#define PICKUP_BOB_SIZE_Y 8
+#define PICKUP_BOB_OFFSET_X ((PICKUP_BOB_SIZE_X - 8) / 2)
+#define PICKUP_BOB_OFFSET_Y ((PICKUP_BOB_SIZE_Y - 8) / 2)
+#define PICKUP_SPAWN_CHANCE_MAX 128
+#define PICKUP_SPAWN_CHANCE ((10 * PICKUP_SPAWN_CHANCE_MAX) / 100)
+
+// + player + pickup
+#define SORTED_ENTITIES_COUNT (ENEMY_COUNT + 1 + 1)
 
 #define BG_BYTES_PER_BITPLANE_ROW (MAP_TILES_X * MAP_TILE_SIZE / 8)
 #define BG_BYTES_PER_PIXEL_ROW (BG_BYTES_PER_BITPLANE_ROW * GAME_BPP)
 
 typedef UWORD tFix10p6;
+
+typedef enum tPickupKind {
+	PICKUP_KIND_RIFLE,
+	PICKUP_KIND_SMG,
+	PICKUP_KIND_ASSAULT_RIFLE,
+	PICKUP_KIND_SHOTGUN,
+	PICKUP_KIND_SAWOFF,
+	PICKUP_KIND_COUNT,
+} tPickupKind;
 
 typedef enum tDirection {
 	DIRECTION_SE,
@@ -166,7 +185,7 @@ typedef enum tCharacterFrame {
 } tCharacterFrame;
 
 typedef enum tWeaponKind {
-	WEAPON_KIND_BASE_RIFLE,
+	WEAPON_KIND_STOCK_RIFLE,
 	WEAPON_KIND_SMG,
 	WEAPON_KIND_ASSAULT_RIFLE,
 	WEAPON_KIND_SHOTGUN,
@@ -178,11 +197,21 @@ typedef struct tFrameOffset {
 	UBYTE *pMask;
 } tFrameOffset;
 
-typedef struct tCharacter {
+typedef enum tEntityKind {
+	ENTITY_KIND_PLAYER,
+	ENTITY_KIND_ENEMY,
+	ENTITY_KIND_PICKUP,
+} tEntityKind;
+
+typedef struct tEntity {
+	tEntityKind eKind;
 	tUwCoordYX sPos; ///< Top-left coordinate of collision box.
 	tBob sBob;
 	tCharacterFrame eFrame;
-	tWeaponKind eWeapon;
+	union {
+		tWeaponKind eWeapon;
+		tPickupKind ePickup;
+	};
 	WORD wHealth;
 	UBYTE ubFrameCooldown;
 	UBYTE ubAttackCooldown;
@@ -190,7 +219,7 @@ typedef struct tCharacter {
 	UBYTE ubReloadCooldown;
 	UBYTE ubSpeed;
 	UBYTE ubPreferredSpawn;
-} tCharacter;
+} tEntity;
 
 typedef struct tProjectile {
 	tFix10p6 fX;
@@ -230,7 +259,7 @@ static ULONG s_ulFrameWaitCount;
 static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
 static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
-static tCharacter s_sPlayer;
+static tEntity s_sPlayer;
 static ULONG s_ulScore;
 static ULONG s_ulKills;
 static ULONG s_ulPrevLevelScore;
@@ -242,9 +271,14 @@ static UWORD s_uwEnemySpawnHealth;
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
 static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
-static tCharacter s_pEnemies[ENEMY_COUNT];
+static tEntity s_pEnemies[ENEMY_COUNT];
 
-static tCharacter *s_pSortedChars[SORTED_CHARS_COUNT];
+static tEntity s_sPickup;
+static tBitMap *s_pPickupFrames;
+static tBitMap *s_pPickupMasks;
+static tFrameOffset s_pPickupFrameOffsets[PICKUP_KIND_COUNT];
+
+static tEntity *s_pSortedEntities[SORTED_ENTITIES_COUNT];
 
 static tBitMap *s_pBulletFrames;
 static tBitMap *s_pBulletMasks;
@@ -264,14 +298,14 @@ static const UBYTE s_pBulletMaskFromX[] = {
 	BV(7), BV(6), BV(5), BV(4), BV(3), BV(2), BV(1), BV(0)
 };
 static const UBYTE s_pWeaponAmmo[] = {
-	[WEAPON_KIND_BASE_RIFLE] = 10,
+	[WEAPON_KIND_STOCK_RIFLE] = 10,
 	[WEAPON_KIND_SMG] = 30,
 	[WEAPON_KIND_ASSAULT_RIFLE] = 25,
 	[WEAPON_KIND_SHOTGUN] = 12,
 	[WEAPON_KIND_SAWOFF] = 12,
 };
 static const UBYTE s_pWeaponReloadCooldowns[] = {
-	[WEAPON_KIND_BASE_RIFLE] = 30,
+	[WEAPON_KIND_STOCK_RIFLE] = 30,
 	[WEAPON_KIND_SMG] = 40,
 	[WEAPON_KIND_ASSAULT_RIFLE] = 40,
 	[WEAPON_KIND_SHOTGUN] = 80,
@@ -280,7 +314,7 @@ static const UBYTE s_pWeaponReloadCooldowns[] = {
 
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
 
-static tCharacter *s_pCollisionTiles[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y];
+static tEntity *s_pCollisionTiles[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y];
 static tUwCoordYX s_pRespawnSlots[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y][RESPAWN_SLOTS_PER_POSITION]; // left, right, up, down
 
 static tProjectile s_pProjectiles[PROJECTILE_COUNT];
@@ -358,11 +392,11 @@ static void gameSetTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
 }
 
 __attribute__((always_inline))
-static inline UBYTE isPositionCollidingWithCharacter(
-	tUwCoordYX sPos, const tCharacter *pCharacter
+static inline UBYTE isPositionCollidingWithEntity(
+	tUwCoordYX sPos, const tEntity *pEntity
 ) {
-	WORD Dx = sPos.uwX - pCharacter->sPos.uwX;
-	WORD Dy = sPos.uwY - pCharacter->sPos.uwY;
+	WORD Dx = sPos.uwX - pEntity->sPos.uwX;
+	WORD Dy = sPos.uwY - pEntity->sPos.uwY;
 	return (
 		-COLLISION_SIZE_X <= Dx && Dx <= COLLISION_SIZE_X &&
 		-COLLISION_SIZE_Y <= Dy && Dy <= COLLISION_SIZE_Y
@@ -370,7 +404,7 @@ static inline UBYTE isPositionCollidingWithCharacter(
 }
 
 __attribute__((always_inline))
-static inline tCharacter *characterGetNearPos(
+static inline tEntity *entityGetNearPos(
 	UWORD uwPosX, BYTE bLookupAddX, UWORD uwPosY, BYTE bLookupAddY
 ) {
 	UWORD uwLookupX = uwPosX / COLLISION_SIZE_X + bLookupAddX;
@@ -383,8 +417,102 @@ static inline tCharacter *characterGetNearPos(
 }
 
 __attribute__((always_inline))
-static inline UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LONG lDeltaY) {
-	tUwCoordYX sGoodPos = pCharacter->sPos;
+static inline UBYTE enemyTryMoveBy(tEntity *pEnemy, LONG lDeltaX, LONG lDeltaY) {
+	tUwCoordYX sGoodPos = pEnemy->sPos;
+	UBYTE isMoved = 0;
+
+	if (lDeltaX) {
+		tUwCoordYX sNewPos = sGoodPos;
+		sNewPos.uwX += lDeltaX;
+		UWORD uwTestX = sNewPos.uwX;
+		if(lDeltaX < 0) {
+			uwTestX -= ENEMY_BOB_OFFSET_X;
+		}
+		UBYTE isColliding = 0;
+
+		// collision with upper corner
+		tEntity *pUp = entityGetNearPos(sGoodPos.uwX, SGN(lDeltaX), sGoodPos.uwY, 0);
+		if(pUp && pUp != pEnemy) {
+			isColliding = isPositionCollidingWithEntity(sNewPos, pUp);
+		}
+
+		// collision with lower corner
+		if (!isColliding && (sGoodPos.uwY & (COLLISION_SIZE_Y - 1))) {
+			tEntity *pDown = entityGetNearPos(sGoodPos.uwX, SGN(lDeltaX), sGoodPos.uwY, +1);
+			if(pDown && pDown != pEnemy) {
+				isColliding = isPositionCollidingWithEntity(sNewPos, pDown);
+			}
+		}
+
+		if(!isColliding) {
+			isMoved = 1;
+			sGoodPos = sNewPos;
+		}
+	}
+
+	if (lDeltaY) {
+		tUwCoordYX sNewPos = sGoodPos;
+		sNewPos.uwY += lDeltaY;
+
+		UWORD uwTestY = sNewPos.uwY;
+		if(lDeltaY < 0) {
+			uwTestY -= ENEMY_BOB_OFFSET_Y;
+		}
+		UBYTE isColliding = 0;
+
+		// collision with left corner
+		tEntity *pLeft = entityGetNearPos(sGoodPos.uwX, 0, sGoodPos.uwY, SGN(lDeltaY));
+		if(pLeft && pLeft != pEnemy) {
+			isColliding = isPositionCollidingWithEntity(sNewPos, pLeft);
+		}
+
+		// collision with right corner
+		if (!isColliding && (sGoodPos.uwX & (COLLISION_SIZE_X - 1))) {
+			tEntity *pRight = entityGetNearPos(sGoodPos.uwX, +1, sGoodPos.uwY, SGN(lDeltaY));
+			if(pRight && pRight != pEnemy) {
+				isColliding = isPositionCollidingWithEntity(sNewPos, pRight);
+			}
+		}
+
+		if(!isColliding) {
+			isMoved = 1;
+			sGoodPos = sNewPos;
+		}
+	}
+
+	if(isMoved) {
+		ULONG ubOldLookupX = pEnemy->sPos.uwX / COLLISION_SIZE_X;
+		ULONG ubOldLookupY = pEnemy->sPos.uwY / COLLISION_SIZE_Y;
+		pEnemy->sPos = sGoodPos;
+		// Update lookup
+		if(
+			s_pCollisionTiles[ubOldLookupX][ubOldLookupY] &&
+			s_pCollisionTiles[ubOldLookupX][ubOldLookupY] != pEnemy
+		) {
+			logWrite(
+				"ERR: Erasing other entity %p\n",
+				s_pCollisionTiles[ubOldLookupX][ubOldLookupY]
+			);
+		}
+		s_pCollisionTiles[ubOldLookupX][ubOldLookupY] = 0;
+
+		ULONG ubNewLookupX = pEnemy->sPos.uwX / COLLISION_SIZE_X;
+		ULONG ubNewLookupY = pEnemy->sPos.uwY / COLLISION_SIZE_Y;
+		if(s_pCollisionTiles[ubNewLookupX][ubNewLookupY]) {
+			logWrite(
+				"ERR: Overwriting other entity %p in lookup with %p\n",
+				s_pCollisionTiles[ubNewLookupX][ubNewLookupY], pEnemy
+			);
+		}
+		s_pCollisionTiles[ubNewLookupX][ubNewLookupY] = pEnemy;
+	}
+
+	return isMoved;
+}
+
+__attribute__((always_inline))
+static inline UBYTE playerTryMoveBy(tEntity *pPlayer, LONG lDeltaX, LONG lDeltaY) {
+	tUwCoordYX sGoodPos = pPlayer->sPos;
 	UBYTE isMoved = 0;
 
 	if (lDeltaX) {
@@ -398,17 +526,17 @@ static inline UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LON
 
 		// collision with upper corner
 		if(!isColliding) {
-			tCharacter *pUp = characterGetNearPos(sGoodPos.uwX, SGN(lDeltaX), sGoodPos.uwY, 0);
-			if(pUp && pUp != pCharacter) {
-				isColliding = isPositionCollidingWithCharacter(sNewPos, pUp);
+			tEntity *pUp = entityGetNearPos(sGoodPos.uwX, SGN(lDeltaX), sGoodPos.uwY, 0);
+			if(pUp && pUp->eKind == ENTITY_KIND_ENEMY) {
+				isColliding = isPositionCollidingWithEntity(sNewPos, pUp);
 			}
 		}
 
 		// collision with lower corner
 		if (!isColliding && (sGoodPos.uwY & (COLLISION_SIZE_Y - 1))) {
-			tCharacter *pDown = characterGetNearPos(sGoodPos.uwX, SGN(lDeltaX), sGoodPos.uwY, +1);
-			if(pDown && pDown != pCharacter) {
-				isColliding = isPositionCollidingWithCharacter(sNewPos, pDown);
+			tEntity *pDown = entityGetNearPos(sGoodPos.uwX, SGN(lDeltaX), sGoodPos.uwY, +1);
+			if(pDown && pDown->eKind == ENTITY_KIND_ENEMY) {
+				isColliding = isPositionCollidingWithEntity(sNewPos, pDown);
 			}
 		}
 
@@ -430,17 +558,17 @@ static inline UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LON
 
 		// collision with left corner
 		if(!isColliding) {
-			tCharacter *pLeft = characterGetNearPos(sGoodPos.uwX, 0, sGoodPos.uwY, SGN(lDeltaY));
-			if(pLeft && pLeft != pCharacter) {
-				isColliding = isPositionCollidingWithCharacter(sNewPos, pLeft);
+			tEntity *pLeft = entityGetNearPos(sGoodPos.uwX, 0, sGoodPos.uwY, SGN(lDeltaY));
+			if(pLeft && pLeft->eKind == ENTITY_KIND_ENEMY) {
+				isColliding = isPositionCollidingWithEntity(sNewPos, pLeft);
 			}
 		}
 
 		// collision with right corner
 		if (!isColliding && (sGoodPos.uwX & (COLLISION_SIZE_X - 1))) {
-			tCharacter *pRight = characterGetNearPos(sGoodPos.uwX, +1, sGoodPos.uwY, SGN(lDeltaY));
-			if(pRight && pRight != pCharacter) {
-				isColliding = isPositionCollidingWithCharacter(sNewPos, pRight);
+			tEntity *pRight = entityGetNearPos(sGoodPos.uwX, +1, sGoodPos.uwY, SGN(lDeltaY));
+			if(pRight && pRight->eKind == ENTITY_KIND_ENEMY) {
+				isColliding = isPositionCollidingWithEntity(sNewPos, pRight);
 			}
 		}
 
@@ -451,30 +579,34 @@ static inline UBYTE characterTryMoveBy(tCharacter *pCharacter, LONG lDeltaX, LON
 	}
 
 	if(isMoved) {
-		ULONG ubOldLookupX = pCharacter->sPos.uwX / COLLISION_SIZE_X;
-		ULONG ubOldLookupY = pCharacter->sPos.uwY / COLLISION_SIZE_Y;
-		pCharacter->sPos = sGoodPos;
+		ULONG ubOldLookupX = pPlayer->sPos.uwX / COLLISION_SIZE_X;
+		ULONG ubOldLookupY = pPlayer->sPos.uwY / COLLISION_SIZE_Y;
+		pPlayer->sPos = sGoodPos;
 		// Update lookup
 		if(
 			s_pCollisionTiles[ubOldLookupX][ubOldLookupY] &&
-			s_pCollisionTiles[ubOldLookupX][ubOldLookupY] != pCharacter
+			s_pCollisionTiles[ubOldLookupX][ubOldLookupY] != pPlayer &&
+			s_pCollisionTiles[ubOldLookupX][ubOldLookupY]->eKind != ENTITY_KIND_PICKUP
 		) {
 			logWrite(
-				"ERR: Erasing other character %p\n",
+				"ERR: Erasing other entity %p\n",
 				s_pCollisionTiles[ubOldLookupX][ubOldLookupY]
 			);
 		}
 		s_pCollisionTiles[ubOldLookupX][ubOldLookupY] = 0;
 
-		ULONG ubNewLookupX = pCharacter->sPos.uwX / COLLISION_SIZE_X;
-		ULONG ubNewLookupY = pCharacter->sPos.uwY / COLLISION_SIZE_Y;
-		if(s_pCollisionTiles[ubNewLookupX][ubNewLookupY]) {
+		ULONG ubNewLookupX = pPlayer->sPos.uwX / COLLISION_SIZE_X;
+		ULONG ubNewLookupY = pPlayer->sPos.uwY / COLLISION_SIZE_Y;
+		if(
+			s_pCollisionTiles[ubNewLookupX][ubNewLookupY] &&
+			s_pCollisionTiles[ubNewLookupX][ubNewLookupY]->eKind != ENTITY_KIND_PICKUP
+		) {
 			logWrite(
-				"ERR: Overwriting other character %p in lookup with %p\n",
-				s_pCollisionTiles[ubNewLookupX][ubNewLookupY], pCharacter
+				"ERR: Overwriting other entity %p in lookup with %p\n",
+				s_pCollisionTiles[ubNewLookupX][ubNewLookupY], pPlayer
 			);
 		}
-		s_pCollisionTiles[ubNewLookupX][ubNewLookupY] = pCharacter;
+		s_pCollisionTiles[ubNewLookupX][ubNewLookupY] = pPlayer;
 	}
 
 	return isMoved;
@@ -520,16 +652,16 @@ static inline void projectileDrawNext(void) {
 	if(s_pCurrentProjectile->ubLife > 1) {
 		UWORD uwProjectileX = fix10p6ToUword(s_pCurrentProjectile->fX);
 		UWORD uwProjectileY = fix10p6ToUword(s_pCurrentProjectile->fY);
-		tCharacter *pEnemy;
+		tEntity *pEnemy;
 		if(uwProjectileX >= MAP_TILES_X * MAP_TILE_SIZE || uwProjectileY >= MAP_TILES_Y * MAP_TILE_SIZE) {
 			// TODO: Remove in favor of dummy entries in collision tiles at the edges
 			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
 		}
 		else if(
-			((pEnemy = characterGetNearPos(uwProjectileX, 0, uwProjectileY, 0)) && pEnemy != &s_sPlayer) ||
-			((pEnemy = characterGetNearPos(uwProjectileX, -1, uwProjectileY, 0)) && pEnemy != &s_sPlayer) ||
-			((pEnemy = characterGetNearPos(uwProjectileX, 0, uwProjectileY, -1)) && pEnemy != &s_sPlayer) ||
-			((pEnemy = characterGetNearPos(uwProjectileX, -1, uwProjectileY, -1)) && pEnemy != &s_sPlayer)
+			((pEnemy = entityGetNearPos(uwProjectileX, 0, uwProjectileY, 0)) && pEnemy->eKind == ENTITY_KIND_ENEMY) ||
+			((pEnemy = entityGetNearPos(uwProjectileX, -1, uwProjectileY, 0)) && pEnemy->eKind == ENTITY_KIND_ENEMY) ||
+			((pEnemy = entityGetNearPos(uwProjectileX, 0, uwProjectileY, -1)) && pEnemy->eKind == ENTITY_KIND_ENEMY) ||
+			((pEnemy = entityGetNearPos(uwProjectileX, -1, uwProjectileY, -1)) && pEnemy->eKind == ENTITY_KIND_ENEMY)
 		) {
 			if(s_pNextFreeStain != &s_pFreeStains[0]) {
 				tBob *pStain = *(--s_pNextFreeStain);
@@ -766,7 +898,7 @@ static inline void playerShootProjectile(BYTE bAngle, BYTE pSpreadSide[static SP
 static void playerShootWeapon(UBYTE ubAimAngle) {
 	// TODO: precalculate random stuff
 	switch(s_sPlayer.eWeapon) {
-		case WEAPON_KIND_BASE_RIFLE:
+		case WEAPON_KIND_STOCK_RIFLE:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide1, WEAPON_DAMAGE_BASE_RIFLE);
 			audioMixerPlaySfx(s_pSfxRifle[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_BASE_RIFLE;
@@ -800,7 +932,7 @@ static void playerShootWeapon(UBYTE ubAimAngle) {
 }
 
 __attribute__((always_inline))
-static inline void enemyProcess(tCharacter *pEnemy) {
+static inline void enemyProcess(tEntity *pEnemy) {
 	BYTE bDeltaX, bDeltaY;
 	tDirection eDir;
 	if(pEnemy->wHealth > 0) {
@@ -865,7 +997,7 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 		}
 
 		// if(0) {
-			characterTryMoveBy(pEnemy, bDeltaX, bDeltaY);
+			enemyTryMoveBy(pEnemy, bDeltaX, bDeltaY);
 		// }
 		if(!pEnemy->ubFrameCooldown) {
 			pEnemy->ubFrameCooldown = 1;
@@ -886,13 +1018,17 @@ static inline void enemyProcess(tCharacter *pEnemy) {
 	}
 	else {
 		if(pEnemy->wHealth != HEALTH_DEAD) {
+			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
 			if(pEnemy->wHealth != HEALTH_DEAD_NON_PLAYER_CAUSE) {
 				scoreAdd(ENEMY_SCORE);
 				++s_ulKills;
+				if(s_sPickup.wHealth == HEALTH_PICKUP_INACTIVE) {
+					s_sPickup.wHealth = HEALTH_PICKUP_READY_TO_SPAWN;
+					s_sPickup.sPos = pEnemy->sPos;
+				}
 				pEnemy->ubPreferredSpawn = ENEMY_PREFERRED_SPAWN_NONE;
 			}
 			pEnemy->wHealth = HEALTH_DEAD;
-			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
 			// Failsafe to prevent trashing collision map
 			pEnemy->sPos.uwX = 0;
 			pEnemy->sPos.uwY = 0;
@@ -1053,17 +1189,10 @@ void gameStart(void) {
 		}
 	}
 
-	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
-	s_sPlayer.sPos.uwX = 180;
-	s_sPlayer.sPos.uwY = 180;
-	s_sPlayer.eFrame = 0;
-	s_sPlayer.ubFrameCooldown = 0;
-	s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
-	playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
-	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
-
+	UBYTE ubSorted = 0;
 	s_uwEnemySpawnHealth = ENEMY_HEALTH_BASE;
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
+		s_pEnemies[i].eKind = ENTITY_KIND_ENEMY;
 		s_pEnemies[i].wHealth = s_uwEnemySpawnHealth;
 		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
 		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
@@ -1072,9 +1201,24 @@ void gameStart(void) {
 		s_pEnemies[i].ubAttackCooldown = 0;
 		s_pEnemies[i].ubSpeed = 1;
 		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
-		s_pSortedChars[i] = &s_pEnemies[i];
+		s_pSortedEntities[ubSorted++] = &s_pEnemies[i];
 	}
-	s_pSortedChars[ENEMY_COUNT] = &s_sPlayer;
+
+	s_sPlayer.eKind = ENTITY_KIND_PLAYER;
+	s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
+	s_sPlayer.sPos.uwX = (MAP_TILES_X * MAP_TILE_SIZE) / 2;
+	s_sPlayer.sPos.uwY = (MAP_TILES_Y * MAP_TILE_SIZE) / 2;
+	s_sPlayer.eFrame = 0;
+	s_sPlayer.ubFrameCooldown = 0;
+	s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
+	playerSetWeapon(WEAPON_KIND_STOCK_RIFLE);
+	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
+	s_pSortedEntities[ubSorted++] = &s_sPlayer;
+
+	s_sPickup.eKind = ENTITY_KIND_PICKUP;
+	s_sPickup.wHealth = 0;
+	s_sPickup.sPos.ulYX = 0;
+	s_pSortedEntities[ubSorted++] = &s_sPickup;
 
 	for(UBYTE i = 0; i < PROJECTILE_COUNT; ++i) {
 		s_pProjectiles[i].ubLife = 0;
@@ -1086,13 +1230,36 @@ void gameStart(void) {
 }
 
 __attribute__((always_inline))
+static inline void playerApplyPickup(tPickupKind ePickupKind) {
+	switch(ePickupKind) {
+		case PICKUP_KIND_RIFLE:
+			playerSetWeapon(WEAPON_KIND_STOCK_RIFLE);
+			break;
+		case PICKUP_KIND_SMG:
+			playerSetWeapon(WEAPON_KIND_SMG);
+			break;
+		case PICKUP_KIND_ASSAULT_RIFLE:
+			playerSetWeapon(WEAPON_KIND_ASSAULT_RIFLE);
+			break;
+		case PICKUP_KIND_SHOTGUN:
+			playerSetWeapon(WEAPON_KIND_SHOTGUN);
+			break;
+		case PICKUP_KIND_SAWOFF:
+			playerSetWeapon(WEAPON_KIND_SAWOFF);
+			break;
+		case PICKUP_KIND_COUNT:
+			__builtin_unreachable();
+	}
+}
+
+__attribute__((always_inline))
 static inline UBYTE playerProcess(void) {
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
 
 	if(s_sPlayer.wHealth > 0) {
 		if(keyUse(KEY_1)) {
-			playerSetWeapon(WEAPON_KIND_BASE_RIFLE);
+			playerSetWeapon(WEAPON_KIND_STOCK_RIFLE);
 		}
 		else if(keyUse(KEY_2)) {
 			playerSetWeapon(WEAPON_KIND_SMG);
@@ -1128,7 +1295,7 @@ static inline UBYTE playerProcess(void) {
 			bDeltaX = 3;
 		}
 		if(bDeltaX || bDeltaY) {
-			characterTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
+			playerTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
 			if(s_sPlayer.ubFrameCooldown >= 1) {
 				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
 				if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
@@ -1209,6 +1376,50 @@ static inline UBYTE playerProcess(void) {
 
 	cameraCenterAtOptimized(g_pGameBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
 	return 0;
+}
+
+__attribute__((always_inline))
+static inline void pickupSpawnRandom(void) {
+	s_sPickup.wHealth = 10 * 25;
+	s_sPickup.ePickup = randUwMax(&g_sRand, PICKUP_KIND_COUNT - 1);
+	bobSetFrame(
+		&s_sPickup.sBob,
+		s_pPickupFrameOffsets[s_sPickup.ePickup].pPixels,
+		s_pPickupFrameOffsets[s_sPickup.ePickup].pMask
+	);
+	s_sPickup.sBob.sPos.uwX = s_sPickup.sPos.uwX - PICKUP_BOB_OFFSET_X;
+	s_sPickup.sBob.sPos.uwY = s_sPickup.sPos.uwY - PICKUP_BOB_OFFSET_Y;
+	s_pCollisionTiles[s_sPickup.sPos.uwX / COLLISION_SIZE_X][s_sPickup.sPos.uwY / COLLISION_SIZE_Y] = &s_sPickup;
+}
+
+static inline void pickupProcss(tEntity *pPickup) {
+	if(pPickup->wHealth > 0) {
+		--pPickup->wHealth;
+		if(isPositionCollidingWithEntity(pPickup->sPos, &s_sPlayer)) {
+			pPickup->wHealth = 0;
+			playerApplyPickup(pPickup->ePickup);
+		}
+		else {
+			bobPush(&pPickup->sBob);
+		}
+	}
+	else {
+		if(pPickup->wHealth == HEALTH_PICKUP_READY_TO_SPAWN) {
+			if(
+				s_sPlayer.eWeapon == WEAPON_KIND_STOCK_RIFLE ||
+				randUwMax(&g_sRand, PICKUP_SPAWN_CHANCE_MAX) < PICKUP_SPAWN_CHANCE
+			) {
+				pickupSpawnRandom();
+			}
+			else {
+				pPickup->wHealth = HEALTH_PICKUP_INACTIVE;
+			}
+		}
+		else if(pPickup->wHealth == 0) {
+			s_pCollisionTiles[pPickup->sPos.uwX / COLLISION_SIZE_X][pPickup->sPos.uwY / COLLISION_SIZE_Y] = 0;
+			pPickup->wHealth = HEALTH_PICKUP_INACTIVE;
+		}
+	}
 }
 
 //-------------------------------------------------------------------- GAMESTATE
@@ -1339,6 +1550,13 @@ static void gameGsCreate(void) {
 		}
 	}
 
+	s_pPickupFrames = bitmapCreateFromPath("data/pickups.bm", 0);
+	s_pPickupMasks = bitmapCreateFromPath("data/pickups_mask.bm", 0);
+	for(UBYTE i = 0; i < PICKUP_KIND_COUNT; ++i) {
+		s_pPickupFrameOffsets[i].pPixels = bobCalcFrameAddress(s_pPickupFrames, i * PICKUP_BOB_SIZE_Y);
+		s_pPickupFrameOffsets[i].pMask = bobCalcFrameAddress(s_pPickupMasks, i * PICKUP_BOB_SIZE_Y);
+	}
+
 	s_pBulletFrames = bitmapCreateFromPath("data/bullets.bm", 0);
 	s_pBulletMasks = bitmapCreateFromPath("data/bullets_mask.bm", 0);
 	for(UBYTE i = 0; i < WEAPON_MAX_BULLETS_IN_MAGAZINE; ++i) {
@@ -1402,6 +1620,8 @@ static void gameGsCreate(void) {
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
 		bobInit(&s_pEnemies[i].sBob, ENEMY_BOB_SIZE_X, ENEMY_BOB_SIZE_Y, 1, s_pEnemyFrameOffsets[0][0].pPixels, s_pEnemyFrameOffsets[0][0].pMask, 32, 32);
 	}
+
+	bobInit(&s_sPickup.sBob, PICKUP_BOB_SIZE_X, PICKUP_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 
 	bobReallocateBuffers();
 	gameMathInit();
@@ -1488,23 +1708,28 @@ static void gameGsLoop(void) {
 		projectileUndrawNext();
 	}
 
-	tCharacter **pPrev = &s_pSortedChars[0];
-	for(UBYTE i = 0; i < SORTED_CHARS_COUNT; ++i) {
-		tCharacter *pChar = s_pSortedChars[i];
-		if(pChar == &s_sPlayer) {
-			if(playerProcess()) {
-				return;
-			}
-		}
-		else {
-			enemyProcess(pChar);
+	tEntity **pPrev = &s_pSortedEntities[0];
+	for(UBYTE i = 0; i < SORTED_ENTITIES_COUNT; ++i) {
+		tEntity *pChar = s_pSortedEntities[i];
+		switch(pChar->eKind) {
+			case ENTITY_KIND_PLAYER:
+				if(playerProcess()) {
+					return;
+				}
+				break;
+			case ENTITY_KIND_ENEMY:
+				enemyProcess(pChar);
+				break;
+			case ENTITY_KIND_PICKUP:
+				pickupProcss(pChar);
+				break;
 		}
 
 		if(pChar->sPos.ulYX < (*pPrev)->sPos.ulYX) {
-			s_pSortedChars[i] = *pPrev;
+			s_pSortedEntities[i] = *pPrev;
 			*pPrev = pChar;
 		}
-		pPrev = &s_pSortedChars[i];
+		pPrev = &s_pSortedEntities[i];
 	}
 
 	s_pCurrentProjectile = &s_pProjectiles[0];
