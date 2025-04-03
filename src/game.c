@@ -126,14 +126,14 @@
 #define ENEMY_ATTACK_COOLDOWN 15
 #define ENEMY_HEALTH_BASE 5
 #define ENEMY_HEALTH_ADD_PER_LEVEL 5
-#define ENEMY_SCORE 25
+#define ENEMY_EXP 25
 #define ENEMY_SPEEDY_CHANCE_MAX 127
 #define ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL 10
 #define ENEMY_PREFERRED_SPAWN_NONE 0xFF
 
 #define ENEMY_COUNT 25
 #define PROJECTILE_COUNT 20
-#define PROJECTILE_LIFETIME 25
+#define PROJECTILE_LIFETIME GAME_FPS
 #define PROJECTILE_SPEED 5
 #define SPREAD_SIDE_COUNT 40
 
@@ -143,6 +143,7 @@
 #define PICKUP_BOB_OFFSET_Y ((PICKUP_BOB_SIZE_Y - 8) / 2)
 #define PICKUP_SPAWN_CHANCE_MAX 128
 #define PICKUP_SPAWN_CHANCE ((10 * PICKUP_SPAWN_CHANCE_MAX) / 100)
+#define PICKUP_LIFE_SECONDS 7
 
 // + player + pickup
 #define SORTED_ENTITIES_COUNT (ENEMY_COUNT + 1 + 1)
@@ -208,17 +209,27 @@ typedef struct tEntity {
 	tUwCoordYX sPos; ///< Top-left coordinate of collision box.
 	tBob sBob;
 	tCharacterFrame eFrame;
-	union {
-		tWeaponKind eWeapon;
-		tPickupKind ePickup;
-	};
 	WORD wHealth;
-	UBYTE ubFrameCooldown;
-	UBYTE ubAttackCooldown;
-	UBYTE ubAmmo;
-	UBYTE ubReloadCooldown;
-	UBYTE ubSpeed;
-	UBYTE ubPreferredSpawn;
+	union {
+		struct {
+			tWeaponKind eWeaponKind;
+			UBYTE ubFrameCooldown;
+			UBYTE ubAttackCooldown;
+			UBYTE ubAmmo;
+			UBYTE ubReloadCooldown;
+		} sPlayer;
+		struct {
+			UBYTE ubFrameCooldown;
+			UBYTE ubAttackCooldown;
+			UBYTE ubSpeed;
+			UBYTE ubPreferredSpawn;
+		} sEnemy;
+		struct {
+			tPickupKind ePickupKind;
+			WORD wBlinkCooldown;
+			UBYTE isDisplayed;
+		} sPickup;
+	};
 } tEntity;
 
 typedef struct tProjectile {
@@ -723,13 +734,13 @@ static void hudProcess(void) {
 		case HUD_STATE_DRAW_WEAPON:
 			++s_eHudState;
 			blitCopyAligned(
-				s_pHudWeapons, 0, s_sPlayer.eWeapon * HUD_WEAPON_SIZE_Y,
+				s_pHudWeapons, 0, s_sPlayer.sPlayer.eWeaponKind * HUD_WEAPON_SIZE_Y,
 				s_pBufferHud->pBack, 0, 0, HUD_WEAPON_SIZE_X, HUD_WEAPON_SIZE_Y
 			);
 			// fallthrough
 		case HUD_STATE_DRAW_BULLETS:
 			++s_eHudState;
-			if(s_ubHudAmmoCount != s_sPlayer.ubAmmo) {
+			if(s_ubHudAmmoCount != s_sPlayer.sPlayer.ubAmmo) {
 				if(s_ubHudAmmoCount == HUD_AMMO_COUNT_FORCE_REDRAW) {
 					s_ubHudAmmoCount = 0;
 					blitRect(
@@ -737,9 +748,9 @@ static void hudProcess(void) {
 						HUD_AMMO_FIELD_SIZE_X, HUD_AMMO_FIELD_SIZE_Y, COLOR_HUD_BG
 					);
 				}
-				else if(s_ubHudAmmoCount < s_sPlayer.ubAmmo) {
+				else if(s_ubHudAmmoCount < s_sPlayer.sPlayer.ubAmmo) {
 					UWORD uwSrcY;
-					switch(s_sPlayer.eWeapon) {
+					switch(s_sPlayer.sPlayer.eWeaponKind) {
 						case WEAPON_KIND_SAWOFF:
 						case WEAPON_KIND_SHOTGUN:
 							uwSrcY = BULLET_OFFSET_Y_SHELL;
@@ -840,8 +851,8 @@ static void hudProcess(void) {
 }
 
 static void playerSetWeapon(tWeaponKind eWeaponKind) {
-	s_sPlayer.eWeapon = eWeaponKind;
-	s_sPlayer.ubAmmo = s_pWeaponAmmo[eWeaponKind];
+	s_sPlayer.sPlayer.eWeaponKind = eWeaponKind;
+	s_sPlayer.sPlayer.ubAmmo = s_pWeaponAmmo[eWeaponKind];
 
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
 	// TOOD: set ammo
@@ -849,9 +860,9 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 
 __attribute__((always_inline))
 static inline void playerStartReloadWeapon(void) {
-	s_sPlayer.ubReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.eWeapon];
-	// s_sPlayer.ubReloadCooldown = 1;
-	s_sPlayer.ubAmmo = s_pWeaponAmmo[s_sPlayer.eWeapon];
+	s_sPlayer.sPlayer.ubReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.sPlayer.eWeaponKind];
+	// s_sPlayer.sPlayer.ubReloadCooldown = 1;
+	s_sPlayer.sPlayer.ubAmmo = s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind];
 	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
@@ -897,35 +908,35 @@ static inline void playerShootProjectile(BYTE bAngle, BYTE pSpreadSide[static SP
 
 static void playerShootWeapon(UBYTE ubAimAngle) {
 	// TODO: precalculate random stuff
-	switch(s_sPlayer.eWeapon) {
+	switch(s_sPlayer.sPlayer.eWeaponKind) {
 		case WEAPON_KIND_STOCK_RIFLE:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide1, WEAPON_DAMAGE_BASE_RIFLE);
 			audioMixerPlaySfx(s_pSfxRifle[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_BASE_RIFLE;
+			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_BASE_RIFLE;
 			break;
 			case WEAPON_KIND_SMG:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide3, WEAPON_DAMAGE_SMG);
 			audioMixerPlaySfx(s_pSfxSmg[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SMG;
+			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SMG;
 			break;
 		case WEAPON_KIND_ASSAULT_RIFLE:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide2, WEAPON_DAMAGE_ASSAULT_RIFLE);
 			audioMixerPlaySfx(s_pSfxAssault[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_ASSAULT_RIFLE;
+			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_ASSAULT_RIFLE;
 			break;
 		case WEAPON_KIND_SHOTGUN:
 			for(UBYTE i = 0; i < 10; ++i) {
 				playerShootProjectile(ubAimAngle, s_pSpreadSide3, WEAPON_DAMAGE_SHOTGUN);
 			}
 			audioMixerPlaySfx(s_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SHOTGUN;
+			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SHOTGUN;
 			break;
 		case WEAPON_KIND_SAWOFF:
 			for(UBYTE i = 0; i < 10; ++i) {
 				playerShootProjectile(ubAimAngle, s_pSpreadSide10, WEAPON_DAMAGE_SAWOFF);
 			}
 			audioMixerPlaySfx(s_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SAWOFF;
+			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SAWOFF;
 			break;
 	}
 	// TODO: remove ammo from magazine
@@ -939,71 +950,71 @@ static inline void enemyProcess(tEntity *pEnemy) {
 		// Despawn if enemy is too far
 		if(pEnemy->sPos.uwX < g_pGameBufferMain->pCamera->uPos.uwX - 32) {
 			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
-			pEnemy->ubPreferredSpawn = 1;
+			pEnemy->sEnemy.ubPreferredSpawn = 1;
 			return;
 		}
 		else if(g_pGameBufferMain->pCamera->uPos.uwX + GAME_MAIN_VPORT_SIZE_X + 32 < pEnemy->sPos.uwX) {
 			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
-			pEnemy->ubPreferredSpawn = 0;
+			pEnemy->sEnemy.ubPreferredSpawn = 0;
 			return;
 		}
 		else if(pEnemy->sPos.uwY < g_pGameBufferMain->pCamera->uPos.uwY - 32) {
 			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
-			pEnemy->ubPreferredSpawn = 3;
+			pEnemy->sEnemy.ubPreferredSpawn = 3;
 			return;
 		}
 		else if(g_pGameBufferMain->pCamera->uPos.uwY + GAME_MAIN_VPORT_SIZE_Y + 32 < pEnemy->sPos.uwY) {
-			pEnemy->ubPreferredSpawn = 2;
+			pEnemy->sEnemy.ubPreferredSpawn = 2;
 			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
 			return;
 		}
 		WORD wDistanceToPlayerX = s_sPlayer.sPos.uwX - pEnemy->sPos.uwX;
 		WORD wDistanceToPlayerY = s_sPlayer.sPos.uwY - pEnemy->sPos.uwY;
 		if(wDistanceToPlayerX < 0) {
-			bDeltaX = -pEnemy->ubSpeed;
+			bDeltaX = -pEnemy->sEnemy.ubSpeed;
 			if(wDistanceToPlayerY < 0) {
-				bDeltaY = -pEnemy->ubSpeed;
+				bDeltaY = -pEnemy->sEnemy.ubSpeed;
 				eDir = DIRECTION_NW;
 				wDistanceToPlayerY = -wDistanceToPlayerY;
 			}
 			else {
-				bDeltaY = pEnemy->ubSpeed;
+				bDeltaY = pEnemy->sEnemy.ubSpeed;
 				eDir = DIRECTION_SW;
 			}
 			wDistanceToPlayerX = -wDistanceToPlayerX;
 		}
 		else {
-			bDeltaX = pEnemy->ubSpeed;
+			bDeltaX = pEnemy->sEnemy.ubSpeed;
 			if(wDistanceToPlayerY < 0) {
-				bDeltaY = -pEnemy->ubSpeed;
+				bDeltaY = -pEnemy->sEnemy.ubSpeed;
 				eDir = DIRECTION_NE;
 				wDistanceToPlayerX = -wDistanceToPlayerX;
 			}
 			else {
-				bDeltaY = pEnemy->ubSpeed;
+				bDeltaY = pEnemy->sEnemy.ubSpeed;
 				eDir = DIRECTION_SE;
 			}
 	}
 
-		if(pEnemy->ubAttackCooldown == 0) {
+		if(pEnemy->sEnemy.ubAttackCooldown == 0) {
 			if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
 				s_sPlayer.wHealth -= 5;
 				audioMixerPlaySfx(s_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
-				pEnemy->ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
+				pEnemy->sEnemy.ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
 			}
 		}
 		else {
-			--pEnemy->ubAttackCooldown;
+			--pEnemy->sEnemy.ubAttackCooldown;
 		}
 
 		// if(0) {
 			enemyTryMoveBy(pEnemy, bDeltaX, bDeltaY);
 		// }
-		if(!pEnemy->ubFrameCooldown) {
-			pEnemy->ubFrameCooldown = 1;
+		if(!pEnemy->sEnemy.ubFrameCooldown) {
+			pEnemy->sEnemy.ubFrameCooldown = 1;
 		}
 		else {
-			pEnemy->ubFrameCooldown = 0;
+			pEnemy->sEnemy.ubFrameCooldown = 0;
 			pEnemy->eFrame = (pEnemy->eFrame + 1);
 			if(pEnemy->eFrame > PLAYER_FRAME_WALK_8) {
 				pEnemy->eFrame = PLAYER_FRAME_WALK_1;
@@ -1020,13 +1031,13 @@ static inline void enemyProcess(tEntity *pEnemy) {
 		if(pEnemy->wHealth != HEALTH_DEAD) {
 			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
 			if(pEnemy->wHealth != HEALTH_DEAD_NON_PLAYER_CAUSE) {
-				scoreAdd(ENEMY_SCORE);
+				scoreAdd(ENEMY_EXP);
 				++s_ulKills;
 				if(s_sPickup.wHealth == HEALTH_PICKUP_INACTIVE) {
 					s_sPickup.wHealth = HEALTH_PICKUP_READY_TO_SPAWN;
 					s_sPickup.sPos = pEnemy->sPos;
 				}
-				pEnemy->ubPreferredSpawn = ENEMY_PREFERRED_SPAWN_NONE;
+				pEnemy->sEnemy.ubPreferredSpawn = ENEMY_PREFERRED_SPAWN_NONE;
 			}
 			pEnemy->wHealth = HEALTH_DEAD;
 			// Failsafe to prevent trashing collision map
@@ -1035,7 +1046,7 @@ static inline void enemyProcess(tEntity *pEnemy) {
 		}
 		else {
 			// Try respawn
-			if(pEnemy->ubPreferredSpawn == ENEMY_PREFERRED_SPAWN_NONE) {
+			if(pEnemy->sEnemy.ubPreferredSpawn == ENEMY_PREFERRED_SPAWN_NONE) {
 				tUwCoordYX sClosest;
 				UWORD uwClosestDistance = 0xFFFF;
 				for(UBYTE i = 0; i < RESPAWN_SLOTS_PER_POSITION; ++i) {
@@ -1053,17 +1064,17 @@ static inline void enemyProcess(tEntity *pEnemy) {
 					pEnemy->wHealth = s_uwEnemySpawnHealth;
 					s_pCollisionTiles[sClosest.uwX / COLLISION_SIZE_X][sClosest.uwY / COLLISION_SIZE_Y] = pEnemy;
 					pEnemy->sPos = sClosest;
-					pEnemy->ubSpeed = (randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) ? 2 : 1;
+					pEnemy->sEnemy.ubSpeed = (randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) ? 2 : 1;
 					return;
 				}
 			}
 			else {
-				tUwCoordYX sSpawn = s_pRespawnSlots[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y][pEnemy->ubPreferredSpawn];
+				tUwCoordYX sSpawn = s_pRespawnSlots[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y][pEnemy->sEnemy.ubPreferredSpawn];
 				if(!s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y]) {
 					pEnemy->wHealth = s_uwEnemySpawnHealth;
 					s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y] = pEnemy;
 					pEnemy->sPos = sSpawn;
-					pEnemy->ubSpeed = (randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) ? 2 : 1;
+					pEnemy->sEnemy.ubSpeed = (randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) ? 2 : 1;
 					return;
 				}
 			}
@@ -1197,9 +1208,9 @@ void gameStart(void) {
 		s_pEnemies[i].sPos.uwX = 32 + (i % 8) * 32;
 		s_pEnemies[i].sPos.uwY = 32 + (i / 8) * 32;
 		s_pEnemies[i].eFrame = 0;
-		s_pEnemies[i].ubFrameCooldown = 0;
-		s_pEnemies[i].ubAttackCooldown = 0;
-		s_pEnemies[i].ubSpeed = 1;
+		s_pEnemies[i].sEnemy.ubFrameCooldown = 0;
+		s_pEnemies[i].sEnemy.ubAttackCooldown = 0;
+		s_pEnemies[i].sEnemy.ubSpeed = 1;
 		s_pCollisionTiles[s_pEnemies[i].sPos.uwX / COLLISION_SIZE_X][s_pEnemies[i].sPos.uwY / COLLISION_SIZE_Y] = &s_pEnemies[i];
 		s_pSortedEntities[ubSorted++] = &s_pEnemies[i];
 	}
@@ -1209,8 +1220,8 @@ void gameStart(void) {
 	s_sPlayer.sPos.uwX = (MAP_TILES_X * MAP_TILE_SIZE) / 2;
 	s_sPlayer.sPos.uwY = (MAP_TILES_Y * MAP_TILE_SIZE) / 2;
 	s_sPlayer.eFrame = 0;
-	s_sPlayer.ubFrameCooldown = 0;
-	s_sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
+	s_sPlayer.sEnemy.ubFrameCooldown = 0;
+	s_sPlayer.sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
 	playerSetWeapon(WEAPON_KIND_STOCK_RIFLE);
 	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
 	s_pSortedEntities[ubSorted++] = &s_sPlayer;
@@ -1296,20 +1307,20 @@ static inline UBYTE playerProcess(void) {
 		}
 		if(bDeltaX || bDeltaY) {
 			playerTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
-			if(s_sPlayer.ubFrameCooldown >= 1) {
+			if(s_sPlayer.sPlayer.ubFrameCooldown >= 1) {
 				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
 				if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
 					s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
 				}
-				s_sPlayer.ubFrameCooldown = 0;
+				s_sPlayer.sPlayer.ubFrameCooldown = 0;
 			}
 			else {
-				++s_sPlayer.ubFrameCooldown;
+				++s_sPlayer.sPlayer.ubFrameCooldown;
 			}
 		}
 		else {
 			s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
-			s_sPlayer.ubFrameCooldown = 0;
+			s_sPlayer.sPlayer.ubFrameCooldown = 0;
 		}
 
 		tDirection eDir;
@@ -1337,27 +1348,27 @@ static inline UBYTE playerProcess(void) {
 		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
 		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
 
-		if(!s_sPlayer.ubAttackCooldown) {
-			if(!s_sPlayer.ubReloadCooldown) {
-				if(!s_sPlayer.ubAmmo) {
+		if(!s_sPlayer.sPlayer.ubAttackCooldown) {
+			if(!s_sPlayer.sPlayer.ubReloadCooldown) {
+				if(!s_sPlayer.sPlayer.ubAmmo) {
 					playerStartReloadWeapon();
 				}
 				else {
 					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-						--s_sPlayer.ubAmmo;
+						--s_sPlayer.sPlayer.ubAmmo;
 						playerShootWeapon(ubAimAngle);
 					}
-					else if(keyUse(KEY_R) && s_sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.eWeapon]) {
+					else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind]) {
 						playerStartReloadWeapon();
 					}
 				}
 			}
 			else {
-				--s_sPlayer.ubReloadCooldown;
+				--s_sPlayer.sPlayer.ubReloadCooldown;
 			}
 		}
 		else {
-			--s_sPlayer.ubAttackCooldown;
+			--s_sPlayer.sPlayer.ubAttackCooldown;
 		}
 	}
 	else {
@@ -1380,12 +1391,14 @@ static inline UBYTE playerProcess(void) {
 
 __attribute__((always_inline))
 static inline void pickupSpawnRandom(void) {
-	s_sPickup.wHealth = 10 * 25;
-	s_sPickup.ePickup = randUwMax(&g_sRand, PICKUP_KIND_COUNT - 1);
+	s_sPickup.wHealth = PICKUP_LIFE_SECONDS * GAME_FPS;
+	s_sPickup.sPickup.wBlinkCooldown = (PICKUP_LIFE_SECONDS - 3) * GAME_FPS;
+	s_sPickup.sPickup.ePickupKind = randUwMax(&g_sRand, PICKUP_KIND_COUNT - 1);
+	s_sPickup.sPickup.isDisplayed = 1;
 	bobSetFrame(
 		&s_sPickup.sBob,
-		s_pPickupFrameOffsets[s_sPickup.ePickup].pPixels,
-		s_pPickupFrameOffsets[s_sPickup.ePickup].pMask
+		s_pPickupFrameOffsets[s_sPickup.sPickup.ePickupKind].pPixels,
+		s_pPickupFrameOffsets[s_sPickup.sPickup.ePickupKind].pMask
 	);
 	s_sPickup.sBob.sPos.uwX = s_sPickup.sPos.uwX - PICKUP_BOB_OFFSET_X;
 	s_sPickup.sBob.sPos.uwY = s_sPickup.sPos.uwY - PICKUP_BOB_OFFSET_Y;
@@ -1397,16 +1410,22 @@ static inline void pickupProcss(tEntity *pPickup) {
 		--pPickup->wHealth;
 		if(isPositionCollidingWithEntity(pPickup->sPos, &s_sPlayer)) {
 			pPickup->wHealth = 0;
-			playerApplyPickup(pPickup->ePickup);
+			playerApplyPickup(pPickup->sPickup.ePickupKind);
 		}
 		else {
-			bobPush(&pPickup->sBob);
+			if(--s_sPickup.sPickup.wBlinkCooldown == 0) {
+				s_sPickup.sPickup.wBlinkCooldown = GAME_FPS / 5;
+				s_sPickup.sPickup.isDisplayed = !s_sPickup.sPickup.isDisplayed;
+			}
+			if(s_sPickup.sPickup.isDisplayed) {
+				bobPush(&pPickup->sBob);
+			}
 		}
 	}
 	else {
 		if(pPickup->wHealth == HEALTH_PICKUP_READY_TO_SPAWN) {
 			if(
-				s_sPlayer.eWeapon == WEAPON_KIND_STOCK_RIFLE ||
+				s_sPlayer.sPlayer.eWeaponKind == WEAPON_KIND_STOCK_RIFLE ||
 				randUwMax(&g_sRand, PICKUP_SPAWN_CHANCE_MAX) < PICKUP_SPAWN_CHANCE
 			) {
 				pickupSpawnRandom();
