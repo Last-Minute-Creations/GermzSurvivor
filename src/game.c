@@ -853,9 +853,10 @@ static void hudProcess(void) {
 static void playerSetWeapon(tWeaponKind eWeaponKind) {
 	s_sPlayer.sPlayer.eWeaponKind = eWeaponKind;
 	s_sPlayer.sPlayer.ubAmmo = s_pWeaponAmmo[eWeaponKind];
+	s_sPlayer.sPlayer.ubReloadCooldown = 0;
 
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
-	// TOOD: set ammo
+	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
 __attribute__((always_inline))
