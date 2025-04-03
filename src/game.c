@@ -1820,6 +1820,8 @@ static void gameGsDestroy(void) {
 		bitmapDestroy(s_pEnemyMasks[eDir]);
 	}
 
+	bitmapDestroy(s_pPickupFrames);
+	bitmapDestroy(s_pPickupMasks);
 	bitmapDestroy(s_pBulletFrames);
 	bitmapDestroy(s_pBulletMasks);
 	bitmapDestroy(s_pStainFrames);

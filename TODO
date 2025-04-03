@@ -78,7 +78,7 @@ Bare minimum:
 		✘ Display hover text @cancelled(25-04-03)
 		✔ Sort the bob @done(25-04-03)
 		✔ Dissipate after some time @done(25-04-03)
-		☐ Blink in last 3 seconds
+		✔ Blink in last 3 seconds @done(25-04-03)
 
 Nice to have:
 	☐ Add zombie anti-clumping
