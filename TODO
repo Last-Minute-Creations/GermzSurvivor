@@ -52,12 +52,14 @@ Bare minimum:
 	Scale zombies with exp:
 		✔ Speed up zombies after some levels @done(25-03-28)
 		✔ Increase zombie hp with each level @done(25-03-28)
+	☐ Make the zombies go away after player death so that death anim is visible
 	Animations, second pass:
 		✔ Add zombie movement animation @done(25-03-28)
 		✔ Add running while aiming animation @done(25-04-03)
-		☐ Add shooting while aiming animation
-		☐ Add death animation
-		☐ Add zombie explode animation
+		✔ Add shooting while aiming animation @done(25-04-03)
+		✔ Add player death animation @done(25-04-03)
+		☐ Add final zombie walk frames
+		☐ Add zombie death animation
 	Cursor refinements:
 		☐ Improve visibility of cursor
 		☐ Add reload indicator on cursor

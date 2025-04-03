@@ -172,6 +172,15 @@ typedef enum tDirection {
 } tDirection;
 
 typedef enum tCharacterFrame {
+	PLAYER_FRAME_DIE_1,
+	PLAYER_FRAME_DIE_2,
+	PLAYER_FRAME_DIE_3,
+	PLAYER_FRAME_DIE_4,
+	PLAYER_FRAME_DIE_5,
+	PLAYER_FRAME_DIE_6,
+	PLAYER_FRAME_DIE_7,
+	PLAYER_FRAME_DIE_8,
+
 	PLAYER_FRAME_WALK_1,
 	PLAYER_FRAME_WALK_2,
 	PLAYER_FRAME_WALK_3,
@@ -222,6 +231,7 @@ typedef struct tEntity {
 	union {
 		struct {
 			tWeaponKind eWeaponKind;
+			tDirection eDirection;
 			UBYTE ubFrameCooldown;
 			UBYTE ubAttackCooldown;
 			UBYTE ubAmmo;
@@ -368,6 +378,69 @@ static tBob *s_pWaitStains[STAINS_MAX];
 static tBob **s_pNextFreeStain;
 static tBob **s_pNextPushStain;
 static tBob **s_pNextWaitStain;
+
+static const tBCoordYX s_pPlayerFrameDeathOffset[DIRECTION_COUNT][8] = {
+	[DIRECTION_S] = {
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 1 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 2 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 6 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 6 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 9 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 9 },
+	},
+	[DIRECTION_SW] = {
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X - 2, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X - 5, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X - 7, .bY = -PLAYER_BOB_OFFSET_Y + 1 },
+		{.bX = -PLAYER_BOB_OFFSET_X - 7, .bY = -PLAYER_BOB_OFFSET_Y + 1 },
+	},
+	[DIRECTION_NW] = {
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X - 4, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X - 4, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+	},
+	[DIRECTION_N] = {
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+	},
+	[DIRECTION_NE] = {
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 2, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 4, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 6, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 7, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 8, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 8, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+	},
+	[DIRECTION_SE] = {
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 0 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 5 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 0, .bY = -PLAYER_BOB_OFFSET_Y + 4 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 1, .bY = -PLAYER_BOB_OFFSET_Y + 5 },
+		{.bX = -PLAYER_BOB_OFFSET_X + 1, .bY = -PLAYER_BOB_OFFSET_Y + 5 },
+	},
+};
 
 tSimpleBufferManager *g_pGameBufferMain;
 tTextBitMap *g_pGameLineBuffer;
@@ -1376,17 +1449,40 @@ static inline UBYTE playerProcess(void) {
 		else {
 			eDir = DIRECTION_NE;
 		}
-
+		s_sPlayer.sPlayer.eDirection = eDir;
 		tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
 		bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
 		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
 		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
+		cameraCenterAtOptimized(g_pGameBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
 	}
 	else {
 		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
+		if(s_ubDeathCooldown == GAME_PLAYER_DEATH_COOLDOWN) {
+			// Create a different move target for zombies
+			// s_sPlayer.sPos.uwX = (MAP_TILES_X * MAP_TILE_SIZE) - s_sPlayer.sPos.uwX;
+			// s_sPlayer.sPos.uwY = (MAP_TILES_X * MAP_TILE_SIZE) - s_sPlayer.sPos.uwY;
+			s_sPlayer.eFrame = PLAYER_FRAME_DIE_1;
+			s_sPlayer.sPlayer.ubFrameCooldown = 0;
+		}
 		if(s_ubDeathCooldown) {
 			--s_ubDeathCooldown;
-		}
+
+			if(s_sPlayer.sPlayer.ubFrameCooldown >= 1) {
+				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
+				if(s_sPlayer.eFrame > PLAYER_FRAME_DIE_8) {
+					s_sPlayer.eFrame = PLAYER_FRAME_DIE_8;
+				}
+				s_sPlayer.sPlayer.ubFrameCooldown = 0;
+			}
+			else {
+				++s_sPlayer.sPlayer.ubFrameCooldown;
+			}
+			tFrameOffset *pOffset = &s_pPlayerFrameOffsets[s_sPlayer.sPlayer.eDirection][s_sPlayer.eFrame];
+			bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
+			s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX + s_pPlayerFrameDeathOffset[s_sPlayer.sPlayer.eDirection]->bX;
+			s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY + s_pPlayerFrameDeathOffset[s_sPlayer.sPlayer.eDirection]->bY;
+			}
 		else {
 			menuPush(1);
 			return 1;
@@ -1395,8 +1491,6 @@ static inline UBYTE playerProcess(void) {
 	bobPush(&s_sPlayer.sBob);
 
 	gameProcessCursor(uwMouseX, uwMouseY);
-
-	cameraCenterAtOptimized(g_pGameBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
 	return 0;
 }
 
