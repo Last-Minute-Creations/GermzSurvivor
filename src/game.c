@@ -181,7 +181,17 @@ typedef enum tCharacterFrame {
 	PLAYER_FRAME_WALK_7,
 	PLAYER_FRAME_WALK_8,
 
-	PLAYER_FRAME_COUNT
+	PLAYER_FRAME_SHOOT_1,
+	PLAYER_FRAME_SHOOT_2,
+	PLAYER_FRAME_SHOOT_3,
+	PLAYER_FRAME_SHOOT_4,
+	PLAYER_FRAME_SHOOT_5,
+	PLAYER_FRAME_SHOOT_6,
+	PLAYER_FRAME_SHOOT_7,
+	PLAYER_FRAME_SHOOT_8,
+
+	PLAYER_FRAME_COUNT,
+	ENEMY_FRAME_COUNT = PLAYER_FRAME_SHOOT_1
 } tCharacterFrame;
 
 typedef enum tWeaponKind {
@@ -280,7 +290,7 @@ static UWORD s_uwEnemySpawnHealth;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
-static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
+static tFrameOffset s_pEnemyFrameOffsets[DIRECTION_COUNT][ENEMY_FRAME_COUNT];
 static tEntity s_pEnemies[ENEMY_COUNT];
 
 static tEntity s_sPickup;
@@ -1323,6 +1333,30 @@ static inline UBYTE playerProcess(void) {
 			s_sPlayer.sPlayer.ubFrameCooldown = 0;
 		}
 
+		if(!s_sPlayer.sPlayer.ubAttackCooldown) {
+			if(!s_sPlayer.sPlayer.ubReloadCooldown) {
+				if(!s_sPlayer.sPlayer.ubAmmo) {
+					playerStartReloadWeapon();
+				}
+				else {
+					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
+						--s_sPlayer.sPlayer.ubAmmo;
+						playerShootWeapon(ubAimAngle);
+						s_sPlayer.eFrame += PLAYER_FRAME_SHOOT_1;
+					}
+					else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind]) {
+						playerStartReloadWeapon();
+					}
+				}
+			}
+			else {
+				--s_sPlayer.sPlayer.ubReloadCooldown;
+			}
+		}
+		else {
+			--s_sPlayer.sPlayer.ubAttackCooldown;
+		}
+
 		tDirection eDir;
 		if(ubAimAngle < ANGLE_45) {
 			eDir = DIRECTION_SE;
@@ -1347,29 +1381,6 @@ static inline UBYTE playerProcess(void) {
 		bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
 		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
 		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
-
-		if(!s_sPlayer.sPlayer.ubAttackCooldown) {
-			if(!s_sPlayer.sPlayer.ubReloadCooldown) {
-				if(!s_sPlayer.sPlayer.ubAmmo) {
-					playerStartReloadWeapon();
-				}
-				else {
-					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-						--s_sPlayer.sPlayer.ubAmmo;
-						playerShootWeapon(ubAimAngle);
-					}
-					else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind]) {
-						playerStartReloadWeapon();
-					}
-				}
-			}
-			else {
-				--s_sPlayer.sPlayer.ubReloadCooldown;
-			}
-		}
-		else {
-			--s_sPlayer.sPlayer.ubAttackCooldown;
-		}
 	}
 	else {
 		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
@@ -1555,7 +1566,7 @@ static void gameGsCreate(void) {
 	s_pEnemyMasks[DIRECTION_SE] = bitmapCreateFromPath("data/zombie_se_mask.bm", 0);
 
 	for(tDirection eDir = 0; eDir < DIRECTION_COUNT; ++eDir) {
-		for(tCharacterFrame eFrame = 0; eFrame < PLAYER_FRAME_COUNT; ++eFrame) {
+		for(tCharacterFrame eFrame = 0; eFrame < ENEMY_FRAME_COUNT; ++eFrame) {
 			s_pEnemyFrameOffsets[eDir][eFrame].pPixels = bobCalcFrameAddress(s_pEnemyFrames[eDir], eFrame * ENEMY_BOB_SIZE_Y);
 			s_pEnemyFrameOffsets[eDir][eFrame].pMask = bobCalcFrameAddress(s_pEnemyMasks[eDir], eFrame * ENEMY_BOB_SIZE_Y);
 

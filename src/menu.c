@@ -238,6 +238,11 @@ static void menuGsCreate(void) {
 	buttonAdd("Quit", COMM_DISPLAY_WIDTH / 2, uwY); uwY += buttonGetHeight() + MENU_BUTTON_MARGIN_Y;
 	buttonDrawAll(commGetDisplayBuffer());
 
+	commDrawText(
+		COMM_DISPLAY_WIDTH / 2, COMM_DISPLAY_HEIGHT, "v" GAME_VERSION,
+		FONT_COOKIE | FONT_BOTTOM | FONT_HCENTER, COMM_DISPLAY_COLOR_TEXT_DARK
+	);
+
 	viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
 	copProcessBlocks();
 	logBlockEnd("menuGsCreate()");
