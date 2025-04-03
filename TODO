@@ -54,10 +54,10 @@ Bare minimum:
 		✔ Increase zombie hp with each level @done(25-03-28)
 	Animations, second pass:
 		✔ Add zombie movement animation @done(25-03-28)
+		✔ Add running while aiming animation @done(25-04-03)
+		☐ Add shooting while aiming animation
 		☐ Add death animation
 		☐ Add zombie explode animation
-		☐ Add running while aiming animation
-		☐ Add shooting while aiming animation
 	Cursor refinements:
 		☐ Improve visibility of cursor
 		☐ Add reload indicator on cursor
@@ -102,6 +102,7 @@ Optimizations:
 	☐ Process two bullet undraws in one bob undraw and do something else in remaining calls?
 	☐ Low-height font for HUD score draw
 	☐ Speed chance rand table
+	☐ Pickup chance rand table
 
 Perks to implement:
 	☐ Fast loader

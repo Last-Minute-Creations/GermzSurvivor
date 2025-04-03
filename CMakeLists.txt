@@ -77,7 +77,7 @@ convertFont(
 #----------------------------------------------------------------------- PALETTE
 
 file(GLOB PALETTE_SPRITE ${RES_DIR}/sprite.plt)
-file(GLOB PALETTE_GPL ${RES_DIR}/game.gpl)
+file(GLOB PALETTE_GPL ${RES_DIR}/survivor.gpl)
 set(PALETTE_PLT ${DATA_DIR}/game.plt)
 set(TRANSPARENCY_HEX "#880088")
 
@@ -95,16 +95,16 @@ convertBitmaps(
 
 #-------------------------------------------------------------------------- MENU
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/killfriend.png
 	GENERATED_FILE_LIST "KILLFRIEND_PATH"
 	DESTINATIONS
-	${GEN_DIR}/killfriend.png 384 0 256 192
+	${GEN_DIR}/killfriend.png 32 31 256 192
 )
 
 #------------------------------------------------------------------------- TILES
 file(MAKE_DIRECTORY ${GEN_DIR}/tiles)
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/tiles.png
 	GENERATED_FILE_LIST "TILE_PATHS"
 	DESTINATIONS
 	# Corners
@@ -407,21 +407,34 @@ convertTileset(
 
 #----------------------------------------------------------------------- PICKUPS
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
-	GENERATED_FILE_LIST "PICKUPS_PATH"
+file(MAKE_DIRECTORY ${GEN_DIR}/pickups)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/pickups.png
+	GENERATED_FILE_LIST "PICKUP_PATHS"
 	DESTINATIONS
-	${GEN_DIR}/pickups.png 80 230 16 40
+	${GEN_DIR}/pickups/0.png 3  61 16 12
+	${GEN_DIR}/pickups/1.png 3  77 16 12
+	${GEN_DIR}/pickups/2.png 3  93 16 12
+	${GEN_DIR}/pickups/3.png 3 109 16 12
+	${GEN_DIR}/pickups/4.png 3 125 16 12
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 12
+	SOURCE ${GEN_DIR}/pickups
+	INTERLEAVED DESTINATION ${GEN_DIR}/pickups.png
+	TILE_PATHS ${PICKUP_PATHS}
 )
 
 #----------------------------------------------------------------------- BULLETS
 
 file(MAKE_DIRECTORY ${GEN_DIR}/bullets)
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/misc.png
 	GENERATED_FILE_LIST "BULLETS_PATHS"
 	DESTINATIONS
-	${GEN_DIR}/bullets/0.png  134 147 16 6
-	${GEN_DIR}/bullets/1.png  134 154 16 6
+	${GEN_DIR}/bullets/0.png  270 104 16 6
+	${GEN_DIR}/bullets/1.png  270 111 16 6
 )
 
 convertTileset(
@@ -435,12 +448,12 @@ convertTileset(
 
 file(MAKE_DIRECTORY ${GEN_DIR}/stains)
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/mockup.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/misc.png
 	GENERATED_FILE_LIST "STAINS_PATHS"
 	DESTINATIONS
-	${GEN_DIR}/stains/0.png   35 141 16 16
-	${GEN_DIR}/stains/1.png   35 161 16 16
-	${GEN_DIR}/stains/2.png   33 179 16 16
+	${GEN_DIR}/stains/0.png 256 136 16 16
+	${GEN_DIR}/stains/1.png 256 152 16 16
+	${GEN_DIR}/stains/2.png 256 168 16 16
 )
 
 convertTileset(

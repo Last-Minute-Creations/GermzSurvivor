@@ -93,11 +93,10 @@
 #define MAP_TILE_SIZE  (1 << MAP_TILE_SHIFT)
 #define SPRITE_CHANNEL_CURSOR 6
 
-#define COLOR_HUD_BG 6
-#define COLOR_BAR_BG 10
-#define COLOR_RED 16
-#define COLOR_HUD_HP 23
-#define COLOR_HUD_SCORE 20
+#define COLOR_HUD_BG 17
+#define COLOR_BAR_BG 16
+#define COLOR_HUD_HP 9
+#define COLOR_HUD_SCORE 19
 
 #define COLLISION_SIZE_X 8
 #define COLLISION_SIZE_Y 8
@@ -138,9 +137,9 @@
 #define SPREAD_SIDE_COUNT 40
 
 #define PICKUP_BOB_SIZE_X 16
-#define PICKUP_BOB_SIZE_Y 8
-#define PICKUP_BOB_OFFSET_X ((PICKUP_BOB_SIZE_X - 8) / 2)
-#define PICKUP_BOB_OFFSET_Y ((PICKUP_BOB_SIZE_Y - 8) / 2)
+#define PICKUP_BOB_SIZE_Y 12
+#define PICKUP_BOB_OFFSET_X (PICKUP_BOB_SIZE_X / 2)
+#define PICKUP_BOB_OFFSET_Y (PICKUP_BOB_SIZE_Y / 2)
 #define PICKUP_SPAWN_CHANCE_MAX 128
 #define PICKUP_SPAWN_CHANCE ((10 * PICKUP_SPAWN_CHANCE_MAX) / 100)
 #define PICKUP_LIFE_SECONDS 7
@@ -1501,7 +1500,7 @@ static void gameGsCreate(void) {
 
 	paletteLoadFromPath("data/game.plt", s_pVpHud->pPalette, 1 << GAME_BPP);
 
-	s_pMod = ptplayerModCreateFromPath("data/germz1.mod");
+	s_pMod = ptplayerModCreateFromPath("data/game.mod");
 
 	randInit(&g_sRand, 2184, 1911);
 
