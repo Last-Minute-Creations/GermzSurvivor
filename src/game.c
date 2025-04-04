@@ -56,23 +56,23 @@
 #define HUD_AMMO_FIELD_SIZE_Y (HUD_AMMO_BULLET_COUNT_Y * (HUD_AMMO_BULLET_SIZE_Y + 1) - 1)
 #define HUD_AMMO_COUNT_FORCE_REDRAW 0xFF
 #define HUD_HEALTH_BAR_OFFSET_X 200
-#define HUD_HEALTH_BAR_OFFSET_Y 12
+#define HUD_HEALTH_BAR_OFFSET_Y 11
 #define HUD_HEALTH_BAR_SIZE_X PLAYER_HEALTH_MAX
 #define HUD_HEALTH_BAR_SIZE_Y 3
 #define HUD_SCORE_DIGITS 10
 #define HUD_SCORE_TEXT_X 200
-#define HUD_SCORE_TEXT_Y 0
+#define HUD_SCORE_TEXT_Y 1
 #define HUD_SCORE_TEXT_SIZE_X (HUD_SCORE_DIGITS * (DIGIT_WIDTH_MAX + 1) - 1)
-#define HUD_SCORE_TEXT_SIZE_Y 8
+#define HUD_SCORE_TEXT_SIZE_Y 5
 #define HUD_SCORE_BAR_OFFSET_X 200
-#define HUD_SCORE_BAR_OFFSET_Y 8
+#define HUD_SCORE_BAR_OFFSET_Y 7
 #define HUD_SCORE_BAR_SIZE_X 100
 #define HUD_SCORE_BAR_SIZE_Y 3
 #define HUD_LEVEL_DIGITS 3
-#define HUD_LEVEL_TEXT_X (HUD_SCORE_TEXT_X + HUD_SCORE_TEXT_SIZE_X + 10)
 #define HUD_LEVEL_TEXT_Y HUD_SCORE_TEXT_Y
 #define HUD_LEVEL_TEXT_SIZE_X (HUD_LEVEL_DIGITS * (DIGIT_WIDTH_MAX + 1) - 1)
 #define HUD_LEVEL_TEXT_SIZE_Y HUD_SCORE_TEXT_SIZE_Y
+#define HUD_LEVEL_TEXT_X (HUD_SCORE_BAR_OFFSET_X + HUD_SCORE_BAR_SIZE_X - HUD_LEVEL_TEXT_SIZE_X)
 
 #define BULLET_OFFSET_Y_SHELL 0
 #define BULLET_OFFSET_Y_BULLET 6
@@ -98,10 +98,10 @@
 #define BG_TILE_COUNT 8
 #define SPRITE_CHANNEL_CURSOR 4
 
-#define COLOR_HUD_BG 17
-#define COLOR_BAR_BG 16
+#define COLOR_HUD_BG 28
+#define COLOR_BAR_BG 24
 #define COLOR_HUD_HP 9
-#define COLOR_HUD_SCORE 19
+#define COLOR_HUD_SCORE 25
 
 #define COLLISION_SIZE_X 8
 #define COLLISION_SIZE_Y 8
@@ -899,7 +899,7 @@ static void hudProcess(void) {
 				++s_eHudState;
 				char szScore[sizeof("4294967295")];
 				stringDecimalFromULong(s_ulScore, szScore);
-				fontFillTextBitMap(g_pFont, g_pGameLineBuffer, szScore);
+				fontFillTextBitMap(g_pFontSmall, g_pGameLineBuffer, szScore);
 				break;
 			}
 			else {
@@ -944,7 +944,7 @@ static void hudProcess(void) {
 				s_ubHudLevel = s_ubScoreLevel;
 				char szScore[sizeof("255")];
 				stringDecimalFromULong(s_ubScoreLevel, szScore);
-				fontFillTextBitMap(g_pFont, g_pGameLineBuffer, szScore);
+				fontFillTextBitMap(g_pFontSmall, g_pGameLineBuffer, szScore);
 			}
 			else {
 				s_eHudState = 0; // skip to beginning
@@ -1307,25 +1307,45 @@ void gameStart(void) {
 	}
 
 	s_ubDeathCooldown = GAME_PLAYER_DEATH_COOLDOWN;
-	s_uwHudHealth = 0;
-	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
-	s_ulHudScore = 0;
-	s_ubHudLevel = 255;
-	s_ubHudBarPixel = 0;
-	s_eHudState = HUD_STATE_PREPARE_LEVEL_NUM;
-	blitRect(
-		s_pBufferHud->pBack,
-		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
-		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
-	);
 	gameSetCursor(CURSOR_KIND_FULL);
 
 	s_ulKills = 0;
 	s_ulScore = 0;
 	s_ulPrevLevelScore = 0;
 	s_ulNextLevelScore = 1024;
-	s_ubScoreLevel = 0;
+	s_ubScoreLevel = 1;
 	s_ubHiSpeedChance = 0;
+
+	s_uwHudHealth = 0;
+	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
+	s_ulHudScore = 1;
+	s_ubHudLevel = 255;
+	s_ubHudBarPixel = 0;
+	s_eHudState = 0;
+	blitRect(
+		s_pBufferHud->pBack,
+		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
+		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
+	);
+	blitRect(
+		s_pBufferHud->pBack,
+		HUD_HEALTH_BAR_OFFSET_X, HUD_HEALTH_BAR_OFFSET_Y,
+		HUD_HEALTH_BAR_SIZE_X, HUD_HEALTH_BAR_SIZE_Y, COLOR_BAR_BG
+	);
+	fontDrawStr(
+		g_pFontSmall, s_pBufferHud->pBack,
+		HUD_SCORE_TEXT_X - 20, HUD_SCORE_TEXT_Y, "EXP",
+		COLOR_HUD_SCORE, FONT_COOKIE, g_pGameLineBuffer
+	);
+	fontDrawStr(
+		g_pFontSmall, s_pBufferHud->pBack,
+		HUD_LEVEL_TEXT_X - 20, HUD_LEVEL_TEXT_Y, "LVL",
+		COLOR_HUD_SCORE, FONT_COOKIE, g_pGameLineBuffer
+	);
+
+	do {
+		hudProcess();
+	} while(s_eHudState != 0);
 
 	for(UBYTE ubX = 0; ubX < COLLISION_LOOKUP_SIZE_X; ++ubX) {
 		for(UBYTE ubY = 0; ubY < COLLISION_LOOKUP_SIZE_Y; ++ubY) {
@@ -1533,8 +1553,8 @@ static inline UBYTE playerProcess(void) {
 			}
 			tFrameOffset *pOffset = &s_pPlayerFrameOffsets[s_sPlayer.sPlayer.eDirection][s_sPlayer.eFrame];
 			bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
-			s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX + s_pPlayerFrameDeathOffset[s_sPlayer.sPlayer.eDirection]->bX;
-			s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY + s_pPlayerFrameDeathOffset[s_sPlayer.sPlayer.eDirection]->bY;
+			s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX + s_pPlayerFrameDeathOffset[s_sPlayer.sPlayer.eDirection][s_sPlayer.eFrame - ENTITY_FRAME_DIE_1].bX;
+			s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY + s_pPlayerFrameDeathOffset[s_sPlayer.sPlayer.eDirection][s_sPlayer.eFrame - ENTITY_FRAME_DIE_1].bY;
 			}
 		else {
 			gameSetCursor(CURSOR_KIND_FULL);

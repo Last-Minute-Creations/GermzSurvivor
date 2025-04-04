@@ -12,6 +12,9 @@ void assetsGlobalCreate(void);
 void assetsGlobalDestroy(void);
 
 extern tFont *g_pFont;
+extern tFont *g_pFontSmall;
+
+extern tBitMap *g_pLogo;
 
 #endif // SURVIVOR_ASSETS_H
 

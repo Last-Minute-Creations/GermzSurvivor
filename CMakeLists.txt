@@ -73,6 +73,10 @@ convertFont(
 	TARGET ${GAME_EXECUTABLE}
 	SOURCE ${RES_DIR}/uni54 DESTINATION ${DATA_DIR}/uni54.fnt
 )
+convertFont(
+	TARGET ${GAME_EXECUTABLE}
+	SOURCE ${RES_DIR}/uni54_small DESTINATION ${DATA_DIR}/uni54_small.fnt
+)
 
 #----------------------------------------------------------------------- PALETTE
 
@@ -115,6 +119,11 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/killfriend.png
 	GENERATED_FILE_LIST "KILLFRIEND_PATH"
 	DESTINATIONS
 	${GEN_DIR}/killfriend.png 32 31 256 192
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/logo.png
+	GENERATED_FILE_LIST "LOGO_PATH"
+	DESTINATIONS
+	${GEN_DIR}/logo.png 106 57 112 48
 )
 
 #------------------------------------------------------------------------- TILES
@@ -654,8 +663,10 @@ convertBitmaps(
 	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT}
 	INTERLEAVED SOURCES
 		${GEN_DIR}/tiles.png ${RES_DIR}/weapons.png ${GEN_DIR}/killfriend.png
+		${GEN_DIR}/logo.png
 	DESTINATIONS
 		${DATA_DIR}/tiles.bm ${DATA_DIR}/weapons.bm ${DATA_DIR}/killfriend.bm
+		${DATA_DIR}/logo.bm
 )
 
 convertBitmaps(

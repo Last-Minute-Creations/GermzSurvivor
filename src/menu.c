@@ -12,8 +12,11 @@
 #include "survivor.h"
 #include "game.h"
 #include "hi_score.h"
+#include "assets.h"
 
 #define MENU_BUTTON_MARGIN_Y 5
+#define LOGO_SIZE_X 112
+#define LOGO_SIZE_Y 48
 
 typedef enum tMenuButton {
 	MENU_BUTTON_SURVIVE,
@@ -176,7 +179,7 @@ static void menuSummaryGsCreate(void) {
 	commDrawText(COMM_DISPLAY_WIDTH - SUMMARY_COLUMN_OFFSET_X, uwOffsY, szBuffer, FONT_COOKIE | FONT_RIGHT, COMM_DISPLAY_COLOR_TEXT);
 	uwOffsY += 2 * ubLineHeight;
 
-	stringDecimalFromULong(gameGetLevel() + 1, szBuffer);
+	stringDecimalFromULong(gameGetLevel(), szBuffer);
 	commDrawText(SUMMARY_COLUMN_OFFSET_X, uwOffsY, "Level:", FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
 	commDrawText(COMM_DISPLAY_WIDTH - SUMMARY_COLUMN_OFFSET_X, uwOffsY, szBuffer, FONT_COOKIE | FONT_RIGHT, COMM_DISPLAY_COLOR_TEXT);
 	uwOffsY += 2 * ubLineHeight;
@@ -228,6 +231,12 @@ void menuPush(UBYTE isDead) {
 static void menuGsCreate(void) {
 	logBlockBegin("menuGsCreate()");
 	commShow();
+	tUwCoordYX sOrigin = commGetOriginDisplay();
+	blitCopy(
+		g_pLogo, 0, 0, commGetDisplayBuffer(),
+		sOrigin.uwX + (COMM_DISPLAY_WIDTH - LOGO_SIZE_X) / 2, sOrigin.uwY,
+		LOGO_SIZE_X, LOGO_SIZE_Y, MINTERM_COOKIE
+	);
 
 	buttonReset();
 	UWORD uwY = 64;
