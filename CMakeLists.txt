@@ -63,8 +63,9 @@ set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 file(MAKE_DIRECTORY ${DATA_DIR})
 file(MAKE_DIRECTORY ${DATA_DIR}/sfx)
+file(MAKE_DIRECTORY ${DATA_DIR}/intro)
 file(MAKE_DIRECTORY ${GEN_DIR})
-file(GLOB COPY_FILES ${RES_DIR}/copied/*)
+file(GLOB COPY_FILES ${RES_DIR}/copied/* ${RES_DIR}/music/*)
 file(COPY ${COPY_FILES} DESTINATION ${DATA_DIR})
 
 #-------------------------------------------------------------------------- FONT
@@ -82,10 +83,41 @@ convertFont(
 
 file(GLOB PALETTE_SPRITE ${RES_DIR}/sprite.gpl)
 file(GLOB PALETTE_GPL ${RES_DIR}/survivor.gpl)
+file(GLOB PALETTE_INTRO_GPL ${RES_DIR}/intro.gpl)
 set(PALETTE_PLT ${DATA_DIR}/game.plt)
 set(TRANSPARENCY_HEX "#880088")
 
 convertPalette(${GAME_EXECUTABLE} ${PALETTE_GPL} ${PALETTE_PLT})
+convertPalette(${GAME_EXECUTABLE} ${PALETTE_INTRO_GPL} ${DATA_DIR}/intro.plt)
+
+#------------------------------------------------------------------------- MUSIC
+
+# mergeMods(
+# 	TARGET ${GAME_EXECUTABLE} COMPRESS
+# 	SOURCES
+# 		${RES_DIR}/music/game.mod
+# 		${RES_DIR}/music/menu.mod
+# 		${RES_DIR}/music/intro.mod
+# 	DESTINATIONS
+# 		${DATA_DIR}/game.mod
+# 		${DATA_DIR}/menu.mod
+# 		${DATA_DIR}/intro.mod
+# 	SAMPLE_PACK ${DATA_DIR}/music.samplepack
+# )
+
+#------------------------------------------------------------------------- INTRO
+
+foreach(intro_idx RANGE 4)
+	convertPalette(
+		${GAME_EXECUTABLE}
+		${RES_DIR}/intro/${intro_idx}.pal ${DATA_DIR}/intro/${intro_idx}.plt
+	)
+	convertBitmaps(
+		TARGET ${GAME_EXECUTABLE} PALETTE ${RES_DIR}/intro/${intro_idx}.pal
+		SOURCES ${RES_DIR}/intro/${intro_idx}.png
+		INTERLEAVED DESTINATIONS ${DATA_DIR}/intro/${intro_idx}.bm
+	)
+endforeach()
 
 #----------------------------------------------------------------------- CURSORS
 
@@ -132,17 +164,24 @@ file(MAKE_DIRECTORY ${GEN_DIR}/tiles)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/tiles.png
 	GENERATED_FILE_LIST "TILE_PATHS"
 	DESTINATIONS
-	# Regular
-	${GEN_DIR}/tiles/0.png   0   0 32 32
-	${GEN_DIR}/tiles/1.png   0  32 32 32
-	${GEN_DIR}/tiles/2.png   0  64 32 32
-	# Barrel
-	${GEN_DIR}/tiles/3.png  32   0 32 32
-	${GEN_DIR}/tiles/4.png  32  32 32 32
-	${GEN_DIR}/tiles/5.png  32  64 32 32
-	# Skeleton
-	${GEN_DIR}/tiles/6.png  32  96 32 32
-	${GEN_DIR}/tiles/7.png  32 128 32 32
+	# # Regular
+	# ${GEN_DIR}/tiles/0.png   0   0 32 32
+	# ${GEN_DIR}/tiles/1.png   0  32 32 32
+	# ${GEN_DIR}/tiles/2.png   0  64 32 32
+	# # Barrel
+	# ${GEN_DIR}/tiles/3.png  32   0 32 32
+	# ${GEN_DIR}/tiles/4.png  32  32 32 32
+	# ${GEN_DIR}/tiles/5.png  32  64 32 32
+	# # Skeleton
+	# ${GEN_DIR}/tiles/6.png  32  96 32 32
+	# ${GEN_DIR}/tiles/7.png  32 128 32 32
+
+	# Simple
+	${GEN_DIR}/tiles/0.png   0  96 32 32
+	${GEN_DIR}/tiles/1.png   0 128 32 32
+	${GEN_DIR}/tiles/2.png   0 160 32 32
+	${GEN_DIR}/tiles/3.png   0 192 32 32
+	${GEN_DIR}/tiles/4.png   0 224 32 32
 )
 
 convertTileset(

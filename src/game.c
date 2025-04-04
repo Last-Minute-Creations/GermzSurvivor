@@ -1291,16 +1291,17 @@ void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY) {
 void gameStart(void) {
 	for(UBYTE ubX = 0; ubX < BG_TILES_X; ++ubX) {
 		for(UBYTE ubY = 0; ubY < BG_TILES_Y; ++ubY) {
-			UWORD uwRand = randUwMinMax(&g_sRand, 0, 99);
-			if(uwRand < 5) {
-				gameSetTile(randUwMinMax(&g_sRand, 3, 5), ubX, ubY);
-			}
-			else if(uwRand < 15) {
-				gameSetTile(randUwMinMax(&g_sRand, 6, 7), ubX, ubY);
-			}
-			else {
-				gameSetTile(randUwMinMax(&g_sRand, 0, 2), ubX, ubY);
-			}
+			// UWORD uwRand = randUwMinMax(&g_sRand, 0, 99);
+			// if(uwRand < 5) {
+			// 	gameSetTile(randUwMinMax(&g_sRand, 3, 5), ubX, ubY);
+			// }
+			// else if(uwRand < 15) {
+			// 	gameSetTile(randUwMinMax(&g_sRand, 6, 7), ubX, ubY);
+			// }
+			// else {
+			// 	gameSetTile(randUwMinMax(&g_sRand, 0, 2), ubX, ubY);
+			// }
+			gameSetTile(randUwMinMax(&g_sRand, 0, 4), ubX, ubY);
 		}
 	}
 
