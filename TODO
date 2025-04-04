@@ -81,7 +81,7 @@ Bare minimum:
 		✔ Sort the bob @done(25-04-03)
 		✔ Dissipate after some time @done(25-04-03)
 		✔ Blink in last 3 seconds @done(25-04-03)
-	☐ Fix player going out of screen
+	✔ Fix player going out of screen @done(25-04-04)
 
 Nice to have:
 	☐ Add zombie anti-clumping

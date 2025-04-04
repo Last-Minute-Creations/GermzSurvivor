@@ -635,9 +635,11 @@ static inline UBYTE playerTryMoveBy(tEntity *pPlayer, LONG lDeltaX, LONG lDeltaY
 		sNewPos.uwX += lDeltaX;
 		UWORD uwTestX = sNewPos.uwX;
 		if(lDeltaX < 0) {
-			uwTestX -= PLAYER_BOB_OFFSET_X;
+			uwTestX -= MAP_MARGIN_TILES * MAP_TILE_SIZE;
 		}
-		UBYTE isColliding = (uwTestX >= MAP_TILES_X * MAP_TILE_SIZE - (PLAYER_BOB_SIZE_X - PLAYER_BOB_OFFSET_X));
+		UBYTE isColliding = (
+			uwTestX >= (MAP_TILES_X - MAP_MARGIN_TILES) * MAP_TILE_SIZE - PLAYER_BOB_OFFSET_X
+		);
 
 		// collision with upper corner
 		if(!isColliding) {
@@ -667,9 +669,11 @@ static inline UBYTE playerTryMoveBy(tEntity *pPlayer, LONG lDeltaX, LONG lDeltaY
 
 		UWORD uwTestY = sNewPos.uwY;
 		if(lDeltaY < 0) {
-			uwTestY -= PLAYER_BOB_OFFSET_Y;
+			uwTestY -= MAP_MARGIN_TILES * MAP_TILE_SIZE + PLAYER_BOB_SIZE_Y - PLAYER_BOB_OFFSET_Y;
 		}
-		UBYTE isColliding = (uwTestY >= MAP_TILES_Y * MAP_TILE_SIZE - (PLAYER_BOB_SIZE_Y - PLAYER_BOB_OFFSET_Y));
+		UBYTE isColliding = (
+			uwTestY >= (MAP_TILES_Y - MAP_MARGIN_TILES) * MAP_TILE_SIZE - 6
+		);
 
 		// collision with left corner
 		if(!isColliding) {
