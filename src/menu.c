@@ -304,6 +304,12 @@ static void menuGsDestroy(void) {
 
 static void menuGsResume(void) {
 	commEraseAll();
+	tUwCoordYX sOrigin = commGetOriginDisplay();
+	blitCopy(
+		g_pLogo, 0, 0, commGetDisplayBuffer(),
+		sOrigin.uwX + (COMM_DISPLAY_WIDTH - LOGO_SIZE_X) / 2, sOrigin.uwY,
+		LOGO_SIZE_X, LOGO_SIZE_Y, MINTERM_COOKIE
+	);
 	buttonDrawAll(commGetDisplayBuffer());
 }
 
