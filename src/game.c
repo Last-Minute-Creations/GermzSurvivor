@@ -90,7 +90,12 @@
 #define MAP_TILES_Y 32
 #define MAP_MARGIN_TILES 2
 #define MAP_TILE_SHIFT 4
-#define MAP_TILE_SIZE  (1 << MAP_TILE_SHIFT)
+#define MAP_TILE_SIZE (1 << MAP_TILE_SHIFT)
+#define BG_TILE_SHIFT 5
+#define BG_TILE_SIZE (1 << BG_TILE_SHIFT)
+#define BG_TILES_X (MAP_TILES_X * MAP_TILE_SIZE / BG_TILE_SIZE)
+#define BG_TILES_Y (MAP_TILES_Y * MAP_TILE_SIZE / BG_TILE_SIZE)
+#define BG_TILE_COUNT 8
 #define SPRITE_CHANNEL_CURSOR 4
 
 #define COLOR_HUD_BG 17
@@ -490,21 +495,21 @@ static inline void scoreAdd(ULONG ulScore) {
 	}
 }
 
-static void gameSetTile(UBYTE ubTileIndex, UWORD uwTileX, UWORD uwTileY) {
+static void gameSetTile(UBYTE ubTileIndex, UWORD uwBgTileX, UWORD uwBgTileY) {
 	blitCopyAligned(
-		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		g_pGameBufferMain->pBack, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
-		MAP_TILE_SIZE, MAP_TILE_SIZE
+		s_pTileset, 0, ubTileIndex * BG_TILE_SIZE,
+		g_pGameBufferMain->pBack, uwBgTileX * BG_TILE_SIZE, uwBgTileY * BG_TILE_SIZE,
+		BG_TILE_SIZE, BG_TILE_SIZE
 	);
 	blitCopyAligned(
-		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		g_pGameBufferMain->pFront, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
-		MAP_TILE_SIZE, MAP_TILE_SIZE
+		s_pTileset, 0, ubTileIndex * BG_TILE_SIZE,
+		g_pGameBufferMain->pFront, uwBgTileX * BG_TILE_SIZE, uwBgTileY * BG_TILE_SIZE,
+		BG_TILE_SIZE, BG_TILE_SIZE
 	);
 	blitCopyAligned(
-		s_pTileset, 0, ubTileIndex * MAP_TILE_SIZE,
-		g_pGamePristineBuffer, uwTileX * MAP_TILE_SIZE, uwTileY * MAP_TILE_SIZE,
-		MAP_TILE_SIZE, MAP_TILE_SIZE
+		s_pTileset, 0, ubTileIndex * BG_TILE_SIZE,
+		g_pGamePristineBuffer, uwBgTileX * BG_TILE_SIZE, uwBgTileY * BG_TILE_SIZE,
+		BG_TILE_SIZE, BG_TILE_SIZE
 	);
 }
 
@@ -1286,24 +1291,18 @@ void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY) {
 }
 
 void gameStart(void) {
-	gameSetTile(0, MAP_MARGIN_TILES, MAP_MARGIN_TILES);
-	gameSetTile(1, MAP_TILES_X - 1 - MAP_MARGIN_TILES, MAP_MARGIN_TILES);
-	gameSetTile(2, MAP_MARGIN_TILES, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
-	gameSetTile(3, MAP_TILES_X - 1 - MAP_MARGIN_TILES, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
-
-	for(UBYTE ubX = MAP_MARGIN_TILES + 1; ubX < MAP_TILES_X - 1 - MAP_MARGIN_TILES; ++ubX) {
-		gameSetTile(randUwMinMax(&g_sRand, 4, 6), ubX, MAP_MARGIN_TILES);
-		gameSetTile(randUwMinMax(&g_sRand, 13, 15), ubX, MAP_TILES_Y - 1 - MAP_MARGIN_TILES);
-	}
-
-	for(UBYTE ubY = MAP_MARGIN_TILES + 1; ubY < MAP_TILES_Y - 1 - MAP_MARGIN_TILES; ++ubY) {
-		gameSetTile(randUwMinMax(&g_sRand, 7, 9), MAP_MARGIN_TILES, ubY);
-		gameSetTile(randUwMinMax(&g_sRand, 10, 12), MAP_TILES_X - 1 - MAP_MARGIN_TILES, ubY);
-	}
-
-	for(UBYTE ubX = MAP_MARGIN_TILES + 1; ubX < MAP_TILES_X - 1 - MAP_MARGIN_TILES; ++ubX) {
-		for(UBYTE ubY = MAP_MARGIN_TILES + 1; ubY < MAP_TILES_Y - 1 - MAP_MARGIN_TILES; ++ubY) {
-			gameSetTile(randUwMinMax(&g_sRand, 16, 24), ubX, ubY);
+	for(UBYTE ubX = 0; ubX < BG_TILES_X; ++ubX) {
+		for(UBYTE ubY = 0; ubY < BG_TILES_Y; ++ubY) {
+			UWORD uwRand = randUwMinMax(&g_sRand, 0, 99);
+			if(uwRand < 5) {
+				gameSetTile(randUwMinMax(&g_sRand, 3, 5), ubX, ubY);
+			}
+			else if(uwRand < 15) {
+				gameSetTile(randUwMinMax(&g_sRand, 6, 7), ubX, ubY);
+			}
+			else {
+				gameSetTile(randUwMinMax(&g_sRand, 0, 2), ubX, ubY);
+			}
 		}
 	}
 
