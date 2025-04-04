@@ -5,7 +5,7 @@
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/system.h>
 #include <ace/managers/key.h>
-#include <ace/managers/joy.h>
+#include <ace/managers/mouse.h>
 #include <ace/utils/disk_file.h>
 #include <ace/utils/palette.h>
 #include <ace/generic/screen.h>
@@ -240,7 +240,6 @@ static void cutsceneLoopFinale(void) {
 	}
 
 	vPortWaitForEnd(s_pVp);
-	UBYTE isEnabled34 = joyIsParallelEnabled();
 	if(s_ubFadeStep <= 0x10) {
 		// Process text fade-in
 		// Increment color
@@ -288,8 +287,7 @@ static void cutsceneLoopFinale(void) {
 	}
 	else if(
 		keyUse(KEY_RETURN) || keyUse(KEY_LSHIFT) || keyUse(KEY_RSHIFT) ||
-		joyUse(JOY1_FIRE) || joyUse(JOY2_FIRE) ||
-		(isEnabled34 && (joyUse(JOY3_FIRE) || joyUse(JOY4_FIRE)))
+		mouseUse(MOUSE_PORT_1, MOUSE_LMB)
 	) {
 		// Quit the cutscene
 		fadeSet(s_pFade, FADE_STATE_OUT, 50, 1, onCutsceneFadeOut);
@@ -303,7 +301,6 @@ static void cutsceneGsLoop(void) {
 	}
 
 	vPortWaitForEnd(s_pVp);
-	UBYTE isEnabled34 = joyIsParallelEnabled();
 	if(s_ubFadeStep <= 0x10) {
 		// Process text fade-in
 		// Increment color
@@ -348,8 +345,7 @@ static void cutsceneGsLoop(void) {
 	}
 	else if(
 		keyUse(KEY_RETURN) || keyUse(KEY_LSHIFT) || keyUse(KEY_RSHIFT) ||
-		joyUse(JOY1_FIRE) || joyUse(JOY2_FIRE) ||
-		(isEnabled34 && (joyUse(JOY3_FIRE) || joyUse(JOY4_FIRE)))
+		mouseUse(MOUSE_PORT_1, MOUSE_LMB)
 	) {
 		if(++s_ubCurrentSlide < s_ubSlideCount) {
 			// Draw next slide
