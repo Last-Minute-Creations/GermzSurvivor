@@ -104,8 +104,9 @@
 #define COLLISION_LOOKUP_SIZE_Y (MAP_TILES_Y * MAP_TILE_SIZE / COLLISION_SIZE_Y)
 #define RESPAWN_SLOTS_PER_POSITION 4
 
-#define HEALTH_DEAD (-32768)
-#define HEALTH_DEAD_NON_PLAYER_CAUSE (-32767)
+#define HEALTH_ENEMY_DEAD_AWAITING_RESPAWN (-32768)
+#define HEALTH_ENEMY_OFFSCREENED (-32767)
+#define HEALTH_ENEMY_DEATH_ANIM (-32764)
 #define HEALTH_PICKUP_INACTIVE (-32766)
 #define HEALTH_PICKUP_READY_TO_SPAWN (-32765)
 
@@ -175,35 +176,35 @@ typedef enum tDirection {
 } tDirection;
 
 typedef enum tCharacterFrame {
-	PLAYER_FRAME_DIE_1,
-	PLAYER_FRAME_DIE_2,
-	PLAYER_FRAME_DIE_3,
-	PLAYER_FRAME_DIE_4,
-	PLAYER_FRAME_DIE_5,
-	PLAYER_FRAME_DIE_6,
-	PLAYER_FRAME_DIE_7,
-	PLAYER_FRAME_DIE_8,
+	ENTITY_FRAME_WALK_1,
+	ENTITY_FRAME_WALK_2,
+	ENTITY_FRAME_WALK_3,
+	ENTITY_FRAME_WALK_4,
+	ENTITY_FRAME_WALK_5,
+	ENTITY_FRAME_WALK_6,
+	ENTITY_FRAME_WALK_7,
+	ENTITY_FRAME_WALK_8,
 
-	PLAYER_FRAME_WALK_1,
-	PLAYER_FRAME_WALK_2,
-	PLAYER_FRAME_WALK_3,
-	PLAYER_FRAME_WALK_4,
-	PLAYER_FRAME_WALK_5,
-	PLAYER_FRAME_WALK_6,
-	PLAYER_FRAME_WALK_7,
-	PLAYER_FRAME_WALK_8,
+	ENTITY_FRAME_DIE_1,
+	ENTITY_FRAME_DIE_2,
+	ENTITY_FRAME_DIE_3,
+	ENTITY_FRAME_DIE_4,
+	ENTITY_FRAME_DIE_5,
+	ENTITY_FRAME_DIE_6,
+	ENTITY_FRAME_DIE_7,
+	ENTITY_FRAME_DIE_8,
 
-	PLAYER_FRAME_SHOOT_1,
-	PLAYER_FRAME_SHOOT_2,
-	PLAYER_FRAME_SHOOT_3,
-	PLAYER_FRAME_SHOOT_4,
-	PLAYER_FRAME_SHOOT_5,
-	PLAYER_FRAME_SHOOT_6,
-	PLAYER_FRAME_SHOOT_7,
-	PLAYER_FRAME_SHOOT_8,
+	ENTITY_FRAME_SHOOT_1,
+	ENTITY_FRAME_SHOOT_2,
+	ENTITY_FRAME_SHOOT_3,
+	ENTITY_FRAME_SHOOT_4,
+	ENTITY_FRAME_SHOOT_5,
+	ENTITY_FRAME_SHOOT_6,
+	ENTITY_FRAME_SHOOT_7,
+	ENTITY_FRAME_SHOOT_8,
 
-	PLAYER_FRAME_COUNT,
-	ENEMY_FRAME_COUNT = PLAYER_FRAME_SHOOT_1
+	ENTITY_FRAME_COUNT,
+	ENEMY_FRAME_COUNT = ENTITY_FRAME_DIE_4
 } tCharacterFrame;
 
 typedef enum tWeaponKind {
@@ -233,14 +234,15 @@ typedef struct tEntity {
 	WORD wHealth;
 	union {
 		struct {
-			tWeaponKind eWeaponKind;
 			tDirection eDirection;
+			tWeaponKind eWeaponKind;
 			UBYTE ubFrameCooldown;
 			UBYTE ubAttackCooldown;
 			UBYTE ubAmmo;
 			UBYTE ubReloadCooldown;
 		} sPlayer;
 		struct {
+			tDirection eDirection;
 			UBYTE ubFrameCooldown;
 			UBYTE ubAttackCooldown;
 			UBYTE ubSpeed;
@@ -301,7 +303,7 @@ static ULONG s_ulFrameWaitCount;
 
 static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
-static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][PLAYER_FRAME_COUNT];
+static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][ENTITY_FRAME_COUNT];
 static tEntity s_sPlayer;
 static ULONG s_ulScore;
 static ULONG s_ulKills;
@@ -1060,23 +1062,23 @@ static inline void enemyProcess(tEntity *pEnemy) {
 	if(pEnemy->wHealth > 0) {
 		// Despawn if enemy is too far
 		if(pEnemy->sPos.uwX < g_pGameBufferMain->pCamera->uPos.uwX - 32) {
-			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
+			pEnemy->wHealth = HEALTH_ENEMY_OFFSCREENED;
 			pEnemy->sEnemy.ubPreferredSpawn = 1;
 			return;
 		}
 		else if(g_pGameBufferMain->pCamera->uPos.uwX + GAME_MAIN_VPORT_SIZE_X + 32 < pEnemy->sPos.uwX) {
-			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
+			pEnemy->wHealth = HEALTH_ENEMY_OFFSCREENED;
 			pEnemy->sEnemy.ubPreferredSpawn = 0;
 			return;
 		}
 		else if(pEnemy->sPos.uwY < g_pGameBufferMain->pCamera->uPos.uwY - 32) {
-			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
+			pEnemy->wHealth = HEALTH_ENEMY_OFFSCREENED;
 			pEnemy->sEnemy.ubPreferredSpawn = 3;
 			return;
 		}
 		else if(g_pGameBufferMain->pCamera->uPos.uwY + GAME_MAIN_VPORT_SIZE_Y + 32 < pEnemy->sPos.uwY) {
 			pEnemy->sEnemy.ubPreferredSpawn = 2;
-			pEnemy->wHealth = HEALTH_DEAD_NON_PLAYER_CAUSE;
+			pEnemy->wHealth = HEALTH_ENEMY_OFFSCREENED;
 			return;
 		}
 		WORD wDistanceToPlayerX = s_sPlayer.sPos.uwX - pEnemy->sPos.uwX;
@@ -1105,7 +1107,7 @@ static inline void enemyProcess(tEntity *pEnemy) {
 				bDeltaY = pEnemy->sEnemy.ubSpeed;
 				eDir = DIRECTION_SE;
 			}
-	}
+		}
 
 		if(pEnemy->sEnemy.ubAttackCooldown == 0) {
 			if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
@@ -1127,35 +1129,20 @@ static inline void enemyProcess(tEntity *pEnemy) {
 		else {
 			pEnemy->sEnemy.ubFrameCooldown = 0;
 			pEnemy->eFrame = (pEnemy->eFrame + 1);
-			if(pEnemy->eFrame > PLAYER_FRAME_WALK_8) {
-				pEnemy->eFrame = PLAYER_FRAME_WALK_1;
+			if(pEnemy->eFrame > ENTITY_FRAME_WALK_8) {
+				pEnemy->eFrame = ENTITY_FRAME_WALK_1;
 			}
 		}
 
 		tFrameOffset *pOffset = &s_pEnemyFrameOffsets[eDir][pEnemy->eFrame];
+		pEnemy->sEnemy.eDirection = eDir;
 		bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
 		pEnemy->sBob.sPos.uwX = pEnemy->sPos.uwX - ENEMY_BOB_OFFSET_X;
 		pEnemy->sBob.sPos.uwY = pEnemy->sPos.uwY - ENEMY_BOB_OFFSET_Y;
 		bobPush(&pEnemy->sBob);
 	}
 	else {
-		if(pEnemy->wHealth != HEALTH_DEAD) {
-			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
-			if(pEnemy->wHealth != HEALTH_DEAD_NON_PLAYER_CAUSE) {
-				scoreAdd(ENEMY_EXP);
-				++s_ulKills;
-				if(s_sPickup.wHealth == HEALTH_PICKUP_INACTIVE) {
-					s_sPickup.wHealth = HEALTH_PICKUP_READY_TO_SPAWN;
-					s_sPickup.sPos = pEnemy->sPos;
-				}
-				pEnemy->sEnemy.ubPreferredSpawn = ENEMY_PREFERRED_SPAWN_NONE;
-			}
-			pEnemy->wHealth = HEALTH_DEAD;
-			// Failsafe to prevent trashing collision map
-			pEnemy->sPos.uwX = 0;
-			pEnemy->sPos.uwY = 0;
-		}
-		else {
+		if(pEnemy->wHealth == HEALTH_ENEMY_DEAD_AWAITING_RESPAWN) {
 			// Try respawn
 			if(pEnemy->sEnemy.ubPreferredSpawn == ENEMY_PREFERRED_SPAWN_NONE) {
 				tUwCoordYX sClosest;
@@ -1189,6 +1176,42 @@ static inline void enemyProcess(tEntity *pEnemy) {
 					return;
 				}
 			}
+		}
+		else if(pEnemy->wHealth == HEALTH_ENEMY_DEATH_ANIM) {
+			if(!pEnemy->sEnemy.ubFrameCooldown) {
+				pEnemy->sEnemy.ubFrameCooldown = 1;
+			}
+			else {
+				pEnemy->sEnemy.ubFrameCooldown = 0;
+				pEnemy->eFrame = (pEnemy->eFrame + 1);
+				if(pEnemy->eFrame > ENTITY_FRAME_DIE_3) {
+					pEnemy->eFrame = ENTITY_FRAME_DIE_3;
+					pEnemy->wHealth = HEALTH_ENEMY_DEAD_AWAITING_RESPAWN;
+				}
+			}
+			tFrameOffset *pOffset = &s_pEnemyFrameOffsets[pEnemy->sEnemy.eDirection][pEnemy->eFrame];
+			bobSetFrame(&pEnemy->sBob, pOffset->pPixels, pOffset->pMask);
+			bobPush(&pEnemy->sBob);
+		}
+		else {
+			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
+			if(pEnemy->wHealth == HEALTH_ENEMY_OFFSCREENED) {
+				pEnemy->wHealth = HEALTH_ENEMY_DEAD_AWAITING_RESPAWN;
+			}
+			else {
+				scoreAdd(ENEMY_EXP);
+				++s_ulKills;
+				if(s_sPickup.wHealth == HEALTH_PICKUP_INACTIVE) {
+					s_sPickup.wHealth = HEALTH_PICKUP_READY_TO_SPAWN;
+					s_sPickup.sPos = pEnemy->sPos;
+				}
+				pEnemy->sEnemy.ubPreferredSpawn = ENEMY_PREFERRED_SPAWN_NONE;
+				pEnemy->wHealth = HEALTH_ENEMY_DEATH_ANIM;
+				pEnemy->sEnemy.ubFrameCooldown = 0;
+				pEnemy->eFrame = ENTITY_FRAME_DIE_1;
+			}
+			// Failsafe to prevent trashing collision map
+			pEnemy->sPos.ulYX = 0;
 		}
 	}
 }
@@ -1420,8 +1443,8 @@ static inline UBYTE playerProcess(void) {
 			playerTryMoveBy(&s_sPlayer, bDeltaX, bDeltaY);
 			if(s_sPlayer.sPlayer.ubFrameCooldown >= 1) {
 				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
-				if(s_sPlayer.eFrame > PLAYER_FRAME_WALK_8) {
-					s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+				if(s_sPlayer.eFrame > ENTITY_FRAME_WALK_8) {
+					s_sPlayer.eFrame = ENTITY_FRAME_WALK_1;
 				}
 				s_sPlayer.sPlayer.ubFrameCooldown = 0;
 			}
@@ -1430,7 +1453,7 @@ static inline UBYTE playerProcess(void) {
 			}
 		}
 		else {
-			s_sPlayer.eFrame = PLAYER_FRAME_WALK_1;
+			s_sPlayer.eFrame = ENTITY_FRAME_WALK_1;
 			s_sPlayer.sPlayer.ubFrameCooldown = 0;
 		}
 
@@ -1443,7 +1466,7 @@ static inline UBYTE playerProcess(void) {
 					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
 						--s_sPlayer.sPlayer.ubAmmo;
 						playerShootWeapon(ubAimAngle);
-						s_sPlayer.eFrame += PLAYER_FRAME_SHOOT_1 - PLAYER_FRAME_WALK_1;
+						s_sPlayer.eFrame += ENTITY_FRAME_SHOOT_1 - ENTITY_FRAME_WALK_1;
 					}
 					else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind]) {
 						playerStartReloadWeapon();
@@ -1493,7 +1516,7 @@ static inline UBYTE playerProcess(void) {
 			// Create a different move target for zombies
 			// s_sPlayer.sPos.uwX = (MAP_TILES_X * MAP_TILE_SIZE) - s_sPlayer.sPos.uwX;
 			// s_sPlayer.sPos.uwY = (MAP_TILES_X * MAP_TILE_SIZE) - s_sPlayer.sPos.uwY;
-			s_sPlayer.eFrame = PLAYER_FRAME_DIE_1;
+			s_sPlayer.eFrame = ENTITY_FRAME_DIE_1;
 			s_sPlayer.sPlayer.ubFrameCooldown = 0;
 		}
 		if(s_ubDeathCooldown) {
@@ -1501,8 +1524,8 @@ static inline UBYTE playerProcess(void) {
 
 			if(s_sPlayer.sPlayer.ubFrameCooldown >= 1) {
 				s_sPlayer.eFrame = (s_sPlayer.eFrame + 1);
-				if(s_sPlayer.eFrame > PLAYER_FRAME_DIE_8) {
-					s_sPlayer.eFrame = PLAYER_FRAME_DIE_8;
+				if(s_sPlayer.eFrame > ENTITY_FRAME_DIE_8) {
+					s_sPlayer.eFrame = ENTITY_FRAME_DIE_8;
 				}
 				s_sPlayer.sPlayer.ubFrameCooldown = 0;
 			}
@@ -1663,7 +1686,7 @@ static void gameGsCreate(void) {
 	s_pPlayerMasks[DIRECTION_SE] = bitmapCreateFromPath("data/player_se_mask.bm", 0);
 
 	for(tDirection eDir = 0; eDir < DIRECTION_COUNT; ++eDir) {
-		for(tCharacterFrame eFrame = 0; eFrame < PLAYER_FRAME_COUNT; ++eFrame) {
+		for(tCharacterFrame eFrame = 0; eFrame < ENTITY_FRAME_COUNT; ++eFrame) {
 			s_pPlayerFrameOffsets[eDir][eFrame].pPixels = bobCalcFrameAddress(s_pPlayerFrames[eDir], eFrame * PLAYER_BOB_SIZE_Y);
 			s_pPlayerFrameOffsets[eDir][eFrame].pMask = bobCalcFrameAddress(s_pPlayerMasks[eDir], eFrame * PLAYER_BOB_SIZE_Y);
 

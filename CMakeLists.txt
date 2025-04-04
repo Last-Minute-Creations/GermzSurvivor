@@ -172,31 +172,31 @@ file(MAKE_DIRECTORY ${GEN_DIR}/player_n)
 file(MAKE_DIRECTORY ${GEN_DIR}/player_ne)
 file(MAKE_DIRECTORY ${GEN_DIR}/player_se)
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
-	GENERATED_FILE_LIST "PLAYER_S_PATHS_DIE"
-	DESTINATIONS
-	# Walk + aim
-	${GEN_DIR}/player_s/0.png    8  16 32 32 # 0,0
-	${GEN_DIR}/player_s/1.png   56  16 32 32 # 0,0
-	${GEN_DIR}/player_s/2.png  104  17 32 32 # 0,1
-	${GEN_DIR}/player_s/3.png  152  18 32 32 # 0,2
-	${GEN_DIR}/player_s/4.png  200  22 32 32 # 0,6
-	${GEN_DIR}/player_s/5.png  248  22 32 32 # 0,6
-	${GEN_DIR}/player_s/6.png  296  25 32 32 # 0,9
-	${GEN_DIR}/player_s/7.png  344  25 32 32 # 0,9
-)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_S_PATHS_WALK_AIM"
 	DESTINATIONS
 	# Walk + aim
-	${GEN_DIR}/player_s/8.png    8  16 32 32
-	${GEN_DIR}/player_s/9.png   56  16 32 32
-	${GEN_DIR}/player_s/10.png 104  16 32 32
-	${GEN_DIR}/player_s/11.png 152  16 32 32
-	${GEN_DIR}/player_s/12.png 200  16 32 32
-	${GEN_DIR}/player_s/13.png 248  16 32 32
-	${GEN_DIR}/player_s/14.png 296  16 32 32
-	${GEN_DIR}/player_s/15.png 344  16 32 32
+	${GEN_DIR}/player_s/0.png    8  16 32 32
+	${GEN_DIR}/player_s/1.png   56  16 32 32
+	${GEN_DIR}/player_s/2.png  104  16 32 32
+	${GEN_DIR}/player_s/3.png  152  16 32 32
+	${GEN_DIR}/player_s/4.png  200  16 32 32
+	${GEN_DIR}/player_s/5.png  248  16 32 32
+	${GEN_DIR}/player_s/6.png  296  16 32 32
+	${GEN_DIR}/player_s/7.png  344  16 32 32
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+	GENERATED_FILE_LIST "PLAYER_S_PATHS_DIE"
+	DESTINATIONS
+	# Walk + aim
+	${GEN_DIR}/player_s/8.png     8  16 32 32 # 0,0
+	${GEN_DIR}/player_s/9.png    56  16 32 32 # 0,0
+	${GEN_DIR}/player_s/10.png  104  17 32 32 # 0,1
+	${GEN_DIR}/player_s/11.png  152  18 32 32 # 0,2
+	${GEN_DIR}/player_s/12.png  200  22 32 32 # 0,6
+	${GEN_DIR}/player_s/13.png  248  22 32 32 # 0,6
+	${GEN_DIR}/player_s/14.png  296  25 32 32 # 0,9
+	${GEN_DIR}/player_s/15.png  344  25 32 32 # 0,9
 )
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_S_PATHS_WALK_SHOOT"
@@ -219,29 +219,29 @@ convertTileset(
 	TILE_PATHS ${PLAYER_S_PATHS_WALK_AIM} ${PLAYER_S_PATHS_WALK_SHOOT} ${PLAYER_S_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
-	GENERATED_FILE_LIST "PLAYER_SW_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/player_sw/0.png   8  80 32 32 #  0,0
-	${GEN_DIR}/player_sw/1.png  56  80 32 32 #  0,0
-	${GEN_DIR}/player_sw/2.png 104  80 32 32 #  0,0
-	${GEN_DIR}/player_sw/3.png 152  80 32 32 #  0,0
-	${GEN_DIR}/player_sw/4.png 198  80 32 32 # -2,0
-	${GEN_DIR}/player_sw/5.png 243  80 32 32 # -5,0
-	${GEN_DIR}/player_sw/6.png 289  81 32 32 # -7,1
-	${GEN_DIR}/player_sw/7.png 337  81 32 32 # -7,1
-)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_SW_PATHS_WALK_AIM"
 	DESTINATIONS
-	${GEN_DIR}/player_sw/8.png    8  80 32 32
-	${GEN_DIR}/player_sw/9.png   56  80 32 32
-	${GEN_DIR}/player_sw/10.png 104  80 32 32
-	${GEN_DIR}/player_sw/11.png 152  80 32 32
-	${GEN_DIR}/player_sw/12.png 200  80 32 32
-	${GEN_DIR}/player_sw/13.png 248  80 32 32
-	${GEN_DIR}/player_sw/14.png 296  80 32 32
-	${GEN_DIR}/player_sw/15.png 344  80 32 32
+	${GEN_DIR}/player_sw/0.png    8  80 32 32
+	${GEN_DIR}/player_sw/1.png   56  80 32 32
+	${GEN_DIR}/player_sw/2.png  104  80 32 32
+	${GEN_DIR}/player_sw/3.png  152  80 32 32
+	${GEN_DIR}/player_sw/4.png  200  80 32 32
+	${GEN_DIR}/player_sw/5.png  248  80 32 32
+	${GEN_DIR}/player_sw/6.png  296  80 32 32
+	${GEN_DIR}/player_sw/7.png  344  80 32 32
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+	GENERATED_FILE_LIST "PLAYER_SW_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/player_sw/8.png    8  80 32 32 #  0,0
+	${GEN_DIR}/player_sw/9.png   56  80 32 32 #  0,0
+	${GEN_DIR}/player_sw/10.png 104  80 32 32 #  0,0
+	${GEN_DIR}/player_sw/11.png 152  80 32 32 #  0,0
+	${GEN_DIR}/player_sw/12.png 198  80 32 32 # -2,0
+	${GEN_DIR}/player_sw/13.png 243  80 32 32 # -5,0
+	${GEN_DIR}/player_sw/14.png 289  81 32 32 # -7,1
+	${GEN_DIR}/player_sw/15.png 337  81 32 32 # -7,1
 )
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_SW_PATHS_WALK_SHOOT"
@@ -263,29 +263,29 @@ convertTileset(
 	TILE_PATHS ${PLAYER_SW_PATHS_WALK_AIM} ${PLAYER_SW_PATHS_WALK_SHOOT} ${PLAYER_SW_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
-	GENERATED_FILE_LIST "PLAYER_NW_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/player_nw/0.png   8 144 32 32 #  0,0
-	${GEN_DIR}/player_nw/1.png  56 144 32 32 #  0,0
-	${GEN_DIR}/player_nw/2.png 104 144 32 32 #  0,0
-	${GEN_DIR}/player_nw/3.png 152 144 32 32 #  0,0
-	${GEN_DIR}/player_nw/4.png 200 144 32 32 #  0,0
-	${GEN_DIR}/player_nw/5.png 248 144 32 32 #  0,0
-	${GEN_DIR}/player_nw/6.png 292 144 32 32 # -4,0
-	${GEN_DIR}/player_nw/7.png 340 144 32 32 # -4,0
-)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_NW_PATHS_WALK_AIM"
 	DESTINATIONS
-	${GEN_DIR}/player_nw/8.png    8 144 32 32
-	${GEN_DIR}/player_nw/9.png   56 144 32 32
-	${GEN_DIR}/player_nw/10.png 104 144 32 32
-	${GEN_DIR}/player_nw/11.png 152 144 32 32
-	${GEN_DIR}/player_nw/12.png 200 144 32 32
-	${GEN_DIR}/player_nw/13.png 248 144 32 32
-	${GEN_DIR}/player_nw/14.png 296 144 32 32
-	${GEN_DIR}/player_nw/15.png 344 144 32 32
+	${GEN_DIR}/player_nw/0.png   8 144 32 32
+	${GEN_DIR}/player_nw/1.png  56 144 32 32
+	${GEN_DIR}/player_nw/2.png 104 144 32 32
+	${GEN_DIR}/player_nw/3.png 152 144 32 32
+	${GEN_DIR}/player_nw/4.png 200 144 32 32
+	${GEN_DIR}/player_nw/5.png 248 144 32 32
+	${GEN_DIR}/player_nw/6.png 296 144 32 32
+	${GEN_DIR}/player_nw/7.png 344 144 32 32
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+	GENERATED_FILE_LIST "PLAYER_NW_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/player_nw/8.png    8 144 32 32 #  0,0
+	${GEN_DIR}/player_nw/9.png   56 144 32 32 #  0,0
+	${GEN_DIR}/player_nw/10.png 104 144 32 32 #  0,0
+	${GEN_DIR}/player_nw/11.png 152 144 32 32 #  0,0
+	${GEN_DIR}/player_nw/12.png 200 144 32 32 #  0,0
+	${GEN_DIR}/player_nw/13.png 248 144 32 32 #  0,0
+	${GEN_DIR}/player_nw/14.png 292 144 32 32 # -4,0
+	${GEN_DIR}/player_nw/15.png 340 144 32 32 # -4,0
 )
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_NW_PATHS_WALK_SHOOT"
@@ -307,29 +307,29 @@ convertTileset(
 	TILE_PATHS ${PLAYER_NW_PATHS_WALK_AIM} ${PLAYER_NW_PATHS_WALK_SHOOT} ${PLAYER_NW_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
-	GENERATED_FILE_LIST "PLAYER_N_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/player_n/0.png   8 208 32 32 # 0,0
-	${GEN_DIR}/player_n/1.png  56 208 32 32 # 0,0
-	${GEN_DIR}/player_n/2.png 104 208 32 32 # 0,0
-	${GEN_DIR}/player_n/3.png 152 208 32 32 # 0,0
-	${GEN_DIR}/player_n/4.png 200 208 32 32 # 0,0
-	${GEN_DIR}/player_n/5.png 248 208 32 32 # 0,0
-	${GEN_DIR}/player_n/6.png 296 208 32 32 # 0,0
-	${GEN_DIR}/player_n/7.png 344 208 32 32 # 0,0
-)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_N_PATHS_WALK_AIM"
 	DESTINATIONS
-	${GEN_DIR}/player_n/8.png    8 208 32 32
-	${GEN_DIR}/player_n/9.png   56 208 32 32
-	${GEN_DIR}/player_n/10.png 104 208 32 32
-	${GEN_DIR}/player_n/11.png 152 208 32 32
-	${GEN_DIR}/player_n/12.png 200 208 32 32
-	${GEN_DIR}/player_n/13.png 248 208 32 32
-	${GEN_DIR}/player_n/14.png 296 208 32 32
-	${GEN_DIR}/player_n/15.png 344 208 32 32
+	${GEN_DIR}/player_n/0.png   8 208 32 32
+	${GEN_DIR}/player_n/1.png  56 208 32 32
+	${GEN_DIR}/player_n/2.png 104 208 32 32
+	${GEN_DIR}/player_n/3.png 152 208 32 32
+	${GEN_DIR}/player_n/4.png 200 208 32 32
+	${GEN_DIR}/player_n/5.png 248 208 32 32
+	${GEN_DIR}/player_n/6.png 296 208 32 32
+	${GEN_DIR}/player_n/7.png 344 208 32 32
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+	GENERATED_FILE_LIST "PLAYER_N_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/player_n/8.png    8 208 32 32 # 0,0
+	${GEN_DIR}/player_n/9.png   56 208 32 32 # 0,0
+	${GEN_DIR}/player_n/10.png 104 208 32 32 # 0,0
+	${GEN_DIR}/player_n/11.png 152 208 32 32 # 0,0
+	${GEN_DIR}/player_n/12.png 200 208 32 32 # 0,0
+	${GEN_DIR}/player_n/13.png 248 208 32 32 # 0,0
+	${GEN_DIR}/player_n/14.png 296 208 32 32 # 0,0
+	${GEN_DIR}/player_n/15.png 344 208 32 32 # 0,0
 )
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_N_PATHS_WALK_SHOOT"
@@ -351,29 +351,29 @@ convertTileset(
 	TILE_PATHS ${PLAYER_N_PATHS_WALK_AIM} ${PLAYER_N_PATHS_WALK_SHOOT} ${PLAYER_N_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
-	GENERATED_FILE_LIST "PLAYER_NE_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/player_ne/0.png   8 272 32 32 # 0,0
-	${GEN_DIR}/player_ne/1.png  56 272 32 32 # 0,0
-	${GEN_DIR}/player_ne/2.png 106 272 32 32 # 2,0
-	${GEN_DIR}/player_ne/3.png 156 272 32 32 # 4,0
-	${GEN_DIR}/player_ne/4.png 206 272 32 32 # 6,0
-	${GEN_DIR}/player_ne/5.png 255 272 32 32 # 7,0
-	${GEN_DIR}/player_ne/6.png 304 272 32 32 # 8,0
-	${GEN_DIR}/player_ne/7.png 352 272 32 32 # 8,0
-)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_NE_PATHS_WALK_AIM"
 	DESTINATIONS
-	${GEN_DIR}/player_ne/8.png    8 272 32 32
-	${GEN_DIR}/player_ne/9.png   56 272 32 32
-	${GEN_DIR}/player_ne/10.png 104 272 32 32
-	${GEN_DIR}/player_ne/11.png 152 272 32 32
-	${GEN_DIR}/player_ne/12.png 200 272 32 32
-	${GEN_DIR}/player_ne/13.png 248 272 32 32
-	${GEN_DIR}/player_ne/14.png 296 272 32 32
-	${GEN_DIR}/player_ne/15.png 344 272 32 32
+	${GEN_DIR}/player_ne/0.png   8 272 32 32
+	${GEN_DIR}/player_ne/1.png  56 272 32 32
+	${GEN_DIR}/player_ne/2.png 104 272 32 32
+	${GEN_DIR}/player_ne/3.png 152 272 32 32
+	${GEN_DIR}/player_ne/4.png 200 272 32 32
+	${GEN_DIR}/player_ne/5.png 248 272 32 32
+	${GEN_DIR}/player_ne/6.png 296 272 32 32
+	${GEN_DIR}/player_ne/7.png 344 272 32 32
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+	GENERATED_FILE_LIST "PLAYER_NE_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/player_ne/8.png    8 272 32 32 # 0,0
+	${GEN_DIR}/player_ne/9.png   56 272 32 32 # 0,0
+	${GEN_DIR}/player_ne/10.png 106 272 32 32 # 2,0
+	${GEN_DIR}/player_ne/11.png 156 272 32 32 # 4,0
+	${GEN_DIR}/player_ne/12.png 206 272 32 32 # 6,0
+	${GEN_DIR}/player_ne/13.png 255 272 32 32 # 7,0
+	${GEN_DIR}/player_ne/14.png 304 272 32 32 # 8,0
+	${GEN_DIR}/player_ne/15.png 352 272 32 32 # 8,0
 )
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_NE_PATHS_WALK_SHOOT"
@@ -395,29 +395,29 @@ convertTileset(
 	TILE_PATHS ${PLAYER_NE_PATHS_WALK_AIM} ${PLAYER_NE_PATHS_WALK_SHOOT} ${PLAYER_NE_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
-	GENERATED_FILE_LIST "PLAYER_SE_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/player_se/0.png   8  336 32 32 # 0,0
-	${GEN_DIR}/player_se/1.png  56  336 32 32 # 0,0
-	${GEN_DIR}/player_se/2.png 104  336 32 32 # 0,0
-	${GEN_DIR}/player_se/3.png 152  336 32 32 # 0,0
-	${GEN_DIR}/player_se/4.png 200  341 32 32 # 0,5
-	${GEN_DIR}/player_se/5.png 248  340 32 32 # 0,4
-	${GEN_DIR}/player_se/6.png 297  341 32 32 # 1,5
-	${GEN_DIR}/player_se/7.png 345  341 32 32 # 1,5
-)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_SE_PATHS_WALK_AIM"
 	DESTINATIONS
-	${GEN_DIR}/player_se/8.png    8  336 32 32
-	${GEN_DIR}/player_se/9.png   56  336 32 32
-	${GEN_DIR}/player_se/10.png 104  336 32 32
-	${GEN_DIR}/player_se/11.png 152  336 32 32
-	${GEN_DIR}/player_se/12.png 200  336 32 32
-	${GEN_DIR}/player_se/13.png 248  336 32 32
-	${GEN_DIR}/player_se/14.png 296  336 32 32
-	${GEN_DIR}/player_se/15.png 344  336 32 32
+	${GEN_DIR}/player_se/0.png   8  336 32 32
+	${GEN_DIR}/player_se/1.png  56  336 32 32
+	${GEN_DIR}/player_se/2.png 104  336 32 32
+	${GEN_DIR}/player_se/3.png 152  336 32 32
+	${GEN_DIR}/player_se/4.png 200  336 32 32
+	${GEN_DIR}/player_se/5.png 248  336 32 32
+	${GEN_DIR}/player_se/6.png 296  336 32 32
+	${GEN_DIR}/player_se/7.png 344  336 32 32
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+	GENERATED_FILE_LIST "PLAYER_SE_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/player_se/8.png    8  336 32 32 # 0,0
+	${GEN_DIR}/player_se/9.png   56  336 32 32 # 0,0
+	${GEN_DIR}/player_se/10.png 104  336 32 32 # 0,0
+	${GEN_DIR}/player_se/11.png 152  336 32 32 # 0,0
+	${GEN_DIR}/player_se/12.png 200  341 32 32 # 0,5
+	${GEN_DIR}/player_se/13.png 248  340 32 32 # 0,4
+	${GEN_DIR}/player_se/14.png 297  341 32 32 # 1,5
+	${GEN_DIR}/player_se/15.png 345  341 32 32 # 1,5
 )
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_SE_PATHS_WALK_SHOOT"
@@ -448,29 +448,24 @@ file(MAKE_DIRECTORY ${GEN_DIR}/zombie_n)
 file(MAKE_DIRECTORY ${GEN_DIR}/zombie_ne)
 file(MAKE_DIRECTORY ${GEN_DIR}/zombie_se)
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/die.png
-	GENERATED_FILE_LIST "ZOMBIE_S_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/zombie_s/0.png     16   20 16 24
-	${GEN_DIR}/zombie_s/1.png     64   20 16 24
-	${GEN_DIR}/zombie_s/2.png    112   20 16 24
-	${GEN_DIR}/zombie_s/3.png    160   20 16 24
-	${GEN_DIR}/zombie_s/4.png    208   20 16 24
-	${GEN_DIR}/zombie_s/5.png    256   20 16 24
-	${GEN_DIR}/zombie_s/6.png    304   20 16 24
-	${GEN_DIR}/zombie_s/7.png    352   20 16 24
-)
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
 	GENERATED_FILE_LIST "ZOMBIE_S_PATHS_WALK"
 	DESTINATIONS
-	${GEN_DIR}/zombie_s/8.png     16   20 16 24
-	${GEN_DIR}/zombie_s/9.png     64   20 16 24
-	${GEN_DIR}/zombie_s/10.png    112   20 16 24
-	${GEN_DIR}/zombie_s/11.png    160   20 16 24
-	${GEN_DIR}/zombie_s/12.png    208   20 16 24
-	${GEN_DIR}/zombie_s/13.png    256   20 16 24
-	${GEN_DIR}/zombie_s/14.png    304   20 16 24
-	${GEN_DIR}/zombie_s/15.png    352   20 16 24
+	${GEN_DIR}/zombie_s/0.png    8    4 16 24
+	${GEN_DIR}/zombie_s/1.png   40    4 16 24
+	${GEN_DIR}/zombie_s/2.png   72    4 16 24
+	${GEN_DIR}/zombie_s/3.png  104    4 16 24
+	${GEN_DIR}/zombie_s/4.png  136    4 16 24
+	${GEN_DIR}/zombie_s/5.png  168    4 16 24
+	${GEN_DIR}/zombie_s/6.png  200    4 16 24
+	${GEN_DIR}/zombie_s/7.png  232    4 16 24
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
+	GENERATED_FILE_LIST "ZOMBIE_S_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/zombie_s/8.png  264    4 16 24
+	${GEN_DIR}/zombie_s/9.png  296    4 16 24
+	${GEN_DIR}/zombie_s/10.png 328    4 16 24
 )
 
 convertTileset(
@@ -480,29 +475,24 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_S_PATHS_WALK} ${ZOMBIE_S_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/die.png
-	GENERATED_FILE_LIST "ZOMBIE_SW_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/zombie_sw/0.png     16   84 16 24
-	${GEN_DIR}/zombie_sw/1.png     64   84 16 24
-	${GEN_DIR}/zombie_sw/2.png    112   84 16 24
-	${GEN_DIR}/zombie_sw/3.png    160   84 16 24
-	${GEN_DIR}/zombie_sw/4.png    208   84 16 24
-	${GEN_DIR}/zombie_sw/5.png    256   84 16 24
-	${GEN_DIR}/zombie_sw/6.png    304   84 16 24
-	${GEN_DIR}/zombie_sw/7.png    352   84 16 24
-)
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
 	GENERATED_FILE_LIST "ZOMBIE_SW_PATHS_WALK"
 	DESTINATIONS
-	${GEN_DIR}/zombie_sw/8.png     16   84 16 24
-	${GEN_DIR}/zombie_sw/9.png     64   84 16 24
-	${GEN_DIR}/zombie_sw/10.png    112   84 16 24
-	${GEN_DIR}/zombie_sw/11.png    160   84 16 24
-	${GEN_DIR}/zombie_sw/12.png    208   84 16 24
-	${GEN_DIR}/zombie_sw/13.png    256   84 16 24
-	${GEN_DIR}/zombie_sw/14.png    304   84 16 24
-	${GEN_DIR}/zombie_sw/15.png    352   84 16 24
+	${GEN_DIR}/zombie_sw/0.png    8   36 16 24
+	${GEN_DIR}/zombie_sw/1.png   40   36 16 24
+	${GEN_DIR}/zombie_sw/2.png   72   36 16 24
+	${GEN_DIR}/zombie_sw/3.png  104   36 16 24
+	${GEN_DIR}/zombie_sw/4.png  136   36 16 24
+	${GEN_DIR}/zombie_sw/5.png  168   36 16 24
+	${GEN_DIR}/zombie_sw/6.png  200   36 16 24
+	${GEN_DIR}/zombie_sw/7.png  232   36 16 24
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
+	GENERATED_FILE_LIST "ZOMBIE_SW_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/zombie_sw/8.png  264   36 16 24
+	${GEN_DIR}/zombie_sw/9.png  296   36 16 24
+	${GEN_DIR}/zombie_sw/10.png 328   36 16 24
 )
 
 convertTileset(
@@ -512,29 +502,24 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_SW_PATHS_WALK} ${ZOMBIE_SW_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/die.png
-	GENERATED_FILE_LIST "ZOMBIE_NW_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/zombie_nw/0.png     16  148 16 24
-	${GEN_DIR}/zombie_nw/1.png     64  148 16 24
-	${GEN_DIR}/zombie_nw/2.png    112  148 16 24
-	${GEN_DIR}/zombie_nw/3.png    160  148 16 24
-	${GEN_DIR}/zombie_nw/4.png    208  148 16 24
-	${GEN_DIR}/zombie_nw/5.png    256  148 16 24
-	${GEN_DIR}/zombie_nw/6.png    304  148 16 24
-	${GEN_DIR}/zombie_nw/7.png    352  148 16 24
-)
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
 	GENERATED_FILE_LIST "ZOMBIE_NW_PATHS_WALK"
 	DESTINATIONS
-	${GEN_DIR}/zombie_nw/8.png     16  148 16 24
-	${GEN_DIR}/zombie_nw/9.png     64  148 16 24
-	${GEN_DIR}/zombie_nw/10.png    112  148 16 24
-	${GEN_DIR}/zombie_nw/11.png    160  148 16 24
-	${GEN_DIR}/zombie_nw/12.png    208  148 16 24
-	${GEN_DIR}/zombie_nw/13.png    256  148 16 24
-	${GEN_DIR}/zombie_nw/14.png    304  148 16 24
-	${GEN_DIR}/zombie_nw/15.png    352  148 16 24
+	${GEN_DIR}/zombie_nw/0.png    8  68 16 24
+	${GEN_DIR}/zombie_nw/1.png   40  68 16 24
+	${GEN_DIR}/zombie_nw/2.png   72  68 16 24
+	${GEN_DIR}/zombie_nw/3.png  104  68 16 24
+	${GEN_DIR}/zombie_nw/4.png  136  68 16 24
+	${GEN_DIR}/zombie_nw/5.png  168  68 16 24
+	${GEN_DIR}/zombie_nw/6.png  200  68 16 24
+	${GEN_DIR}/zombie_nw/7.png  232  68 16 24
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
+	GENERATED_FILE_LIST "ZOMBIE_NW_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/zombie_nw/8.png  264  68 16 24
+	${GEN_DIR}/zombie_nw/9.png  296  68 16 24
+	${GEN_DIR}/zombie_nw/10.png 328  68 16 24
 )
 
 convertTileset(
@@ -544,29 +529,24 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_NW_PATHS_WALK} ${ZOMBIE_NW_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/die.png
-	GENERATED_FILE_LIST "ZOMBIE_N_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/zombie_n/0.png     16  212 16 24
-	${GEN_DIR}/zombie_n/1.png     64  212 16 24
-	${GEN_DIR}/zombie_n/2.png    112  212 16 24
-	${GEN_DIR}/zombie_n/3.png    160  212 16 24
-	${GEN_DIR}/zombie_n/4.png    208  212 16 24
-	${GEN_DIR}/zombie_n/5.png    256  212 16 24
-	${GEN_DIR}/zombie_n/6.png    304  212 16 24
-	${GEN_DIR}/zombie_n/7.png    352  212 16 24
-)
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
 	GENERATED_FILE_LIST "ZOMBIE_N_PATHS_WALK"
 	DESTINATIONS
-	${GEN_DIR}/zombie_n/8.png     16  212 16 24
-	${GEN_DIR}/zombie_n/9.png     64  212 16 24
-	${GEN_DIR}/zombie_n/10.png    112  212 16 24
-	${GEN_DIR}/zombie_n/11.png    160  212 16 24
-	${GEN_DIR}/zombie_n/12.png    208  212 16 24
-	${GEN_DIR}/zombie_n/13.png    256  212 16 24
-	${GEN_DIR}/zombie_n/14.png    304  212 16 24
-	${GEN_DIR}/zombie_n/15.png    352  212 16 24
+	${GEN_DIR}/zombie_n/0.png    8  100 16 24
+	${GEN_DIR}/zombie_n/1.png   40  100 16 24
+	${GEN_DIR}/zombie_n/2.png   72  100 16 24
+	${GEN_DIR}/zombie_n/3.png  104  100 16 24
+	${GEN_DIR}/zombie_n/4.png  136  100 16 24
+	${GEN_DIR}/zombie_n/5.png  168  100 16 24
+	${GEN_DIR}/zombie_n/6.png  200  100 16 24
+	${GEN_DIR}/zombie_n/7.png  232  100 16 24
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
+	GENERATED_FILE_LIST "ZOMBIE_N_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/zombie_n/8.png  264  100 16 24
+	${GEN_DIR}/zombie_n/9.png  296  100 16 24
+	${GEN_DIR}/zombie_n/10.png 328  100 16 24
 )
 
 convertTileset(
@@ -576,29 +556,24 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_N_PATHS_WALK} ${ZOMBIE_N_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/die.png
-	GENERATED_FILE_LIST "ZOMBIE_NE_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/zombie_ne/0.png     16  276 16 24
-	${GEN_DIR}/zombie_ne/1.png     64  276 16 24
-	${GEN_DIR}/zombie_ne/2.png    112  276 16 24
-	${GEN_DIR}/zombie_ne/3.png    160  276 16 24
-	${GEN_DIR}/zombie_ne/4.png    208  276 16 24
-	${GEN_DIR}/zombie_ne/5.png    256  276 16 24
-	${GEN_DIR}/zombie_ne/6.png    304  276 16 24
-	${GEN_DIR}/zombie_ne/7.png    352  276 16 24
-)
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
 	GENERATED_FILE_LIST "ZOMBIE_NE_PATHS_WALK"
 	DESTINATIONS
-	${GEN_DIR}/zombie_ne/8.png     16  276 16 24
-	${GEN_DIR}/zombie_ne/9.png     64  276 16 24
-	${GEN_DIR}/zombie_ne/10.png    112  276 16 24
-	${GEN_DIR}/zombie_ne/11.png    160  276 16 24
-	${GEN_DIR}/zombie_ne/12.png    208  276 16 24
-	${GEN_DIR}/zombie_ne/13.png    256  276 16 24
-	${GEN_DIR}/zombie_ne/14.png    304  276 16 24
-	${GEN_DIR}/zombie_ne/15.png    352  276 16 24
+	${GEN_DIR}/zombie_ne/0.png    8  132 16 24
+	${GEN_DIR}/zombie_ne/1.png   40  132 16 24
+	${GEN_DIR}/zombie_ne/2.png   72  132 16 24
+	${GEN_DIR}/zombie_ne/3.png  104  132 16 24
+	${GEN_DIR}/zombie_ne/4.png  136  132 16 24
+	${GEN_DIR}/zombie_ne/5.png  168  132 16 24
+	${GEN_DIR}/zombie_ne/6.png  200  132 16 24
+	${GEN_DIR}/zombie_ne/7.png  232  132 16 24
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
+	GENERATED_FILE_LIST "ZOMBIE_NE_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/zombie_ne/8.png  264  132 16 24
+	${GEN_DIR}/zombie_ne/9.png  296  132 16 24
+	${GEN_DIR}/zombie_ne/10.png 328  132 16 24
 )
 
 convertTileset(
@@ -608,29 +583,24 @@ convertTileset(
 	TILE_PATHS ${ZOMBIE_NE_PATHS_WALK} ${ZOMBIE_NE_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/die.png
-	GENERATED_FILE_LIST "ZOMBIE_SE_PATHS_DIE"
-	DESTINATIONS
-	${GEN_DIR}/zombie_se/0.png     16  340 16 24
-	${GEN_DIR}/zombie_se/1.png     64  340 16 24
-	${GEN_DIR}/zombie_se/2.png    112  340 16 24
-	${GEN_DIR}/zombie_se/3.png    160  340 16 24
-	${GEN_DIR}/zombie_se/4.png    208  340 16 24
-	${GEN_DIR}/zombie_se/5.png    256  340 16 24
-	${GEN_DIR}/zombie_se/6.png    304  340 16 24
-	${GEN_DIR}/zombie_se/7.png    352  340 16 24
-)
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
 	GENERATED_FILE_LIST "ZOMBIE_SE_PATHS_WALK"
 	DESTINATIONS
-	${GEN_DIR}/zombie_se/8.png     16  340 16 24
-	${GEN_DIR}/zombie_se/9.png     64  340 16 24
-	${GEN_DIR}/zombie_se/10.png    112  340 16 24
-	${GEN_DIR}/zombie_se/11.png    160  340 16 24
-	${GEN_DIR}/zombie_se/12.png    208  340 16 24
-	${GEN_DIR}/zombie_se/13.png    256  340 16 24
-	${GEN_DIR}/zombie_se/14.png    304  340 16 24
-	${GEN_DIR}/zombie_se/15.png    352  340 16 24
+	${GEN_DIR}/zombie_se/0.png    8  164 16 24
+	${GEN_DIR}/zombie_se/1.png   40  164 16 24
+	${GEN_DIR}/zombie_se/2.png   72  164 16 24
+	${GEN_DIR}/zombie_se/3.png  104  164 16 24
+	${GEN_DIR}/zombie_se/4.png  136  164 16 24
+	${GEN_DIR}/zombie_se/5.png  168  164 16 24
+	${GEN_DIR}/zombie_se/6.png  200  164 16 24
+	${GEN_DIR}/zombie_se/7.png  232  164 16 24
+)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/zombie/frames.png
+	GENERATED_FILE_LIST "ZOMBIE_SE_PATHS_DIE"
+	DESTINATIONS
+	${GEN_DIR}/zombie_se/8.png  264  164 16 24
+	${GEN_DIR}/zombie_se/9.png  296  164 16 24
+	${GEN_DIR}/zombie_se/10.png 328  164 16 24
 )
 
 convertTileset(

@@ -58,8 +58,8 @@ Bare minimum:
 		✔ Add running while aiming animation @done(25-04-03)
 		✔ Add shooting while aiming animation @done(25-04-03)
 		✔ Add player death animation @done(25-04-03)
-		☐ Add final zombie walk frames
-		☐ Add zombie death animation
+		✔ Add final zombie walk frames @done(25-04-04)
+		✔ Add zombie death animation @done(25-04-04)
 	Cursor refinements:
 		✔ Improve visibility of cursor @done(25-04-04)
 		✔ Add reload indicator on cursor @done(25-04-04)
