@@ -150,6 +150,9 @@
 #define BG_BYTES_PER_BITPLANE_ROW (MAP_TILES_X * MAP_TILE_SIZE / 8)
 #define BG_BYTES_PER_PIXEL_ROW (BG_BYTES_PER_BITPLANE_ROW * GAME_BPP)
 
+#define CURSOR_SPRITE_SIZE_X 16
+#define CURSOR_SPRITE_SIZE_Y (CURSOR_SIZE+2)
+
 typedef UWORD tFix10p6;
 
 typedef enum tPickupKind {
@@ -272,6 +275,13 @@ typedef enum tHudState {
 	HUD_STATE_DRAW_LEVEL_NUM,
 } tHudState;
 
+typedef enum tCursorKind {
+	CURSOR_KIND_EMPTY,
+	CURSOR_KIND_HALF_FULL,
+	CURSOR_KIND_FULL,
+	CURSOR_KIND_COUNT
+} tCursorKind;
+
 static tView *s_pView;
 static tVPort *s_pVpMain;
 static tVPort *s_pVpHud;
@@ -279,7 +289,10 @@ static UBYTE *s_pPristinePlanes;
 static UBYTE *s_pBackPlanes;
 static tSimpleBufferManager *s_pBufferHud;
 static tBitMap *s_pTileset;
-static tBitMap *s_pBmCrosshair;
+static ULONG *s_pCursorData;
+static tBitMap *s_pBmCursor;
+static tBitMap *s_pBmCursorFrames;
+static ULONG *s_pCursorOffsets[CURSOR_KIND_COUNT];
 static tBitMap *s_pHudWeapons;
 static tRandManager g_sRand;
 static tSprite *s_pSpriteCursor;
@@ -453,6 +466,15 @@ static inline tFix10p6 fix10p6FromUword(UWORD x) {return x << 6; }
 static inline tFix10p6 fix10p6ToUword(UWORD x) {return x >> 6; }
 #define fix10p6Sin(x) s_pSin10p6[x]
 #define fix10p6Cos(x) (((x) < 3 * ANGLE_90) ? fix10p6Sin(ANGLE_90 + (x)) : fix10p6Sin((x) - (3 * ANGLE_90)))
+
+__attribute__((always_inline))
+static inline void gameSetCursor(tCursorKind eKind) {
+	ULONG *pSrc = s_pCursorOffsets[eKind];
+	ULONG *pDest = s_pCursorData;
+	for(UBYTE i = 0; i < CURSOR_SIZE; ++i) {
+		*(pDest++) = *(pSrc++);
+	}
+}
 
 __attribute__((always_inline))
 static inline void scoreAdd(ULONG ulScore) {
@@ -938,6 +960,7 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 	s_sPlayer.sPlayer.ubReloadCooldown = 0;
 
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
+	gameSetCursor(CURSOR_KIND_FULL);
 	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
@@ -946,6 +969,7 @@ static inline void playerStartReloadWeapon(void) {
 	s_sPlayer.sPlayer.ubReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.sPlayer.eWeaponKind];
 	// s_sPlayer.sPlayer.ubReloadCooldown = 1;
 	s_sPlayer.sPlayer.ubAmmo = s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind];
+	gameSetCursor(CURSOR_KIND_EMPTY);
 	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
@@ -1228,7 +1252,6 @@ ULONG gameGetExp(void) {
 	return s_ulScore;
 }
 
-
 void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY) {
 	s_pSpriteCursor->wX = uwMouseX - GAME_CURSOR_OFFSET_X;
 	s_pSpriteCursor->wY = uwMouseY - GAME_CURSOR_OFFSET_Y;
@@ -1269,6 +1292,7 @@ void gameStart(void) {
 		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
 		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
 	);
+	gameSetCursor(CURSOR_KIND_FULL);
 
 	s_ulKills = 0;
 	s_ulScore = 0;
@@ -1415,7 +1439,7 @@ static inline UBYTE playerProcess(void) {
 					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
 						--s_sPlayer.sPlayer.ubAmmo;
 						playerShootWeapon(ubAimAngle);
-						s_sPlayer.eFrame += PLAYER_FRAME_SHOOT_1;
+						s_sPlayer.eFrame += PLAYER_FRAME_SHOOT_1 - PLAYER_FRAME_WALK_1;
 					}
 					else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind]) {
 						playerStartReloadWeapon();
@@ -1424,6 +1448,9 @@ static inline UBYTE playerProcess(void) {
 			}
 			else {
 				--s_sPlayer.sPlayer.ubReloadCooldown;
+				if(!s_sPlayer.sPlayer.ubReloadCooldown) {
+					gameSetCursor(CURSOR_KIND_FULL);
+				}
 			}
 		}
 		else {
@@ -1484,6 +1511,7 @@ static inline UBYTE playerProcess(void) {
 			s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY + s_pPlayerFrameDeathOffset[s_sPlayer.sPlayer.eDirection]->bY;
 			}
 		else {
+			gameSetCursor(CURSOR_KIND_FULL);
 			menuPush(1);
 			return 1;
 		}
@@ -1781,9 +1809,15 @@ static void gameGsCreate(void) {
 		}
 	}
 
-	s_pBmCrosshair = bitmapCreateFromPath("data/cursor_crosshair.bm", 0);
+	s_pBmCursor = bitmapCreate(CURSOR_SPRITE_SIZE_X, CURSOR_SPRITE_SIZE_Y, 2, BMF_INTERLEAVED | BMF_CLEAR);
+	s_pBmCursorFrames = bitmapCreateFromPath("data/cursors.bm", 0);
+	for(tCursorKind i = 0; i < CURSOR_KIND_COUNT; ++i) {
+		s_pCursorOffsets[i] = (ULONG*)bobCalcFrameAddress(s_pBmCursorFrames, i * CURSOR_SIZE);
+	}
+	s_pCursorData = &((ULONG*)s_pBmCursor->Planes[0])[1];
+	gameSetCursor(CURSOR_KIND_FULL);
 	spriteManagerCreate(s_pView, 0, 0);
-	s_pSpriteCursor = spriteAdd(SPRITE_CHANNEL_CURSOR, s_pBmCrosshair);
+	s_pSpriteCursor = spriteAdd(SPRITE_CHANNEL_CURSOR, s_pBmCursor);
 	systemSetDmaBit(DMAB_SPRITE, 1);
 	mouseSetBounds(MOUSE_PORT_1, 0, GAME_HUD_VPORT_SIZE_Y, 320, 256);
 
@@ -1821,7 +1855,8 @@ static inline void gameWaitForNextFrame(void) {
 static void gameGsLoop(void) {
 	if(keyUse(KEY_ESCAPE)) {
 		bobDiscardUndraw();
-		statePush(g_pGameStateManager, &g_sStateMenu);
+		gameSetCursor(CURSOR_KIND_FULL);
+		menuPush(0);
 		return;
 	}
 
@@ -1914,7 +1949,7 @@ static void gameGsDestroy(void) {
 	ptplayerModDestroy(s_pMod);
 
 	spriteManagerDestroy();
-	bitmapDestroy(s_pBmCrosshair);
+	bitmapDestroy(s_pBmCursor);
 
 	bobManagerDestroy();
 	for(tDirection eDir = 0; eDir < DIRECTION_COUNT; ++eDir) {

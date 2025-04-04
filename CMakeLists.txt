@@ -76,7 +76,7 @@ convertFont(
 
 #----------------------------------------------------------------------- PALETTE
 
-file(GLOB PALETTE_SPRITE ${RES_DIR}/sprite.plt)
+file(GLOB PALETTE_SPRITE ${RES_DIR}/sprite.gpl)
 file(GLOB PALETTE_GPL ${RES_DIR}/survivor.gpl)
 set(PALETTE_PLT ${DATA_DIR}/game.plt)
 set(TRANSPARENCY_HEX "#880088")
@@ -85,12 +85,28 @@ convertPalette(${GAME_EXECUTABLE} ${PALETTE_GPL} ${PALETTE_PLT})
 
 #----------------------------------------------------------------------- CURSORS
 
+file(MAKE_DIRECTORY ${GEN_DIR}/cursors)
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/misc.png
+	GENERATED_FILE_LIST "CURSOR_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/cursors/0.png 32 41 16 9
+	${GEN_DIR}/cursors/1.png 32 28 16 9
+	${GEN_DIR}/cursors/2.png 32  4 16 9
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 9
+	SOURCE ${GEN_DIR}/cursors
+	INTERLEAVED DESTINATION ${GEN_DIR}/cursors.png
+	TILE_PATHS ${CURSOR_PATHS}
+)
+
 convertBitmaps(
 	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_SPRITE}
 	INTERLEAVED SOURCES
-		${RES_DIR}/cursors/crosshair.png
+		${GEN_DIR}/cursors.png
 	DESTINATIONS
-		${DATA_DIR}/cursor_crosshair.bm
+		${DATA_DIR}/cursors.bm
 )
 
 #-------------------------------------------------------------------------- MENU

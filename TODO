@@ -61,8 +61,8 @@ Bare minimum:
 		☐ Add final zombie walk frames
 		☐ Add zombie death animation
 	Cursor refinements:
-		☐ Improve visibility of cursor
-		☐ Add reload indicator on cursor
+		✔ Improve visibility of cursor @done(25-04-04)
+		✔ Add reload indicator on cursor @done(25-04-04)
 	Add basic menu:
 		✔ New game @done(25-04-02)
 		✔ How to play @done(25-04-02)
@@ -81,6 +81,7 @@ Bare minimum:
 		✔ Sort the bob @done(25-04-03)
 		✔ Dissipate after some time @done(25-04-03)
 		✔ Blink in last 3 seconds @done(25-04-03)
+	☐ Fix player going out of screen
 
 Nice to have:
 	☐ Add zombie anti-clumping

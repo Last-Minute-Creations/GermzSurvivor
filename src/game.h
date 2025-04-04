@@ -16,8 +16,9 @@
 #define GAME_MAIN_VPORT_SIZE_Y (256 - GAME_HUD_VPORT_SIZE_Y)
 #define GAME_FPS 25
 
-#define GAME_CURSOR_OFFSET_X 4
-#define GAME_CURSOR_OFFSET_Y 4
+#define CURSOR_SIZE 9
+#define GAME_CURSOR_OFFSET_X (CURSOR_SIZE / 2)
+#define GAME_CURSOR_OFFSET_Y (CURSOR_SIZE / 2)
 
 extern tState g_sStateGame;
 extern tSimpleBufferManager *g_pGameBufferMain;
