@@ -338,7 +338,6 @@ static tBitMap *s_pStainMasks;
 static tFrameOffset s_pStainFrameOffsets[STAIN_FRAME_PRESET_COUNT];
 static tFrameOffset *s_pNextStainOffset;
 
-static tPtplayerMod *s_pMod;
 static UBYTE s_ubBufferCurr;
 static tProjectile *s_pCurrentProjectile;
 static tFix10p6 s_pSin10p6[GAME_MATH_ANGLE_COUNT];
@@ -463,7 +462,6 @@ static const tBCoordYX s_pPlayerFrameDeathOffset[DIRECTION_COUNT][8] = {
 };
 
 tSimpleBufferManager *g_pGameBufferMain;
-tTextBitMap *g_pGameLineBuffer;
 tBitMap *g_pGamePristineBuffer;
 
 //------------------------------------------------------------------ PRIVATE FNS
@@ -899,7 +897,7 @@ static void hudProcess(void) {
 				++s_eHudState;
 				char szScore[sizeof("4294967295")];
 				stringDecimalFromULong(s_ulScore, szScore);
-				fontFillTextBitMap(g_pFontSmall, g_pGameLineBuffer, szScore);
+				fontFillTextBitMap(g_pFontSmall, g_pLineBuffer, szScore);
 				break;
 			}
 			else {
@@ -915,7 +913,7 @@ static void hudProcess(void) {
 				HUD_SCORE_TEXT_SIZE_X, HUD_SCORE_TEXT_SIZE_Y, COLOR_HUD_BG
 			);
 			fontDrawTextBitMap(
-				s_pBufferHud->pBack, g_pGameLineBuffer, HUD_SCORE_TEXT_X, HUD_SCORE_TEXT_Y,
+				s_pBufferHud->pBack, g_pLineBuffer, HUD_SCORE_TEXT_X, HUD_SCORE_TEXT_Y,
 				COLOR_HUD_SCORE, FONT_COOKIE
 			);
 			break;
@@ -944,7 +942,7 @@ static void hudProcess(void) {
 				s_ubHudLevel = s_ubScoreLevel;
 				char szScore[sizeof("255")];
 				stringDecimalFromULong(s_ubScoreLevel, szScore);
-				fontFillTextBitMap(g_pFontSmall, g_pGameLineBuffer, szScore);
+				fontFillTextBitMap(g_pFontSmall, g_pLineBuffer, szScore);
 			}
 			else {
 				s_eHudState = 0; // skip to beginning
@@ -958,7 +956,7 @@ static void hudProcess(void) {
 				HUD_LEVEL_TEXT_SIZE_X, HUD_LEVEL_TEXT_SIZE_Y, COLOR_HUD_BG
 			);
 			fontDrawTextBitMap(
-				s_pBufferHud->pBack, g_pGameLineBuffer, HUD_LEVEL_TEXT_X, HUD_LEVEL_TEXT_Y,
+				s_pBufferHud->pBack, g_pLineBuffer, HUD_LEVEL_TEXT_X, HUD_LEVEL_TEXT_Y,
 				COLOR_HUD_SCORE, FONT_COOKIE
 			);
 		}
@@ -1335,12 +1333,12 @@ void gameStart(void) {
 	fontDrawStr(
 		g_pFontSmall, s_pBufferHud->pBack,
 		HUD_SCORE_TEXT_X - 20, HUD_SCORE_TEXT_Y, "EXP",
-		COLOR_HUD_SCORE, FONT_COOKIE, g_pGameLineBuffer
+		COLOR_HUD_SCORE, FONT_COOKIE, g_pLineBuffer
 	);
 	fontDrawStr(
 		g_pFontSmall, s_pBufferHud->pBack,
 		HUD_LEVEL_TEXT_X - 20, HUD_LEVEL_TEXT_Y, "LVL",
-		COLOR_HUD_SCORE, FONT_COOKIE, g_pGameLineBuffer
+		COLOR_HUD_SCORE, FONT_COOKIE, g_pLineBuffer
 	);
 
 	do {
@@ -1391,6 +1389,9 @@ void gameStart(void) {
 	s_ubFreeProjectileCount = PROJECTILE_COUNT;
 	s_ulFrameCount = 0;
 	s_ulFrameWaitCount = 1;
+
+	ptplayerLoadMod(g_pModGame, 0, 0);
+	ptplayerEnableMusic(1);
 }
 
 __attribute__((always_inline))
@@ -1626,8 +1627,7 @@ static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
 	s_pHudWeapons = bitmapCreateFromPath("data/weapons.bm", 0);
-	assetsGlobalCreate();
-	g_pGameLineBuffer = fontCreateTextBitMap(GAME_MAIN_VPORT_SIZE_X, g_pFont->uwHeight);
+	assetsGameCreate();
 
 	ULONG ulRawCopSize = 16 + simpleBufferGetRawCopperlistInstructionCount(GAME_BPP) * 2;
 	s_pView = viewCreate(0,
@@ -1679,7 +1679,6 @@ static void gameGsCreate(void) {
 
 	paletteLoadFromPath("data/game.plt", s_pVpHud->pPalette, 1 << GAME_BPP);
 
-	s_pMod = ptplayerModCreateFromPath("data/game.mod");
 
 	randInit(&g_sRand, 2184, 1911);
 
@@ -1883,8 +1882,6 @@ static void gameGsCreate(void) {
 	viewProcessManagers(s_pView);
 	copSwapBuffers();
 
-	ptplayerLoadMod(s_pMod, 0, 0);
-	ptplayerEnableMusic(1);
 	logBlockEnd("gameGsCreate()");
 	menuPush(0);
 }
@@ -1992,9 +1989,8 @@ static void gameGsDestroy(void) {
 	ptplayerSfxDestroy(s_pSfxBite[1]);
 	ptplayerSfxDestroy(s_pSfxReload);
 
-	ptplayerModDestroy(s_pMod);
-
 	spriteManagerDestroy();
+	bitmapDestroy(s_pBmCursorFrames);
 	bitmapDestroy(s_pBmCursor);
 
 	bobManagerDestroy();
@@ -2017,8 +2013,7 @@ static void gameGsDestroy(void) {
 	bitmapDestroy(g_pGamePristineBuffer);
 	bitmapDestroy(s_pHudWeapons);
 	bitmapDestroy(s_pTileset);
-	assetsGlobalDestroy();
-	fontDestroyTextBitMap(g_pGameLineBuffer);
+	assetsGameDestroy();
 }
 
 tState g_sStateGame = {

@@ -254,6 +254,8 @@ static void menuGsCreate(void) {
 
 	viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
 	copProcessBlocks();
+	ptplayerLoadMod(g_pModMenu, 0, 0); // g_pModSamples
+	ptplayerEnableMusic(1);
 	logBlockEnd("menuGsCreate()");
 }
 

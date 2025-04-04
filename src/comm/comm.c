@@ -168,7 +168,7 @@ void commDrawText(
 	const tUwCoordYX sOrigin = commGetOriginDisplay();
 	fontDrawStr(
 		g_pFont, s_pBmDraw, sOrigin.uwX + uwX, sOrigin.uwY + uwY,
-		szText, ubColor, ubFontFlags, g_pGameLineBuffer
+		szText, ubColor, ubFontFlags, g_pLineBuffer
 	);
 }
 
@@ -205,10 +205,10 @@ UBYTE commDrawMultilineText(
 
 void commDrawTitle(UWORD uwX, UWORD uwY, const char *szTitle) {
 	// Clear old contents
-	if(g_pGameLineBuffer->uwActualWidth) {
+	if(g_pLineBuffer->uwActualWidth) {
 		blitRect(
-			g_pGameLineBuffer->pBitMap, 0, 0,
-			g_pGameLineBuffer->uwActualWidth, g_pGameLineBuffer->pBitMap->Rows, 0
+			g_pLineBuffer->pBitMap, 0, 0,
+			g_pLineBuffer->uwActualWidth, g_pLineBuffer->pBitMap->Rows, 0
 		);
 	}
 
@@ -217,17 +217,17 @@ void commDrawTitle(UWORD uwX, UWORD uwY, const char *szTitle) {
 	for(const char *pNextChar = szTitle; *pNextChar != '\0'; ++pNextChar) {
 		// Prepare "bold" letter
 		szChar[0] = *pNextChar;
-		uwEndX = fontDrawStr1bpp(g_pFont, g_pGameLineBuffer->pBitMap, uwEndX, 0, szChar).uwX + 1;
+		uwEndX = fontDrawStr1bpp(g_pFont, g_pLineBuffer->pBitMap, uwEndX, 0, szChar).uwX + 1;
 	}
-	g_pGameLineBuffer->uwActualWidth = uwEndX - 1;
+	g_pLineBuffer->uwActualWidth = uwEndX - 1;
 
 	const tUwCoordYX sOrigin = commGetOriginDisplay();
 	fontDrawTextBitMap(
-		s_pBmDraw, g_pGameLineBuffer, sOrigin.uwX + uwX, sOrigin.uwY + uwY,
+		s_pBmDraw, g_pLineBuffer, sOrigin.uwX + uwX, sOrigin.uwY + uwY,
 		COMM_DISPLAY_COLOR_TEXT, FONT_COOKIE
 	);
 	fontDrawTextBitMap(
-		s_pBmDraw, g_pGameLineBuffer, sOrigin.uwX + uwX + 1, sOrigin.uwY + uwY,
+		s_pBmDraw, g_pLineBuffer, sOrigin.uwX + uwX + 1, sOrigin.uwY + uwY,
 		COMM_DISPLAY_COLOR_TEXT, FONT_COOKIE
 	);
 }

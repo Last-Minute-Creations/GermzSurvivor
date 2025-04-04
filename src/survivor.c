@@ -9,6 +9,8 @@
 #include <ace/managers/ptplayer.h>
 #include <ace/contrib/managers/audio_mixer.h>
 #include "game.h"
+#include "cutscene.h"
+#include "assets.h"
 
 tStateManager *g_pGameStateManager;
 
@@ -23,7 +25,8 @@ void genericCreate(void) {
 	ptplayerSetMasterVolume(32);
 	audioMixerCreate();
 
-	statePush(g_pGameStateManager, &g_sStateGame);
+	assetsGlobalCreate();
+	statePush(g_pGameStateManager, &g_sStateCutscene);
 }
 
 void genericProcess(void) {
@@ -36,6 +39,7 @@ void genericDestroy(void) {
 	audioMixerDestroy();
 	ptplayerDestroy();
 
+	assetsGlobalDestroy();
 	stateManagerDestroy(g_pGameStateManager);
 	keyDestroy();
 	mouseDestroy();

@@ -96,7 +96,7 @@ Nice to have:
 		☐ Instant reload
 		☐ Exp points
 	☐ Add pause screen - resume, exit to main menu
-	☐ Add intro
+	✔ Add intro @done(25-04-04)
 
 Optimizations:
 	✔ Precalculate weapon attack pattern randomization @done(25-03-22)

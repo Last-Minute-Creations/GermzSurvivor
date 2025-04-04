@@ -22,7 +22,6 @@
 
 extern tState g_sStateGame;
 extern tSimpleBufferManager *g_pGameBufferMain;
-extern tTextBitMap *g_pGameLineBuffer;
 extern tBitMap *g_pGamePristineBuffer;
 
 void gameStart(void);
