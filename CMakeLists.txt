@@ -164,24 +164,24 @@ file(MAKE_DIRECTORY ${GEN_DIR}/tiles)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/tiles.png
 	GENERATED_FILE_LIST "TILE_PATHS"
 	DESTINATIONS
-	# # Regular
-	# ${GEN_DIR}/tiles/0.png   0   0 32 32
-	# ${GEN_DIR}/tiles/1.png   0  32 32 32
-	# ${GEN_DIR}/tiles/2.png   0  64 32 32
-	# # Barrel
-	# ${GEN_DIR}/tiles/3.png  32   0 32 32
-	# ${GEN_DIR}/tiles/4.png  32  32 32 32
-	# ${GEN_DIR}/tiles/5.png  32  64 32 32
-	# # Skeleton
-	# ${GEN_DIR}/tiles/6.png  32  96 32 32
-	# ${GEN_DIR}/tiles/7.png  32 128 32 32
+	# Regular
+	${GEN_DIR}/tiles/0.png   0   0 32 32
+	${GEN_DIR}/tiles/1.png   0  32 32 32
+	${GEN_DIR}/tiles/2.png   0  64 32 32
+	# Barrel
+	${GEN_DIR}/tiles/3.png  32   0 32 32
+	${GEN_DIR}/tiles/4.png  32  32 32 32
+	${GEN_DIR}/tiles/5.png  32  64 32 32
+	# Skeleton
+	${GEN_DIR}/tiles/6.png  32  96 32 32
+	${GEN_DIR}/tiles/7.png  32 128 32 32
 
-	# Simple
-	${GEN_DIR}/tiles/0.png   0  96 32 32
-	${GEN_DIR}/tiles/1.png   0 128 32 32
-	${GEN_DIR}/tiles/2.png   0 160 32 32
-	${GEN_DIR}/tiles/3.png   0 192 32 32
-	${GEN_DIR}/tiles/4.png   0 224 32 32
+	# # Simple
+	# ${GEN_DIR}/tiles/0.png   0  96 32 32
+	# ${GEN_DIR}/tiles/1.png   0 128 32 32
+	# ${GEN_DIR}/tiles/2.png   0 160 32 32
+	# ${GEN_DIR}/tiles/3.png   0 192 32 32
+	# ${GEN_DIR}/tiles/4.png   0 224 32 32
 )
 
 convertTileset(
