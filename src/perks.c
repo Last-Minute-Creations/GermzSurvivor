@@ -66,6 +66,10 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 		.szTitle = "BANDAGE",
 		.szDescription = "Heals up to 10% of your health.",
 	},
+	[PERK_THICK_SKINNED] = {
+		.szTitle = "THICK SKINNED",
+		.szDescription = "Trade 25% of your health to receive 20% less damage.",
+	},
 };
 
 static void perksUnlockPending(void) {

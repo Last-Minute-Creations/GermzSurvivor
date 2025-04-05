@@ -130,6 +130,7 @@
 #define ENEMY_BOB_OFFSET_Y 15
 #define ENEMY_ATTACK_COOLDOWN 15
 #define ENEMY_HEALTH_BASE 5
+#define ENEMY_DAMAGE_BASE 5
 #define ENEMY_HEALTH_ADD_PER_LEVEL 5
 #define ENEMY_EXP 25
 #define ENEMY_SPEEDY_CHANCE_MAX 127
@@ -317,6 +318,7 @@ static ULONG s_ulNextLevelScore;
 static UBYTE s_ubScoreLevel;
 static UBYTE s_ubHiSpeedChance;
 static UWORD s_uwEnemySpawnHealth;
+static UBYTE s_ubEnemyDamage;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
@@ -1129,7 +1131,7 @@ static inline void enemyProcess(tEntity *pEnemy) {
 
 		if(pEnemy->sEnemy.ubAttackCooldown == 0) {
 			if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
-				s_sPlayer.wHealth -= 5;
+				s_sPlayer.wHealth -= s_ubEnemyDamage;
 				audioMixerPlaySfx(s_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
 				pEnemy->sEnemy.ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
 			}
@@ -1331,6 +1333,10 @@ void gameApplyPerk(tPerk ePerk) {
 		case PERK_INSTANT_WINNER:
 			scoreAddLarge(2000);
 			break;
+		case PERK_THICK_SKINNED:
+			--s_ubEnemyDamage;
+			perksLock(PERK_THICK_SKINNED);
+			break;
 		case PERK_BANDAGE:
 			s_sPlayer.wHealth = MIN(PLAYER_HEALTH_MAX, s_sPlayer.wHealth + (PLAYER_HEALTH_MAX / 10));
 			break;
@@ -1362,6 +1368,7 @@ void gameStart(void) {
 	perksUnlock(PERK_BANDAGE);
 	perksUnlock(PERK_GRIM_DEAL);
 	perksUnlock(PERK_INSTANT_WINNER);
+	perksUnlock(PERK_THICK_SKINNED);
 
 	s_ulKills = 0;
 	s_ulScore = 0;
@@ -1409,6 +1416,7 @@ void gameStart(void) {
 	}
 
 	UBYTE ubSorted = 0;
+	s_ubEnemyDamage = ENEMY_DAMAGE_BASE;
 	s_uwEnemySpawnHealth = ENEMY_HEALTH_BASE;
 	for(UBYTE i = 0; i < ENEMY_COUNT; ++i) {
 		s_pEnemies[i].eKind = ENTITY_KIND_ENEMY;

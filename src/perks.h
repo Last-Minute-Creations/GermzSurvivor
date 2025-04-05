@@ -12,6 +12,7 @@ typedef enum tPerk {
 	PERK_FATAL_LOTTERY,
 	PERK_INSTANT_WINNER,
 	PERK_BANDAGE,
+	PERK_THICK_SKINNED,
 
 	PERK_COUNT // also used for locked perk
 } tPerk;
