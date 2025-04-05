@@ -702,10 +702,10 @@ convertBitmaps(
 	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT}
 	INTERLEAVED SOURCES
 		${GEN_DIR}/tiles.png ${RES_DIR}/weapons.png ${GEN_DIR}/killfriend.png
-		${GEN_DIR}/logo.png
+		${GEN_DIR}/logo.png ${RES_DIR}/level_up.png
 	DESTINATIONS
 		${DATA_DIR}/tiles.bm ${DATA_DIR}/weapons.bm ${DATA_DIR}/killfriend.bm
-		${DATA_DIR}/logo.bm
+		${DATA_DIR}/logo.bm ${DATA_DIR}/level_up.bm
 )
 
 convertBitmaps(

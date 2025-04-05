@@ -55,6 +55,10 @@
 #define HUD_AMMO_FIELD_SIZE_X (HUD_AMMO_BULLET_COUNT_X * (HUD_AMMO_BULLET_SIZE_X + 1) - 1)
 #define HUD_AMMO_FIELD_SIZE_Y (HUD_AMMO_BULLET_COUNT_Y * (HUD_AMMO_BULLET_SIZE_Y + 1) - 1)
 #define HUD_AMMO_COUNT_FORCE_REDRAW 0xFF
+#define HUD_LEVEL_UP_OFFSET_X CEIL_TO_FACTOR(HUD_AMMO_FIELD_OFFSET_X + HUD_AMMO_FIELD_SIZE_X, 16)
+#define HUD_LEVEL_UP_OFFSET_Y 0
+#define HUD_LEVEL_UP_SIZE_X 80
+#define HUD_LEVEL_UP_SIZE_Y 15
 #define HUD_HEALTH_BAR_OFFSET_X 200
 #define HUD_HEALTH_BAR_OFFSET_Y 11
 #define HUD_HEALTH_BAR_SIZE_X PLAYER_HEALTH_MAX
@@ -273,6 +277,7 @@ typedef struct tProjectile {
 } tProjectile;
 
 typedef enum tHudState {
+	HUD_STATE_DRAW_LEVEL_UP,
 	HUD_STATE_DRAW_HEALTH_BAR,
 	HUD_STATE_DRAW_WEAPON,
 	HUD_STATE_DRAW_BULLETS,
@@ -302,6 +307,7 @@ static tBitMap *s_pBmCursor;
 static tBitMap *s_pBmCursorFrames;
 static ULONG *s_pCursorOffsets[CURSOR_KIND_COUNT];
 static tBitMap *s_pHudWeapons;
+static tBitMap *s_pHudLevelUp;
 static tSprite *s_pSpriteCursor;
 static volatile ULONG s_ulFrameCount;
 static ULONG s_ulFrameWaitCount;
@@ -847,6 +853,30 @@ static void cameraCenterAtOptimized(
 
 static void hudProcess(void) {
 	switch(s_eHudState) {
+		case HUD_STATE_DRAW_LEVEL_UP:
+			++s_eHudState;
+			if(s_ubHudPendingPerksDrawn) {
+				if(!s_ubPendingPerks) {
+					s_ubHudPendingPerksDrawn = 0;
+					blitRect(
+						s_pBufferHud->pBack, HUD_LEVEL_UP_OFFSET_X, HUD_LEVEL_UP_OFFSET_Y,
+						HUD_LEVEL_UP_SIZE_X, HUD_LEVEL_UP_SIZE_Y, COLOR_HUD_BG
+					);
+					break;
+				}
+			}
+			else {
+				if(s_ubPendingPerks) {
+					s_ubHudPendingPerksDrawn = 1;
+					blitCopyAligned(
+						s_pHudLevelUp, 0, 0, s_pBufferHud->pBack,
+						HUD_LEVEL_UP_OFFSET_X, HUD_LEVEL_UP_OFFSET_Y,
+						HUD_LEVEL_UP_SIZE_X, HUD_LEVEL_UP_SIZE_Y
+					);
+					break;
+				}
+			}
+			// fallthrough
 		case HUD_STATE_DRAW_HEALTH_BAR:
 			++s_eHudState;
 			UWORD uwCurrentHealth = s_sPlayer.wHealth;
@@ -1384,6 +1414,7 @@ void gameStart(void) {
 	s_ubHudLevel = 255;
 	s_ubHudBarPixel = 0;
 	s_eHudState = 0;
+	s_ubHudPendingPerksDrawn = 1;
 	blitRect(
 		s_pBufferHud->pBack,
 		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
@@ -1701,6 +1732,7 @@ static void gameGsCreate(void) {
 	logBlockBegin("gameGsCreate()");
 	s_pTileset = bitmapCreateFromPath("data/tiles.bm", 0);
 	s_pHudWeapons = bitmapCreateFromPath("data/weapons.bm", 0);
+	s_pHudLevelUp = bitmapCreateFromPath("data/level_up.bm", 0);
 	assetsGameCreate();
 
 	ULONG ulRawCopSize = 16 + simpleBufferGetRawCopperlistInstructionCount(GAME_BPP) * 2;
@@ -2090,6 +2122,7 @@ static void gameGsDestroy(void) {
 	viewDestroy(s_pView);
 	bitmapDestroy(g_pGamePristineBuffer);
 	bitmapDestroy(s_pHudWeapons);
+	bitmapDestroy(s_pHudLevelUp);
 	bitmapDestroy(s_pTileset);
 	assetsGameDestroy();
 }

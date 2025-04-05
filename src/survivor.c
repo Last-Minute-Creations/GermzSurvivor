@@ -27,6 +27,7 @@ void genericCreate(void) {
 
 	assetsGlobalCreate();
 	statePush(g_pGameStateManager, &g_sStateCutscene);
+	// statePush(g_pGameStateManager, &g_sStateGame);
 }
 
 void genericProcess(void) {
