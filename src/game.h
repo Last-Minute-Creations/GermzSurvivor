@@ -34,6 +34,10 @@ UBYTE gameGetLevel(void);
 
 ULONG gameGetExp(void);
 
+void gameEnableFrameCounter(void);
+
+void gameDiscardUndraw(void);
+
 void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY);
 
 #endif // SURVIVOR_GAME_H

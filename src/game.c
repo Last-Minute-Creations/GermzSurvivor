@@ -20,6 +20,7 @@
 #include "assets.h"
 #include "menu.h"
 #include "hi_score.h"
+#include "pause.h"
 
 #define GAME_PLAYER_DEATH_COOLDOWN 50
 #define WEAPON_MAX_BULLETS_IN_MAGAZINE 30
@@ -1284,6 +1285,14 @@ ULONG gameGetExp(void) {
 	return s_ulScore;
 }
 
+void gameEnableFrameCounter(void) {
+	systemSetInt(INTB_VERTB, onVblank, (void*)&s_ulFrameCount);
+}
+
+void gameDiscardUndraw(void) {
+	bobDiscardUndraw();
+}
+
 void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY) {
 	s_pSpriteCursor->wX = uwMouseX - GAME_CURSOR_OFFSET_X;
 	s_pSpriteCursor->wY = uwMouseY - GAME_CURSOR_OFFSET_Y;
@@ -1392,6 +1401,7 @@ void gameStart(void) {
 	s_ubFreeProjectileCount = PROJECTILE_COUNT;
 	s_ulFrameCount = 0;
 	s_ulFrameWaitCount = 1;
+	gameEnableFrameCounter();
 
 	ptplayerLoadMod(g_pModGame, 0, 0);
 	ptplayerEnableMusic(1);
@@ -1873,7 +1883,6 @@ static void gameGsCreate(void) {
 	commCreate();
 
 	systemUnuse();
-	systemSetInt(INTB_VERTB, onVblank, (void*)&s_ulFrameCount);
 	gameStart();
 
 	viewLoad(s_pView);
@@ -1900,9 +1909,9 @@ static inline void gameWaitForNextFrame(void) {
 
 static void gameGsLoop(void) {
 	if(keyUse(KEY_ESCAPE)) {
-		bobDiscardUndraw();
+		systemSetInt(INTB_VERTB, 0, 0);
 		gameSetCursor(CURSOR_KIND_FULL);
-		menuPush(0);
+		statePush(g_pGameStateManager, &g_sStatePause);
 		return;
 	}
 

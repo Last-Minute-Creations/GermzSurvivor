@@ -30,8 +30,6 @@ static tBitMap *s_pBg;
 static tBitMap *s_pBmDraw;
 static UBYTE s_isCommShown = 0;
 // static const char *s_szPrevProgressText;
-static tPageProcess s_pPageProcess = 0;
-static tPageCleanup s_pPageCleanup = 0;
 
 tBitMap *g_pCommBmFaces;
 tBitMap *g_pCommBmSelection;
@@ -123,8 +121,6 @@ void commHide(void) {
 		return;
 	}
 	s_isCommShown = 0;
-
-	commRegisterPage(0, 0);
 
 	// Restore content beneath commrade
 	tUwCoordYX sOrigin = commGetOrigin();
@@ -323,27 +319,4 @@ UBYTE commBreakTextToWidth(const char *szInput, UWORD uwMaxLineWidth) {
 		++szInput;
 	}
 	return ubCharsInLine;
-}
-
-void commRegisterPage(tPageProcess cbProcess, tPageCleanup cbCleanup) {
-	logBlockBegin(
-		"commRegisterPage(cbProcess: %p, cbCleanup: %p)", cbProcess, cbCleanup
-	);
-	if(s_pPageCleanup) {
-		s_pPageCleanup();
-		s_pPageCleanup = 0;
-	}
-	commEraseAll();
-
-	s_pPageProcess = cbProcess;
-	s_pPageCleanup = cbCleanup;
-	logBlockEnd("commRegisterPage()");
-}
-
-UBYTE commProcessPage(void) {
-	if(s_pPageProcess) {
-		s_pPageProcess();
-		return 1;
-	}
-	return 0;
 }

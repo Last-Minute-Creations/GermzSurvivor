@@ -82,10 +82,6 @@ UBYTE commBreakTextToWidth(const char *szInput, UWORD uwMaxLineWidth);
 
 UBYTE commGetLineHeight(void);
 
-void commRegisterPage(tPageProcess cbProcess, tPageCleanup cbCleanup);
-
-UBYTE commProcessPage(void);
-
 #ifdef __cplusplus
 }
 #endif

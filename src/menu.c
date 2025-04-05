@@ -230,7 +230,13 @@ void menuPush(UBYTE isDead) {
 
 static void menuGsCreate(void) {
 	logBlockBegin("menuGsCreate()");
-	commShow();
+	UBYTE isShown = commIsShown();
+	if(!isShown) {
+		commShow();
+	}
+	else {
+		commEraseAll();
+	}
 	tUwCoordYX sOrigin = commGetOriginDisplay();
 	blitCopy(
 		g_pLogo, 0, 0, commGetDisplayBuffer(),
@@ -239,7 +245,7 @@ static void menuGsCreate(void) {
 	);
 
 	buttonReset();
-	UWORD uwY = 64;
+	UWORD uwY = LOGO_SIZE_Y + 16;
 	buttonAdd("Survive", COMM_DISPLAY_WIDTH / 2, uwY); uwY += buttonGetHeight() + MENU_BUTTON_MARGIN_Y;
 	buttonAdd("How to play", COMM_DISPLAY_WIDTH / 2, uwY); uwY += buttonGetHeight() + MENU_BUTTON_MARGIN_Y;
 	buttonAdd("High scores", COMM_DISPLAY_WIDTH / 2, uwY); uwY += buttonGetHeight() + MENU_BUTTON_MARGIN_Y;
@@ -252,8 +258,10 @@ static void menuGsCreate(void) {
 		FONT_COOKIE | FONT_BOTTOM | FONT_HCENTER, COMM_DISPLAY_COLOR_TEXT_DARK
 	);
 
-	viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
-	copProcessBlocks();
+	if(!isShown) {
+		viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
+		copProcessBlocks();
+	}
 	ptplayerLoadMod(g_pModMenu, 0, 0); // g_pModSamples
 	ptplayerEnableMusic(1);
 	logBlockEnd("menuGsCreate()");
