@@ -7,7 +7,6 @@
 #include <ace/managers/key.h>
 #include <ace/managers/mouse.h>
 #include <ace/managers/system.h>
-#include <ace/managers/rand.h>
 #include <ace/managers/sprite.h>
 #include <ace/managers/ptplayer.h>
 #include <ace/contrib/managers/audio_mixer.h>
@@ -302,7 +301,6 @@ static tBitMap *s_pBmCursor;
 static tBitMap *s_pBmCursorFrames;
 static ULONG *s_pCursorOffsets[CURSOR_KIND_COUNT];
 static tBitMap *s_pHudWeapons;
-static tRandManager g_sRand;
 static tSprite *s_pSpriteCursor;
 static volatile ULONG s_ulFrameCount;
 static ULONG s_ulFrameWaitCount;
@@ -312,6 +310,7 @@ static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
 static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][ENTITY_FRAME_COUNT];
 static tEntity s_sPlayer;
 static ULONG s_ulScore;
+static UBYTE s_ubPendingPerks;
 static ULONG s_ulKills;
 static ULONG s_ulPrevLevelScore;
 static ULONG s_ulNextLevelScore;
@@ -464,6 +463,7 @@ static const tBCoordYX s_pPlayerFrameDeathOffset[DIRECTION_COUNT][8] = {
 
 tSimpleBufferManager *g_pGameBufferMain;
 tBitMap *g_pGamePristineBuffer;
+tRandManager g_sRand;
 
 //------------------------------------------------------------------ PRIVATE FNS
 
@@ -483,12 +483,26 @@ static inline void gameSetCursor(tCursorKind eKind) {
 }
 
 __attribute__((always_inline))
-static inline void scoreAdd(ULONG ulScore) {
+static inline void scoreAddSmall(ULONG ulScore) {
 	s_ulScore += ulScore;
 	if(s_ulScore > s_ulNextLevelScore) {
 		s_ulPrevLevelScore = s_ulNextLevelScore;
 		s_ulNextLevelScore *= 2;
 		++s_ubScoreLevel;
+		++s_ubPendingPerks;
+		s_ubHiSpeedChance = MIN(s_ubHiSpeedChance + ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL, ENEMY_SPEEDY_CHANCE_MAX);
+		s_uwEnemySpawnHealth += ENEMY_HEALTH_ADD_PER_LEVEL;
+	}
+}
+
+// Can add multiple levels at once
+static void scoreAddLarge(ULONG ulScore) {
+	s_ulScore += ulScore;
+	while(s_ulScore > s_ulNextLevelScore) {
+		s_ulPrevLevelScore = s_ulNextLevelScore;
+		s_ulNextLevelScore *= 2;
+		++s_ubScoreLevel;
+		++s_ubPendingPerks;
 		s_ubHiSpeedChance = MIN(s_ubHiSpeedChance + ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL, ENEMY_SPEEDY_CHANCE_MAX);
 		s_uwEnemySpawnHealth += ENEMY_HEALTH_ADD_PER_LEVEL;
 	}
@@ -1202,7 +1216,7 @@ static inline void enemyProcess(tEntity *pEnemy) {
 				pEnemy->wHealth = HEALTH_ENEMY_DEAD_AWAITING_RESPAWN;
 			}
 			else {
-				scoreAdd(ENEMY_EXP);
+				scoreAddSmall(ENEMY_EXP);
 				++s_ulKills;
 				if(s_sPickup.wHealth == HEALTH_PICKUP_INACTIVE) {
 					s_sPickup.wHealth = HEALTH_PICKUP_READY_TO_SPAWN;
@@ -1299,6 +1313,32 @@ void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY) {
 	spriteProcess(s_pSpriteCursor);
 }
 
+void gameApplyPerk(tPerk ePerk) {
+	--s_ubPendingPerks;
+	switch(ePerk) {
+		case PERK_GRIM_DEAL:
+			scoreAddLarge((s_ulScore * 2) / 10);
+			s_sPlayer.wHealth = 0;
+			break;
+		case PERK_FATAL_LOTTERY:
+			if(randUwMax(&g_sRand, 99) < 50) {
+				s_sPlayer.wHealth = 0;
+			}
+			else {
+				scoreAddLarge(20000);
+			}
+			break;
+		case PERK_INSTANT_WINNER:
+			scoreAddLarge(2000);
+			break;
+		case PERK_BANDAGE:
+			s_sPlayer.wHealth = MIN(PLAYER_HEALTH_MAX, s_sPlayer.wHealth + (PLAYER_HEALTH_MAX / 10));
+			break;
+		case PERK_COUNT:
+			__builtin_unreachable();
+	}
+}
+
 void gameStart(void) {
 	for(UBYTE ubX = 0; ubX < BG_TILES_X; ++ubX) {
 		for(UBYTE ubY = 0; ubY < BG_TILES_Y; ++ubY) {
@@ -1318,12 +1358,17 @@ void gameStart(void) {
 
 	s_ubDeathCooldown = GAME_PLAYER_DEATH_COOLDOWN;
 	gameSetCursor(CURSOR_KIND_FULL);
+	perksReset();
+	perksUnlock(PERK_BANDAGE);
+	perksUnlock(PERK_GRIM_DEAL);
+	perksUnlock(PERK_INSTANT_WINNER);
 
 	s_ulKills = 0;
 	s_ulScore = 0;
 	s_ulPrevLevelScore = 0;
 	s_ulNextLevelScore = 1024;
 	s_ubScoreLevel = 1;
+	s_ubPendingPerks = 0;
 	s_ubHiSpeedChance = 0;
 
 	s_uwHudHealth = 0;
@@ -1432,10 +1477,17 @@ static inline void playerApplyPickup(tPickupKind ePickupKind) {
 
 __attribute__((always_inline))
 static inline UBYTE playerProcess(void) {
+	if(mouseUse(MOUSE_PORT_1, MOUSE_RMB) && s_ubPendingPerks) {
+		systemSetInt(INTB_VERTB, 0, 0);
+		gameSetCursor(CURSOR_KIND_FULL);
+		statePush(g_pGameStateManager, &g_sStatePerks);
+		return 1;
+	}
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
 
 	if(s_sPlayer.wHealth > 0) {
+#if defined(GAME_DEBUG)
 		if(keyUse(KEY_1)) {
 			playerSetWeapon(WEAPON_KIND_STOCK_RIFLE);
 		}
@@ -1451,6 +1503,7 @@ static inline UBYTE playerProcess(void) {
 		else if(keyUse(KEY_5)) {
 			playerSetWeapon(WEAPON_KIND_SAWOFF);
 		}
+#endif
 
 		UBYTE ubAimAngle = getAngleBetweenPoints( // 0 is right, going clockwise
 			s_sPlayer.sPos.uwX - g_pGameBufferMain->pCamera->uPos.uwX,
@@ -1914,6 +1967,11 @@ static void gameGsLoop(void) {
 		statePush(g_pGameStateManager, &g_sStatePause);
 		return;
 	}
+#if defined(GAME_DEBUG)
+	if(keyUse(KEY_0)) {
+		scoreAddSmall(500);
+	}
+#endif
 
 	s_pBackPlanes = g_pGameBufferMain->pBack->Planes[0];
 	s_pCurrentProjectile = &s_pProjectiles[0];

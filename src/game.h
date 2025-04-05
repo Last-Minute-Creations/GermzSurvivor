@@ -7,7 +7,9 @@
 
 #include <ace/managers/state.h>
 #include <ace/managers/viewport/simplebuffer.h>
+#include <ace/managers/rand.h>
 #include <ace/utils/font.h>
+#include "perks.h"
 
 // #define GAME_COLLISION_DEBUG
 #define GAME_BPP 5
@@ -23,6 +25,7 @@
 extern tState g_sStateGame;
 extern tSimpleBufferManager *g_pGameBufferMain;
 extern tBitMap *g_pGamePristineBuffer;
+extern tRandManager g_sRand;
 
 void gameStart(void);
 
@@ -39,5 +42,7 @@ void gameEnableFrameCounter(void);
 void gameDiscardUndraw(void);
 
 void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY);
+
+void gameApplyPerk(tPerk ePerk);
 
 #endif // SURVIVOR_GAME_H

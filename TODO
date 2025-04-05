@@ -88,8 +88,8 @@ Nice to have:
 	☐ Draw 2 bullets on hud at once if possible
 	☐ Add sound variations
 	Perks:
-		☐ Add perk selection
-		☐ Implement at least 10 perks
+		✔ Add perk selection @done(25-04-05)
+		✔ Implement at least 4 perks @done(25-04-05)
 	More pickups:
 		☐ Fast move
 		☐ Stronger bullets
@@ -107,30 +107,35 @@ Optimizations:
 	☐ Speed chance rand table
 	☐ Pickup chance rand table
 
+Perks to implement first - cyclic:
+	✔ Grim deal - 20% more exp, instant death @done(25-04-05)
+	✔ Fatal lottery - 50-50 death or exp bonus @done(25-04-05)
+	✔ Instant winner - +2000 exp @done(25-04-05)
+	✔ Bandage - heal 10% health @done(25-04-05)
+
+Perks to implement first:
+	☐ My favourite weapon - +2 bullets, no weapon pickups
+	☐ Anxious loader - click to reload faster
+	☐ Retaliation - hit the monster when it bites you
+	☐ Regression bullets - fire from empty clip, costs exp
+	☐ Ammunition within - fire from empty clip, costs health
+	☐ Dodger - chance to dodge attack
+	☐ Increase chance for pickups
+	☐ Death clock - die in 30 seconds, immortal
+	☐ Highlander - Immortal, 5% chance for instant death on hit
+	☐ Thick-skinned - trade 33% health to receive only 75% of damage
+
 Perks to implement:
 	☐ Fast loader
-	☐ My favourite weapon - +2 bullets, no weapon pickups
 	☐ Ammo maniac - 20% more ammo in magazine
-	☐ Anxious loader - click to reload faster
-	☐ Grim deal - 20% more exp, instant death
-	☐ Fatal lottery - 50-50 death or exp bonus
-	☐ Retaliation - hit the monster when it bits you
 	☐ Telekinetic - move pickups to you by hover
 	☐ Perk expert - +1 perk to choose, lower exp requirements for levels
 	☐ Unstoppable - getting hit doesn't slow you down
-	☐ Regression bullets - fire from empty clip, costs exp
-	☐ Dodger - chance to dodge attack
-	☐ Increase chance for pickups
 	☐ Bonus Economist - increase effect of pickups
-	☐ Thick-skinned - trade 25% health to receive only 75% of damage
-	☐ Ammunition within - fire from empty clip, costs health
 	☐ Ninja - improved dodger
-	☐ Highlander - Immortal, 5% chance for instant death on hit
-	☐ Death clock - die in 30 seconds, immortal
 	☐ Stationary reloader - reload quicker when standing still
 	☐ Tough reloader - damage received during reload is halved
 	☐ Swift reloader - reloading doesn't slow you down
-	☐ Bandage - heal 50% health
 	☐ Increase max hp by 10%
 
 Weapon audio:
