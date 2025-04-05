@@ -1197,7 +1197,6 @@ static inline void enemyProcess(tEntity *pEnemy) {
 			bobPush(&pEnemy->sBob);
 		}
 		else {
-			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
 			if(pEnemy->wHealth == HEALTH_ENEMY_OFFSCREENED) {
 				pEnemy->wHealth = HEALTH_ENEMY_DEAD_AWAITING_RESPAWN;
 			}
@@ -1213,8 +1212,11 @@ static inline void enemyProcess(tEntity *pEnemy) {
 				pEnemy->sEnemy.ubFrameCooldown = 0;
 				pEnemy->eFrame = ENTITY_FRAME_DIE_1;
 			}
+			s_pCollisionTiles[pEnemy->sPos.uwX / COLLISION_SIZE_X][pEnemy->sPos.uwY / COLLISION_SIZE_Y] = 0;
 			// Failsafe to prevent trashing collision map
 			pEnemy->sPos.ulYX = 0;
+			// Display as-is to prevent flicker between alive and dead anim
+			bobPush(&pEnemy->sBob);
 		}
 	}
 }
