@@ -21,6 +21,8 @@
 #include "hi_score.h"
 #include "pause.h"
 
+#define DEATH_CLOCK_COOLDOWN 5
+
 #define GAME_PLAYER_DEATH_COOLDOWN 50
 #define WEAPON_MAX_BULLETS_IN_MAGAZINE 30
 #define STAIN_FRAME_COUNT 3
@@ -126,6 +128,7 @@
 #define PLAYER_BOB_OFFSET_Y 19
 #define PLAYER_ATTACK_COOLDOWN 12
 #define PLAYER_HEALTH_MAX 100
+#define PLAYER_RETALIATION_DAMAGE 30
 
 #define ENEMY_BOB_SIZE_X 16
 #define ENEMY_BOB_SIZE_Y 24
@@ -325,6 +328,10 @@ static UBYTE s_ubScoreLevel;
 static UBYTE s_ubHiSpeedChance;
 static UWORD s_uwEnemySpawnHealth;
 static UBYTE s_ubEnemyDamage;
+static UBYTE s_isDeathClock;
+static UBYTE s_isRetaliation;
+static UBYTE s_ubFatalLotteryLevel;
+static UBYTE s_ubDeathClockCooldown;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
@@ -388,6 +395,7 @@ static UBYTE s_ubHudAmmoCount;
 static ULONG s_ulHudScore;
 static ULONG s_ubHudBarPixel;
 static UBYTE s_ubHudLevel;
+static UBYTE s_ubHudPendingPerksDrawn;
 static tUbCoordYX s_pHudBulletOffsets[WEAPON_MAX_BULLETS_IN_MAGAZINE];
 
 static tPtplayerSfx *s_pSfxRifle[2];
@@ -1161,7 +1169,12 @@ static inline void enemyProcess(tEntity *pEnemy) {
 
 		if(pEnemy->sEnemy.ubAttackCooldown == 0) {
 			if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
-				s_sPlayer.wHealth -= s_ubEnemyDamage;
+				if(!s_isDeathClock) {
+					s_sPlayer.wHealth -= s_ubEnemyDamage;
+				}
+				if(s_isRetaliation) {
+					pEnemy->wHealth -= PLAYER_RETALIATION_DAMAGE;
+				}
 				audioMixerPlaySfx(s_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
 				pEnemy->sEnemy.ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
 			}
@@ -1347,12 +1360,14 @@ void gameProcessCursor(UWORD uwMouseX, UWORD uwMouseY) {
 
 void gameApplyPerk(tPerk ePerk) {
 	--s_ubPendingPerks;
+	perksLock(ePerk);
 	switch(ePerk) {
 		case PERK_GRIM_DEAL:
 			scoreAddLarge((s_ulScore * 2) / 10);
 			s_sPlayer.wHealth = 0;
 			break;
 		case PERK_FATAL_LOTTERY:
+			s_ubFatalLotteryLevel = s_ubScoreLevel;
 			if(randUwMax(&g_sRand, 99) < 50) {
 				s_sPlayer.wHealth = 0;
 			}
@@ -1361,17 +1376,30 @@ void gameApplyPerk(tPerk ePerk) {
 			}
 			break;
 		case PERK_INSTANT_WINNER:
+			perksUnlock(ePerk); // multi-use
 			scoreAddLarge(2000);
 			break;
 		case PERK_THICK_SKINNED:
+			s_sPlayer.wHealth = MAX(1, s_sPlayer.wHealth - 25);
 			--s_ubEnemyDamage;
-			perksLock(PERK_THICK_SKINNED);
 			break;
 		case PERK_BANDAGE:
+			perksUnlock(ePerk); // multi-use
 			s_sPlayer.wHealth = MIN(PLAYER_HEALTH_MAX, s_sPlayer.wHealth + (PLAYER_HEALTH_MAX / 10));
+			break;
+		case PERK_DEATH_CLOCK:
+			s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
+			s_isDeathClock = 1;
+			s_ubDeathClockCooldown = DEATH_CLOCK_COOLDOWN;
+			break;
+		case PERK_RETALIATION:
+			s_isRetaliation = 1;
 			break;
 		case PERK_COUNT:
 			__builtin_unreachable();
+	}
+	if(s_ubFatalLotteryLevel && s_ubScoreLevel >= s_ubFatalLotteryLevel + 2) {
+		perksUnlock(PERK_FATAL_LOTTERY);
 	}
 }
 
@@ -1399,6 +1427,11 @@ void gameStart(void) {
 	perksUnlock(PERK_GRIM_DEAL);
 	perksUnlock(PERK_INSTANT_WINNER);
 	perksUnlock(PERK_THICK_SKINNED);
+	perksUnlock(PERK_DEATH_CLOCK);
+	perksUnlock(PERK_RETALIATION);
+	s_isDeathClock = 0;
+	s_isRetaliation = 0;
+	s_ubFatalLotteryLevel = 0;
 
 	s_ulKills = 0;
 	s_ulScore = 0;
@@ -1634,6 +1667,16 @@ static inline UBYTE playerProcess(void) {
 		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
 		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
 		cameraCenterAtOptimized(g_pGameBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
+
+		if(s_isDeathClock) {
+			if(s_ubDeathClockCooldown) {
+				--s_ubDeathClockCooldown;
+			}
+			else {
+				s_ubDeathClockCooldown = DEATH_CLOCK_COOLDOWN;
+				--s_sPlayer.wHealth;
+			}
+		}
 	}
 	else {
 		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc

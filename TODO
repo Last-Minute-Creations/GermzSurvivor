@@ -114,6 +114,8 @@ Perks to implement first - cyclic:
 	✔ Bandage - heal 10% health @done(25-04-05)
 
 Perks to implement first:
+	✔ Thick-skinned - trade 25% health to receive only 80% of damage @done(25-04-05)
+	✔ Death clock - die in 30 seconds, immortal @done(25-04-05)
 	☐ My favourite weapon - +2 bullets, no weapon pickups
 	☐ Anxious loader - click to reload faster
 	☐ Retaliation - hit the monster when it bites you
@@ -121,9 +123,7 @@ Perks to implement first:
 	☐ Ammunition within - fire from empty clip, costs health
 	☐ Dodger - chance to dodge attack
 	☐ Increase chance for pickups
-	☐ Death clock - die in 30 seconds, immortal
 	☐ Highlander - Immortal, 5% chance for instant death on hit
-	☐ Thick-skinned - trade 33% health to receive only 75% of damage
 
 Perks to implement:
 	☐ Fast loader

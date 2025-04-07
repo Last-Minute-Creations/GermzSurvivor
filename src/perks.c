@@ -70,6 +70,18 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 		.szTitle = "THICK SKINNED",
 		.szDescription = "Trade 25% of your health to receive 20% less damage.",
 	},
+	[PERK_DEATH_CLOCK] = {
+		.szTitle = "DEATH CLOCK",
+		.szDescription = (
+			"You are immortal for the rest of your life.\n"
+			"Which will end exactly in 25 seconds.\n"
+			"Tick tock."
+		),
+	},
+	[PERK_RETALIATION] = {
+		.szTitle = "RETALIATION",
+		.szDescription = "When zombie bites you, punch it back in the face. Hard.",
+	},
 };
 
 static void perksUnlockPending(void) {
