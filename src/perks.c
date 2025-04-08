@@ -167,7 +167,7 @@ void perksLock(tPerk ePerk) {
 
 //-------------------------------------------------------------------- GAMESTATE
 
-static void pauseGsCreate(void) {
+static void perksGsCreate(void) {
 	logBlockBegin("menuGsCreate()");
 	commShow();
 	commDrawText(COMM_DISPLAY_WIDTH / 2, 0, "PICK A PERK", FONT_HCENTER | FONT_COOKIE, COMM_DISPLAY_COLOR_TEXT);
@@ -191,12 +191,10 @@ static void pauseGsCreate(void) {
 
 	viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
 	copProcessBlocks();
-	ptplayerLoadMod(g_pModMenu, 0, 0); // g_pModSamples
-	ptplayerEnableMusic(1);
 	logBlockEnd("menuGsCreate()");
 }
 
-static void pauseGsLoop(void) {
+static void perksGsLoop(void) {
 	if(keyUse(KEY_ESCAPE)) {
 		s_isGoBackToGame = 1;
 		statePop(g_pGameStateManager);
@@ -247,7 +245,7 @@ static void pauseGsLoop(void) {
 	vPortWaitForEnd(g_pGameBufferMain->sCommon.pVPort);
 }
 
-static void pauseGsDestroy(void) {
+static void perksGsDestroy(void) {
 	if(s_isGoBackToGame) {
 		// Sync with game's double buffering
 		viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
@@ -261,5 +259,5 @@ static void pauseGsDestroy(void) {
 }
 
 tState g_sStatePerks = {
-	.cbCreate = pauseGsCreate, .cbLoop = pauseGsLoop, .cbDestroy = pauseGsDestroy
+	.cbCreate = perksGsCreate, .cbLoop = perksGsLoop, .cbDestroy = perksGsDestroy
 };

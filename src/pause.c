@@ -37,8 +37,7 @@ static void pauseGsCreate(void) {
 
 	viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
 	copProcessBlocks();
-	ptplayerLoadMod(g_pModMenu, 0, 0); // g_pModSamples
-	ptplayerEnableMusic(1);
+	ptplayerEnableMusic(0);
 	logBlockEnd("menuGsCreate()");
 }
 
@@ -77,6 +76,7 @@ static void pauseGsDestroy(void) {
 		copProcessBlocks();
 		commHide();
 		gameEnableFrameCounter();
+		ptplayerEnableMusic(1);
 	}
 	else {
 		gameDiscardUndraw();
