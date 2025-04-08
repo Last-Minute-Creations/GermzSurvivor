@@ -296,11 +296,13 @@ static void cutsceneLoopFinale(void) {
 
 static void cutsceneGsLoop(void) {
 	tFadeState eFadeState = fadeProcess(s_pFade);
+	if(s_pVp) {
+		vPortWaitForEnd(s_pVp);
+	}
 	if(eFadeState != FADE_STATE_IDLE) {
 		return;
 	}
 
-	vPortWaitForEnd(s_pVp);
 	if(s_ubFadeStep <= 0x10) {
 		// Process text fade-in
 		// Increment color
@@ -363,6 +365,7 @@ static void cutsceneGsDestroy(void) {
 	systemUse();
 	viewDestroy(s_pView);
 	fadeDestroy(s_pFade);
+	s_pVp = 0;
 
 	// Destroy slides
 	for(UBYTE i = 0; i < s_ubSlideCount; ++i) {

@@ -52,7 +52,6 @@ Bare minimum:
 	Scale zombies with exp:
 		✔ Speed up zombies after some levels @done(25-03-28)
 		✔ Increase zombie hp with each level @done(25-03-28)
-	☐ Make the zombies go away after player death so that death anim is visible
 	Animations, second pass:
 		✔ Add zombie movement animation @done(25-03-28)
 		✔ Add running while aiming animation @done(25-04-03)
@@ -83,18 +82,24 @@ Bare minimum:
 		✔ Blink in last 3 seconds @done(25-04-03)
 	✔ Fix player going out of screen @done(25-04-04)
 
+Final version stuff:
+	✔ Fix intro fade on faster configs @done(25-04-08)
+	☐ Draw 2 bullets on hud at once if possible
+	☐ Make the zombies go away after player death so that death anim is visible
+	☐ Exp points pickup
+	☐ Fix bitplanes on AGA/060
+
 Nice to have:
 	☐ Add zombie anti-clumping
-	☐ Draw 2 bullets on hud at once if possible
 	☐ Add sound variations
 	Perks:
 		✔ Add perk selection @done(25-04-05)
 		✔ Implement at least 4 perks @done(25-04-05)
-	More pickups:
-		☐ Fast move
-		☐ Stronger bullets
-		☐ Instant reload
-		☐ Exp points
+	✘ Instant reload pickup @cancelled(25-04-08)
+	☐ Fast move pickup
+	☐ Stronger bullets pickup
+	☐ Unlimited ammo pickup
+	☐ Slomo bomb pickup
 	✔ Add pause screen - resume, exit to main menu @done(25-04-05)
 	✔ Add intro @done(25-04-04)
 
@@ -104,8 +109,7 @@ Optimizations:
 	☐ Simplify projectile collision - remove check with edges in favor of dummy tiles
 	☐ Process two bullet undraws in one bob undraw and do something else in remaining calls?
 	☐ Low-height font for HUD score draw
-	☐ Speed chance rand table
-	☐ Pickup chance rand table
+	☐ Remove rand() fns again
 
 Perks to implement first - cyclic:
 	✔ Grim deal - 20% more exp, instant death @done(25-04-05)
@@ -116,9 +120,9 @@ Perks to implement first - cyclic:
 Perks to implement first:
 	✔ Thick-skinned - trade 25% health to receive only 80% of damage @done(25-04-05)
 	✔ Death clock - die in 30 seconds, immortal @done(25-04-05)
+	✔ Retaliation - hit the monster when it bites you @done(25-04-08)
 	☐ My favourite weapon - +2 bullets, no weapon pickups
 	☐ Anxious loader - click to reload faster
-	☐ Retaliation - hit the monster when it bites you
 	☐ Regression bullets - fire from empty clip, costs exp
 	☐ Ammunition within - fire from empty clip, costs health
 	☐ Dodger - chance to dodge attack
@@ -126,6 +130,7 @@ Perks to implement first:
 	☐ Highlander - Immortal, 5% chance for instant death on hit
 
 Perks to implement:
+	✘ Swift reloader - reloading doesn't slow you down @cancelled(25-04-08)
 	☐ Fast loader
 	☐ Ammo maniac - 20% more ammo in magazine
 	☐ Telekinetic - move pickups to you by hover
@@ -135,7 +140,6 @@ Perks to implement:
 	☐ Ninja - improved dodger
 	☐ Stationary reloader - reload quicker when standing still
 	☐ Tough reloader - damage received during reload is halved
-	☐ Swift reloader - reloading doesn't slow you down
 	☐ Increase max hp by 10%
 
 Weapon audio:
