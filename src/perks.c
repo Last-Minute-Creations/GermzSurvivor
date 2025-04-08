@@ -82,6 +82,17 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 		.szTitle = "RETALIATION",
 		.szDescription = "When zombie bites you, punch it back in the face. Hard.",
 	},
+	[PERK_MY_FAVOURITE_WEAPON] = {
+		.szTitle = "MY FAVOURITE WEAPON",
+		.szDescription = (
+			"You love your weapon so much, you want to keep it till death do you part.\n"
+			"No more random weapon pickups, increases base magazine capacity by 2."
+		),
+	},
+	[PERK_AMMO_MANIAC] = {
+		.szTitle = "AMMO MANIAC",
+		.szDescription = "Squeeze more bullets in the magazine, increasing its capacity by 20%.",
+	},
 };
 
 static void perksUnlockPending(void) {
@@ -134,7 +145,7 @@ static void perksDrawPerk(UBYTE ubIndex) {
 
 static void perksDrawActiveDescription(void) {
 	UWORD uwOffsY = PERK_ICON_OFFSET_TOP + PERK_ICON_OFFSET_BOTTOM + PERK_ICON_SIZE;
-	commErase(0, uwOffsY, COMM_DISPLAY_WIDTH, COMM_DISPLAY_HEIGHT - uwOffsY - 2 * commGetLineHeight());
+	commErase(0, uwOffsY, COMM_DISPLAY_WIDTH, COMM_DISPLAY_HEIGHT - uwOffsY - buttonGetHeight());
 	if(s_ubSelectedPerkIndex >= s_ubChoiceCount) {
 		return;
 	}

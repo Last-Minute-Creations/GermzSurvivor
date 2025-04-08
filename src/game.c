@@ -24,7 +24,7 @@
 #define DEATH_CLOCK_COOLDOWN 5
 
 #define GAME_PLAYER_DEATH_COOLDOWN 50
-#define WEAPON_MAX_BULLETS_IN_MAGAZINE 30
+#define WEAPON_MAX_BULLETS_IN_MAGAZINE (((30 + 2) * 12 + 5) / 10)
 #define STAIN_FRAME_COUNT 3
 #define STAIN_FRAME_PRESET_COUNT 16
 #define STAINS_MAX 20
@@ -61,16 +61,16 @@
 #define HUD_LEVEL_UP_OFFSET_Y 0
 #define HUD_LEVEL_UP_SIZE_X 80
 #define HUD_LEVEL_UP_SIZE_Y 15
-#define HUD_HEALTH_BAR_OFFSET_X 200
+#define HUD_HEALTH_BAR_OFFSET_X 215
 #define HUD_HEALTH_BAR_OFFSET_Y 11
 #define HUD_HEALTH_BAR_SIZE_X PLAYER_HEALTH_MAX
 #define HUD_HEALTH_BAR_SIZE_Y 3
 #define HUD_SCORE_DIGITS 10
-#define HUD_SCORE_TEXT_X 200
+#define HUD_SCORE_TEXT_X 215
 #define HUD_SCORE_TEXT_Y 1
 #define HUD_SCORE_TEXT_SIZE_X (HUD_SCORE_DIGITS * (DIGIT_WIDTH_MAX + 1) - 1)
 #define HUD_SCORE_TEXT_SIZE_Y 5
-#define HUD_SCORE_BAR_OFFSET_X 200
+#define HUD_SCORE_BAR_OFFSET_X 215
 #define HUD_SCORE_BAR_OFFSET_Y 7
 #define HUD_SCORE_BAR_SIZE_X 100
 #define HUD_SCORE_BAR_SIZE_Y 3
@@ -175,7 +175,9 @@ typedef enum tPickupKind {
 	PICKUP_KIND_ASSAULT_RIFLE,
 	PICKUP_KIND_SHOTGUN,
 	PICKUP_KIND_SAWOFF,
+
 	PICKUP_KIND_COUNT,
+	PICKUP_KIND_WEAPON_LAST = PICKUP_KIND_SAWOFF,
 } tPickupKind;
 
 typedef enum tDirection {
@@ -252,6 +254,7 @@ typedef struct tEntity {
 			UBYTE ubFrameCooldown;
 			UBYTE ubAttackCooldown;
 			UBYTE ubAmmo;
+			UBYTE ubMaxAmmo;
 			UBYTE ubReloadCooldown;
 		} sPlayer;
 		struct {
@@ -330,6 +333,8 @@ static UWORD s_uwEnemySpawnHealth;
 static UBYTE s_ubEnemyDamage;
 static UBYTE s_isDeathClock;
 static UBYTE s_isRetaliation;
+static UBYTE s_isAmmoManiac;
+static UBYTE s_isFavouriteWeapon;
 static UBYTE s_ubDeathClockCooldown;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
@@ -1017,9 +1022,22 @@ static void hudProcess(void) {
 	}
 }
 
+static void playerCalculateMaxAmmo(void) {
+	UBYTE ubMaxAmmo = s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind];
+	if(s_isFavouriteWeapon) {
+		ubMaxAmmo += 2;
+	}
+	if(s_isAmmoManiac) {
+		ubMaxAmmo += (2 * ubMaxAmmo + 5) / 10;
+	}
+
+	s_sPlayer.sPlayer.ubMaxAmmo = ubMaxAmmo;
+}
+
 static void playerSetWeapon(tWeaponKind eWeaponKind) {
 	s_sPlayer.sPlayer.eWeaponKind = eWeaponKind;
-	s_sPlayer.sPlayer.ubAmmo = s_pWeaponAmmo[eWeaponKind];
+	playerCalculateMaxAmmo();
+	s_sPlayer.sPlayer.ubAmmo = s_sPlayer.sPlayer.ubMaxAmmo;
 	s_sPlayer.sPlayer.ubReloadCooldown = 0;
 
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
@@ -1031,7 +1049,6 @@ __attribute__((always_inline))
 static inline void playerStartReloadWeapon(void) {
 	s_sPlayer.sPlayer.ubReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.sPlayer.eWeaponKind];
 	// s_sPlayer.sPlayer.ubReloadCooldown = 1;
-	s_sPlayer.sPlayer.ubAmmo = s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind];
 	gameSetCursor(CURSOR_KIND_EMPTY);
 	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
@@ -1396,6 +1413,14 @@ void gameApplyPerk(tPerk ePerk) {
 		case PERK_RETALIATION:
 			s_isRetaliation = 1;
 			break;
+		case PERK_AMMO_MANIAC:
+			s_isAmmoManiac = 1;
+			playerCalculateMaxAmmo();
+			break;
+		case PERK_MY_FAVOURITE_WEAPON:
+			s_isFavouriteWeapon = 1;
+			playerCalculateMaxAmmo();
+			break;
 		case PERK_COUNT:
 			__builtin_unreachable();
 	}
@@ -1427,8 +1452,12 @@ void gameStart(void) {
 	perksUnlock(PERK_THICK_SKINNED);
 	perksUnlock(PERK_DEATH_CLOCK);
 	perksUnlock(PERK_RETALIATION);
+	perksUnlock(PERK_AMMO_MANIAC);
+	perksUnlock(PERK_MY_FAVOURITE_WEAPON);
 	s_isDeathClock = 0;
 	s_isRetaliation = 0;
+	s_isAmmoManiac = 0;
+	s_isFavouriteWeapon = 0;
 
 	s_ulKills = 0;
 	s_ulScore = 0;
@@ -1623,7 +1652,7 @@ static inline UBYTE playerProcess(void) {
 						playerShootWeapon(ubAimAngle);
 						s_sPlayer.eFrame += ENTITY_FRAME_SHOOT_1 - ENTITY_FRAME_WALK_1;
 					}
-					else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind]) {
+					else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_sPlayer.sPlayer.ubMaxAmmo) {
 						playerStartReloadWeapon();
 					}
 				}
@@ -1631,6 +1660,7 @@ static inline UBYTE playerProcess(void) {
 			else {
 				--s_sPlayer.sPlayer.ubReloadCooldown;
 				if(!s_sPlayer.sPlayer.ubReloadCooldown) {
+					s_sPlayer.sPlayer.ubAmmo = s_sPlayer.sPlayer.ubMaxAmmo;
 					gameSetCursor(CURSOR_KIND_FULL);
 				}
 			}
@@ -1716,9 +1746,14 @@ static inline UBYTE playerProcess(void) {
 
 __attribute__((always_inline))
 static inline void pickupSpawnRandom(void) {
+	tPickupKind ePickupKind = randUwMax(&g_sRand, PICKUP_KIND_COUNT - 1);
+	if(s_isFavouriteWeapon && ePickupKind <= PICKUP_KIND_WEAPON_LAST) {
+		s_sPickup.wHealth = HEALTH_PICKUP_INACTIVE;
+		return;
+	}
+	s_sPickup.sPickup.ePickupKind = ePickupKind;
 	s_sPickup.wHealth = PICKUP_LIFE_SECONDS * GAME_FPS;
 	s_sPickup.sPickup.wBlinkCooldown = (PICKUP_LIFE_SECONDS - 3) * GAME_FPS;
-	s_sPickup.sPickup.ePickupKind = randUwMax(&g_sRand, PICKUP_KIND_COUNT - 1);
 	s_sPickup.sPickup.isDisplayed = 1;
 	bobSetFrame(
 		&s_sPickup.sBob,

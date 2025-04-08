@@ -84,10 +84,14 @@ Bare minimum:
 
 Final version stuff:
 	✔ Fix intro fade on faster configs @done(25-04-08)
+	☐ Fix bitplanes on AGA/060
+	☐ Prevent HUD text bitmap contamination by perk/pause menu
 	☐ Draw 2 bullets on hud at once if possible
 	☐ Make the zombies go away after player death so that death anim is visible
-	☐ Exp points pickup
-	☐ Fix bitplanes on AGA/060
+	☐ Add Exp points pickup
+	☐ Add shoot fx for UI selection
+	☐ Put in final scores
+	☐ Mak bullets yellow
 
 Nice to have:
 	☐ Add zombie anti-clumping
@@ -110,6 +114,7 @@ Optimizations:
 	☐ Process two bullet undraws in one bob undraw and do something else in remaining calls?
 	☐ Low-height font for HUD score draw
 	☐ Remove rand() fns again
+	☐ Make playerCalculateMaxAmmo() calculate the modified reload time table
 
 Perks to implement first - cyclic:
 	✔ Grim deal - 20% more exp, instant death @done(25-04-05)
@@ -121,7 +126,8 @@ Perks to implement first:
 	✔ Thick-skinned - trade 25% health to receive only 80% of damage @done(25-04-05)
 	✔ Death clock - die in 30 seconds, immortal @done(25-04-05)
 	✔ Retaliation - hit the monster when it bites you @done(25-04-08)
-	☐ My favourite weapon - +2 bullets, no weapon pickups
+	✔ My favourite weapon - +2 bullets, no weapon pickups @done(25-04-08)
+	✔ Ammo maniac - 20% more ammo in magazine @done(25-04-08)
 	☐ Anxious loader - click to reload faster
 	☐ Regression bullets - fire from empty clip, costs exp
 	☐ Ammunition within - fire from empty clip, costs health
@@ -132,7 +138,6 @@ Perks to implement first:
 Perks to implement:
 	✘ Swift reloader - reloading doesn't slow you down @cancelled(25-04-08)
 	☐ Fast loader
-	☐ Ammo maniac - 20% more ammo in magazine
 	☐ Telekinetic - move pickups to you by hover
 	☐ Perk expert - +1 perk to choose, lower exp requirements for levels
 	☐ Unstoppable - getting hit doesn't slow you down
@@ -152,11 +157,12 @@ Weapon audio:
 Misc audio:
 	✔ Hitting the meat with bullet @done(25-03-23)
 	✔ Zombie bite @done(25-03-23)
+	✘ UI selection @cancelled(25-04-08)
 	☐ Death
 	☐ Level up
-	☐ UI selection
 
 Music:
-	☐ Title
-	☐ Gameplay
-	☐ Post-gameplay
+	✔ Intro @done(25-04-08)
+	✔ Title @done(25-04-08)
+	✔ Gameplay @done(25-04-08)
+	☐ Post-gameplay?
