@@ -330,7 +330,6 @@ static UWORD s_uwEnemySpawnHealth;
 static UBYTE s_ubEnemyDamage;
 static UBYTE s_isDeathClock;
 static UBYTE s_isRetaliation;
-static UBYTE s_ubFatalLotteryLevel;
 static UBYTE s_ubDeathClockCooldown;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
@@ -1367,7 +1366,6 @@ void gameApplyPerk(tPerk ePerk) {
 			s_sPlayer.wHealth = 0;
 			break;
 		case PERK_FATAL_LOTTERY:
-			s_ubFatalLotteryLevel = s_ubScoreLevel;
 			if(randUwMax(&g_sRand, 99) < 50) {
 				s_sPlayer.wHealth = 0;
 			}
@@ -1391,15 +1389,15 @@ void gameApplyPerk(tPerk ePerk) {
 			s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
 			s_isDeathClock = 1;
 			s_ubDeathClockCooldown = DEATH_CLOCK_COOLDOWN;
+			perksLock(PERK_FATAL_LOTTERY);
+			perksLock(PERK_GRIM_DEAL);
+			perksLock(PERK_BANDAGE);
 			break;
 		case PERK_RETALIATION:
 			s_isRetaliation = 1;
 			break;
 		case PERK_COUNT:
 			__builtin_unreachable();
-	}
-	if(s_ubFatalLotteryLevel && s_ubScoreLevel >= s_ubFatalLotteryLevel + 2) {
-		perksUnlock(PERK_FATAL_LOTTERY);
 	}
 }
 
@@ -1431,7 +1429,6 @@ void gameStart(void) {
 	perksUnlock(PERK_RETALIATION);
 	s_isDeathClock = 0;
 	s_isRetaliation = 0;
-	s_ubFatalLotteryLevel = 0;
 
 	s_ulKills = 0;
 	s_ulScore = 0;
