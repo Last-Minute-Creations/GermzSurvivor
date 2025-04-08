@@ -128,8 +128,8 @@ Perks to implement first:
 	✔ Retaliation - hit the monster when it bites you @done(25-04-08)
 	✔ My favourite weapon - +2 bullets, no weapon pickups @done(25-04-08)
 	✔ Ammo maniac - 20% more ammo in magazine @done(25-04-08)
-	☐ Anxious loader - click to reload faster
-	☐ Regression bullets - fire from empty clip, costs exp
+	✔ Anxious loader - click to reload faster @done(25-04-08)
+	✘ Regression bullets - fire from empty clip, costs exp @cancelled(25-04-08)
 	☐ Ammunition within - fire from empty clip, costs health
 	☐ Dodger - chance to dodge attack
 	☐ Increase chance for pickups

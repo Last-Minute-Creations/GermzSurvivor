@@ -255,7 +255,7 @@ typedef struct tEntity {
 			UBYTE ubAttackCooldown;
 			UBYTE ubAmmo;
 			UBYTE ubMaxAmmo;
-			UBYTE ubReloadCooldown;
+			BYTE bReloadCooldown;
 		} sPlayer;
 		struct {
 			tDirection eDirection;
@@ -335,6 +335,7 @@ static UBYTE s_isDeathClock;
 static UBYTE s_isRetaliation;
 static UBYTE s_isAmmoManiac;
 static UBYTE s_isFavouriteWeapon;
+static UBYTE s_isAnxiousLoader;
 static UBYTE s_ubDeathClockCooldown;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
@@ -1038,7 +1039,7 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 	s_sPlayer.sPlayer.eWeaponKind = eWeaponKind;
 	playerCalculateMaxAmmo();
 	s_sPlayer.sPlayer.ubAmmo = s_sPlayer.sPlayer.ubMaxAmmo;
-	s_sPlayer.sPlayer.ubReloadCooldown = 0;
+	s_sPlayer.sPlayer.bReloadCooldown = 0;
 
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
 	gameSetCursor(CURSOR_KIND_FULL);
@@ -1047,8 +1048,8 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 
 __attribute__((always_inline))
 static inline void playerStartReloadWeapon(void) {
-	s_sPlayer.sPlayer.ubReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.sPlayer.eWeaponKind];
-	// s_sPlayer.sPlayer.ubReloadCooldown = 1;
+	s_sPlayer.sPlayer.bReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.sPlayer.eWeaponKind];
+	// s_sPlayer.sPlayer.bReloadCooldown = 1;
 	gameSetCursor(CURSOR_KIND_EMPTY);
 	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
@@ -1421,6 +1422,9 @@ void gameApplyPerk(tPerk ePerk) {
 			s_isFavouriteWeapon = 1;
 			playerCalculateMaxAmmo();
 			break;
+		case PERK_ANXIOUS_LOADER:
+			s_isAnxiousLoader = 1;
+			break;
 		case PERK_COUNT:
 			__builtin_unreachable();
 	}
@@ -1454,10 +1458,12 @@ void gameStart(void) {
 	perksUnlock(PERK_RETALIATION);
 	perksUnlock(PERK_AMMO_MANIAC);
 	perksUnlock(PERK_MY_FAVOURITE_WEAPON);
+	perksUnlock(PERK_ANXIOUS_LOADER);
 	s_isDeathClock = 0;
 	s_isRetaliation = 0;
 	s_isAmmoManiac = 0;
 	s_isFavouriteWeapon = 0;
+	s_isAnxiousLoader = 0;
 
 	s_ulKills = 0;
 	s_ulScore = 0;
@@ -1642,7 +1648,7 @@ static inline UBYTE playerProcess(void) {
 		}
 
 		if(!s_sPlayer.sPlayer.ubAttackCooldown) {
-			if(!s_sPlayer.sPlayer.ubReloadCooldown) {
+			if(!s_sPlayer.sPlayer.bReloadCooldown) {
 				if(!s_sPlayer.sPlayer.ubAmmo) {
 					playerStartReloadWeapon();
 				}
@@ -1658,8 +1664,12 @@ static inline UBYTE playerProcess(void) {
 				}
 			}
 			else {
-				--s_sPlayer.sPlayer.ubReloadCooldown;
-				if(!s_sPlayer.sPlayer.ubReloadCooldown) {
+				--s_sPlayer.sPlayer.bReloadCooldown;
+				if(s_isAnxiousLoader && mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
+					--s_sPlayer.sPlayer.bReloadCooldown;
+				}
+				if(s_sPlayer.sPlayer.bReloadCooldown <= 0) {
+					s_sPlayer.sPlayer.bReloadCooldown = 0;
 					s_sPlayer.sPlayer.ubAmmo = s_sPlayer.sPlayer.ubMaxAmmo;
 					gameSetCursor(CURSOR_KIND_FULL);
 				}

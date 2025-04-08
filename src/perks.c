@@ -93,6 +93,13 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 		.szTitle = "AMMO MANIAC",
 		.szDescription = "Squeeze more bullets in the magazine, increasing its capacity by 20%.",
 	},
+	[PERK_ANXIOUS_LOADER] = {
+		.szTitle = "ANXIOUS LOADER",
+		.szDescription = (
+			"All those hordes gives you anxiety, especially when you run out of ammo.\n"
+			"Clicking while reloading shortens the reload time."
+		),
+	},
 };
 
 static void perksUnlockPending(void) {
