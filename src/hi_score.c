@@ -26,16 +26,16 @@ typedef struct tHiScore {
 static tHiScore s_pScores[SCORE_COUNT];
 
 static tHiScore s_pPrevScores[SCORE_COUNT] = {
-	{.ulScore = 100, .szName = "Bestest"},
-	{.ulScore = 90,  .szName = "Best"},
-	{.ulScore = 80,  .szName = "Better"},
-	{.ulScore = 70,  .szName = "Good"},
-	{.ulScore = 60,  .szName = "Moderate"},
-	{.ulScore = 50,  .szName = "Bad"},
-	{.ulScore = 40,  .szName = "Awful"},
-	{.ulScore = 30,  .szName = "Too"},
-	{.ulScore = 20,  .szName = "Small"},
-	{.ulScore = 10,  .szName = "Score"},
+	{.ulScore = 81960, .szName = "renton"},
+	{.ulScore = 37925,  .szName = "Saberman"},
+	{.ulScore = 33100,  .szName = "noobsajdor"},
+	{.ulScore = 28550,  .szName = "WojT"},
+	{.ulScore = 24175,  .szName = "Luc3k"},
+	{.ulScore = 14400,  .szName = "Olekw200i"},
+	{.ulScore = 12950,  .szName = "softiron"},
+	{.ulScore = 10025,  .szName = "mariooshk"},
+	{.ulScore = 8350,  .szName = "Almighty"},
+	{.ulScore = 8300,  .szName = "Juen"},
 };
 
 static UBYTE s_ubNewNameLength;

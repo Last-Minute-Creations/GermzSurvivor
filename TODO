@@ -84,14 +84,14 @@ Bare minimum:
 
 Final version stuff:
 	✔ Fix intro fade on faster configs @done(25-04-08)
+	✔ Put in final scores @done(25-04-10)
 	☐ Fix bitplanes on AGA/060
 	☐ Prevent HUD text bitmap contamination by perk/pause menu
 	☐ Draw 2 bullets on hud at once if possible
 	☐ Make the zombies go away after player death so that death anim is visible
 	☐ Add Exp points pickup
 	☐ Add shoot fx for UI selection
-	☐ Put in final scores
-	☐ Mak bullets yellow
+	☐ Make bullets yellow
 
 Nice to have:
 	☐ Add zombie anti-clumping
