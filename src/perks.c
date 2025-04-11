@@ -6,6 +6,7 @@
 #include <ace/managers/key.h>
 #include <ace/managers/mouse.h>
 #include <ace/managers/rand.h>
+#include <ace/contrib/managers/audio_mixer.h>
 #include "comm/comm.h"
 #include "comm/button.h"
 #include "menu.h"
@@ -230,6 +231,7 @@ static void perksGsLoop(void) {
 				sIconPos.uwX <= uwCursorAbsX && uwCursorAbsX <= sIconPos.uwX + PERK_ICON_SIZE &&
 				sIconPos.uwY <= uwCursorAbsY && uwCursorAbsY <= sIconPos.uwY + PERK_ICON_SIZE
 			) {
+				audioMixerPlaySfx(g_pSfxSmg[0], 0, 0, 0);
 				s_ubSelectedPerkIndex = i;
 				break;
 			}
@@ -243,6 +245,7 @@ static void perksGsLoop(void) {
 		UBYTE ubSelectedButton = buttonGetSelected();
 		switch(ubSelectedButton) {
 			case PERKS_BUTTON_ACCEPT:
+				audioMixerPlaySfx(g_pSfxReload, 0, 0, 0);
 				gameApplyPerk(s_pPerkChoice[s_ubSelectedPerkIndex]);
 				s_isPendingChoice = 0;
 				s_isGoBackToGame = 1;
@@ -250,6 +253,7 @@ static void perksGsLoop(void) {
 				break;
 			case PERKS_BUTTON_CANCEL:
 				s_isGoBackToGame = 1;
+				audioMixerPlaySfx(g_pSfxImpact[0], 0, 0, 0);
 				statePop(g_pGameStateManager);
 				break;
 		}

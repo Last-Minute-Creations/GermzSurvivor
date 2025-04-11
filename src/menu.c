@@ -6,6 +6,7 @@
 #include <ace/managers/mouse.h>
 #include <ace/managers/game.h>
 #include <ace/managers/key.h>
+#include <ace/contrib/managers/audio_mixer.h>
 #include <ace/utils/string.h>
 #include "comm/comm.h"
 #include "comm/button.h"
@@ -67,6 +68,7 @@ static void menuCreditsGsCreate(void) {
 
 static void menuCreditsGsLoop(void) {
 	if(mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
+		audioMixerPlaySfx(g_pSfxImpact[0], 0, 0, 0);
 		statePop(g_pGameStateManager);
 		return;
 	}
@@ -109,6 +111,7 @@ static void menuHowtoGsCreate(void) {
 
 static void menuHowtoGsLoop(void) {
 	if(mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
+		audioMixerPlaySfx(g_pSfxImpact[0], 0, 0, 0);
 		statePop(g_pGameStateManager);
 		return;
 	}
@@ -136,6 +139,7 @@ static void menuScoreGsLoop(void) {
 	}
 	else {
 		if(mouseUse(MOUSE_PORT_1, MOUSE_LMB) || keyUse(KEY_RETURN)) {
+			audioMixerPlaySfx(g_pSfxImpact[0], 0, 0, 0);
 			statePop(g_pGameStateManager);
 			return;
 		}
@@ -209,6 +213,7 @@ static void menuSummaryGsCreate(void) {
 
 static void menuSummaryGsLoop(void) {
 	if(mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
+		audioMixerPlaySfx(g_pSfxShotgun[0], 0, 0, 0);
 		stateChange(g_pGameStateManager, &s_sStateMenuScore);
 		return;
 	}
@@ -277,17 +282,21 @@ static void menuGsLoop(void) {
 		UBYTE ubSelectedButton = buttonGetSelected();
 		switch(ubSelectedButton) {
 			case MENU_BUTTON_SURVIVE:
+				audioMixerPlaySfx(g_pSfxShotgun[0], 0, 0, 0);
 				gameStart();
 				statePop(g_pGameStateManager);
 				break;
 			case MENU_BUTTON_HOWTO:
+				audioMixerPlaySfx(g_pSfxShotgun[0], 0, 0, 0);
 				statePush(g_pGameStateManager, &s_sStateMenuHowto);
 				break;
 			case MENU_BUTTON_SCORES:
+				audioMixerPlaySfx(g_pSfxShotgun[0], 0, 0, 0);
 				hiScoreSetup(0, 0);
 				statePush(g_pGameStateManager, &s_sStateMenuScore);
 				break;
 			case MENU_BUTTON_CREDITS:
+				audioMixerPlaySfx(g_pSfxShotgun[0], 0, 0, 0);
 				statePush(g_pGameStateManager, &s_sStateMenuCredits);
 				break;
 			case MENU_BUTTON_QUIT:

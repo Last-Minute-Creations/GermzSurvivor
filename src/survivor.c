@@ -22,7 +22,7 @@ void genericCreate(void) {
 	// Bare minimum
 	ptplayerCreate(1);
 	ptplayerSetChannelsForPlayer(0b0111);
-	ptplayerSetMasterVolume(32);
+	ptplayerSetMasterVolume(20);
 	audioMixerCreate();
 
 	assetsGlobalCreate();

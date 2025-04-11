@@ -403,14 +403,6 @@ static UBYTE s_ubHudLevel;
 static UBYTE s_ubHudPendingPerksDrawn;
 static tUbCoordYX s_pHudBulletOffsets[WEAPON_MAX_BULLETS_IN_MAGAZINE];
 
-static tPtplayerSfx *s_pSfxRifle[2];
-static tPtplayerSfx *s_pSfxAssault[2];
-static tPtplayerSfx *s_pSfxSmg[2];
-static tPtplayerSfx *s_pSfxShotgun[2];
-static tPtplayerSfx *s_pSfxImpact[2];
-static tPtplayerSfx *s_pSfxBite[2];
-static tPtplayerSfx *s_pSfxReload;
-
 static tBob s_pStainBobs[STAINS_MAX];
 static tBob *s_pFreeStains[STAINS_MAX];
 static tBob *s_pPushStains[STAINS_MAX];
@@ -832,7 +824,7 @@ static inline void projectileDrawNext(void) {
 
 			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
 			pEnemy->wHealth -= s_pCurrentProjectile->ubDamage;
-			audioMixerPlaySfx(s_pSfxImpact[0], SFX_CHANNEL_IMPACT, SFX_PRIORITY_IMPACT, 0);
+			audioMixerPlaySfx(g_pSfxImpact[0], SFX_CHANNEL_IMPACT, SFX_PRIORITY_IMPACT, 0);
 		}
 		else {
 			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
@@ -1043,7 +1035,7 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
 	gameSetCursor(CURSOR_KIND_FULL);
-	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
+	audioMixerPlaySfx(g_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
 __attribute__((always_inline))
@@ -1051,7 +1043,7 @@ static inline void playerStartReloadWeapon(void) {
 	s_sPlayer.sPlayer.bReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.sPlayer.eWeaponKind];
 	// s_sPlayer.sPlayer.bReloadCooldown = 1;
 	gameSetCursor(CURSOR_KIND_EMPTY);
-	audioMixerPlaySfx(s_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
+	audioMixerPlaySfx(g_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
 __attribute__((always_inline))
@@ -1099,31 +1091,31 @@ static void playerShootWeapon(UBYTE ubAimAngle) {
 	switch(s_sPlayer.sPlayer.eWeaponKind) {
 		case WEAPON_KIND_STOCK_RIFLE:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide1, WEAPON_DAMAGE_BASE_RIFLE);
-			audioMixerPlaySfx(s_pSfxRifle[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			audioMixerPlaySfx(g_pSfxRifle[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_BASE_RIFLE;
 			break;
 			case WEAPON_KIND_SMG:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide3, WEAPON_DAMAGE_SMG);
-			audioMixerPlaySfx(s_pSfxSmg[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			audioMixerPlaySfx(g_pSfxSmg[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SMG;
 			break;
 		case WEAPON_KIND_ASSAULT_RIFLE:
 			playerShootProjectile(ubAimAngle, s_pSpreadSide2, WEAPON_DAMAGE_ASSAULT_RIFLE);
-			audioMixerPlaySfx(s_pSfxAssault[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			audioMixerPlaySfx(g_pSfxAssault[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_ASSAULT_RIFLE;
 			break;
 		case WEAPON_KIND_SHOTGUN:
 			for(UBYTE i = 0; i < 10; ++i) {
 				playerShootProjectile(ubAimAngle, s_pSpreadSide3, WEAPON_DAMAGE_SHOTGUN);
 			}
-			audioMixerPlaySfx(s_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			audioMixerPlaySfx(g_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SHOTGUN;
 			break;
 		case WEAPON_KIND_SAWOFF:
 			for(UBYTE i = 0; i < 10; ++i) {
 				playerShootProjectile(ubAimAngle, s_pSpreadSide10, WEAPON_DAMAGE_SAWOFF);
 			}
-			audioMixerPlaySfx(s_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
+			audioMixerPlaySfx(g_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SAWOFF;
 			break;
 	}
@@ -1192,7 +1184,7 @@ static inline void enemyProcess(tEntity *pEnemy) {
 				if(s_isRetaliation) {
 					pEnemy->wHealth -= PLAYER_RETALIATION_DAMAGE;
 				}
-				audioMixerPlaySfx(s_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
+				audioMixerPlaySfx(g_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
 				pEnemy->sEnemy.ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
 			}
 		}
@@ -1957,20 +1949,6 @@ static void gameGsCreate(void) {
 	s_pStainFrames = bitmapCreateFromPath("data/stains.bm", 0);
 	s_pStainMasks = bitmapCreateFromPath("data/stains_mask.bm", 0);
 
-	s_pSfxRifle[0] = ptplayerSfxCreateFromPath("data/sfx/rifle_shot_1.sfx", 1);
-	s_pSfxRifle[1] = ptplayerSfxCreateFromPath("data/sfx/rifle_shot_2.sfx", 1);
-	s_pSfxAssault[0] = ptplayerSfxCreateFromPath("data/sfx/assault_shot_1.sfx", 1);
-	s_pSfxAssault[1] = ptplayerSfxCreateFromPath("data/sfx/assault_shot_2.sfx", 1);
-	s_pSfxSmg[0] = ptplayerSfxCreateFromPath("data/sfx/smg_shot_1.sfx", 1);
-	s_pSfxSmg[1] = ptplayerSfxCreateFromPath("data/sfx/smg_shot_2.sfx", 1);
-	s_pSfxShotgun[0] = ptplayerSfxCreateFromPath("data/sfx/shotgun_shot_1.sfx", 1);
-	s_pSfxShotgun[1] = ptplayerSfxCreateFromPath("data/sfx/shotgun_shot_2.sfx", 1);
-	s_pSfxImpact[0] = ptplayerSfxCreateFromPath("data/sfx/impact_1.sfx", 1);
-	s_pSfxImpact[1] = ptplayerSfxCreateFromPath("data/sfx/impact_2.sfx", 1);
-	s_pSfxBite[0] = ptplayerSfxCreateFromPath("data/sfx/bite_1.sfx", 1);
-	s_pSfxBite[1] = ptplayerSfxCreateFromPath("data/sfx/bite_2.sfx", 1);
-	s_pSfxReload = ptplayerSfxCreateFromPath("data/sfx/reload_1.sfx", 1);
-
 	for(UBYTE i = 0; i < SPREAD_SIDE_COUNT; ++i) {
 		s_pSpreadSide1[i] = - 2/2 + randUwMax(&g_sRand, 2);
 	}
@@ -2169,20 +2147,6 @@ static void gameGsDestroy(void) {
 	systemUse();
 
 	commDestroy();
-
-	ptplayerSfxDestroy(s_pSfxRifle[0]);
-	ptplayerSfxDestroy(s_pSfxRifle[1]);
-	ptplayerSfxDestroy(s_pSfxAssault[0]);
-	ptplayerSfxDestroy(s_pSfxAssault[1]);
-	ptplayerSfxDestroy(s_pSfxSmg[0]);
-	ptplayerSfxDestroy(s_pSfxSmg[1]);
-	ptplayerSfxDestroy(s_pSfxShotgun[0]);
-	ptplayerSfxDestroy(s_pSfxShotgun[1]);
-	ptplayerSfxDestroy(s_pSfxImpact[0]);
-	ptplayerSfxDestroy(s_pSfxImpact[1]);
-	ptplayerSfxDestroy(s_pSfxBite[0]);
-	ptplayerSfxDestroy(s_pSfxBite[1]);
-	ptplayerSfxDestroy(s_pSfxReload);
 
 	spriteManagerDestroy();
 	bitmapDestroy(s_pBmCursorFrames);

@@ -26,5 +26,13 @@ extern tPtplayerMod *g_pModMenu;
 extern tPtplayerMod *g_pModGame;
 // extern tPtplayerSamplePack *g_pModSamples;
 
+extern tPtplayerSfx *g_pSfxRifle[2];
+extern tPtplayerSfx *g_pSfxAssault[2];
+extern tPtplayerSfx *g_pSfxSmg[2];
+extern tPtplayerSfx *g_pSfxShotgun[2];
+extern tPtplayerSfx *g_pSfxImpact[2];
+extern tPtplayerSfx *g_pSfxBite[2];
+extern tPtplayerSfx *g_pSfxReload;
+
 #endif // SURVIVOR_ASSETS_H
 
