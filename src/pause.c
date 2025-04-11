@@ -75,7 +75,7 @@ static void pauseGsDestroy(void) {
 		viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
 		copProcessBlocks();
 		commHide();
-		gameEnableFrameCounter();
+		gameResume();
 		ptplayerEnableMusic(1);
 	}
 	else {

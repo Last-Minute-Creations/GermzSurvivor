@@ -1015,6 +1015,30 @@ static void hudProcess(void) {
 	}
 }
 
+static void hudReset(void) {
+	s_uwHudHealth = 0;
+	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
+	s_ulHudScore = 1;
+	s_ubHudLevel = 255;
+	s_ubHudBarPixel = 0;
+	s_eHudState = 0;
+	s_ubHudPendingPerksDrawn = !s_ubPendingPerks;
+
+	blitRect(
+		s_pBufferHud->pBack,
+		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
+		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
+	);
+	blitRect(
+		s_pBufferHud->pBack,
+		HUD_HEALTH_BAR_OFFSET_X, HUD_HEALTH_BAR_OFFSET_Y,
+		HUD_HEALTH_BAR_SIZE_X, HUD_HEALTH_BAR_SIZE_Y, COLOR_BAR_BG
+	);
+	do {
+		hudProcess();
+	} while(s_eHudState != 0);
+}
+
 static void playerCalculateMaxAmmo(void) {
 	UBYTE ubMaxAmmo = s_pWeaponAmmo[s_sPlayer.sPlayer.eWeaponKind];
 	if(s_isFavouriteWeapon) {
@@ -1353,8 +1377,9 @@ ULONG gameGetExp(void) {
 	return s_ulScore;
 }
 
-void gameEnableFrameCounter(void) {
+void gameResume(void) {
 	systemSetInt(INTB_VERTB, onVblank, (void*)&s_ulFrameCount);
+	hudReset();
 }
 
 void gameDiscardUndraw(void) {
@@ -1465,23 +1490,6 @@ void gameStart(void) {
 	s_ubPendingPerks = 0;
 	s_ubHiSpeedChance = 0;
 
-	s_uwHudHealth = 0;
-	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
-	s_ulHudScore = 1;
-	s_ubHudLevel = 255;
-	s_ubHudBarPixel = 0;
-	s_eHudState = 0;
-	s_ubHudPendingPerksDrawn = 1;
-	blitRect(
-		s_pBufferHud->pBack,
-		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
-		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
-	);
-	blitRect(
-		s_pBufferHud->pBack,
-		HUD_HEALTH_BAR_OFFSET_X, HUD_HEALTH_BAR_OFFSET_Y,
-		HUD_HEALTH_BAR_SIZE_X, HUD_HEALTH_BAR_SIZE_Y, COLOR_BAR_BG
-	);
 	fontDrawStr(
 		g_pFontSmall, s_pBufferHud->pBack,
 		HUD_SCORE_TEXT_X - 20, HUD_SCORE_TEXT_Y, "EXP",
@@ -1493,9 +1501,7 @@ void gameStart(void) {
 		COLOR_HUD_SCORE, FONT_COOKIE, g_pLineBuffer
 	);
 
-	do {
-		hudProcess();
-	} while(s_eHudState != 0);
+	hudReset();
 
 	for(UBYTE ubX = 0; ubX < COLLISION_LOOKUP_SIZE_X; ++ubX) {
 		for(UBYTE ubY = 0; ubY < COLLISION_LOOKUP_SIZE_Y; ++ubY) {
@@ -1542,7 +1548,7 @@ void gameStart(void) {
 	s_ubFreeProjectileCount = PROJECTILE_COUNT;
 	s_ulFrameCount = 0;
 	s_ulFrameWaitCount = 1;
-	gameEnableFrameCounter();
+	gameResume();
 
 	ptplayerLoadMod(g_pModGame, 0, 0);
 	ptplayerEnableMusic(1);

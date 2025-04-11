@@ -37,7 +37,7 @@ UBYTE gameGetLevel(void);
 
 ULONG gameGetExp(void);
 
-void gameEnableFrameCounter(void);
+void gameResume(void);
 
 void gameDiscardUndraw(void);
 

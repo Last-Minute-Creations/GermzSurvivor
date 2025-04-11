@@ -86,8 +86,8 @@ Final version stuff:
 	✔ Fix intro fade on faster configs @done(25-04-08)
 	✔ Put in final scores @done(25-04-10)
 	✔ Add shoot sfx for menu selection @done(25-04-11)
+	✔ Prevent HUD text bitmap contamination by perk/pause menu @done(25-04-11)
 	☐ Fix bitplanes on AGA/060
-	☐ Prevent HUD text bitmap contamination by perk/pause menu
 	☐ Draw 2 bullets on hud at once if possible
 	☐ Make the zombies go away after player death so that death anim is visible
 	☐ Add Exp points pickup

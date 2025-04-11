@@ -34,7 +34,6 @@ typedef enum tPerksButton {
 
 static tPerk s_pAvailablePerks[PERK_COUNT];
 static UBYTE s_ubUnlockedPerkCount;
-static UBYTE s_isGoBackToGame;
 static tPerk s_pPerkChoice[4];
 static UBYTE s_ubChoiceCount;
 static UBYTE s_ubSelectedPerkIndex;
@@ -203,7 +202,7 @@ static void perksGsCreate(void) {
 	perksDrawActiveDescription();
 
 	buttonReset();
-	UWORD uwY = COMM_DISPLAY_HEIGHT - buttonGetHeight();
+	UWORD uwY = COMM_DISPLAY_HEIGHT - buttonGetHeight() / 2;
 	buttonAdd("Accept", COMM_DISPLAY_WIDTH / 3, uwY);
 	buttonAdd("Cancel", 2 * COMM_DISPLAY_WIDTH / 3, uwY);
 	buttonDrawAll(commGetDisplayBuffer());
@@ -215,7 +214,6 @@ static void perksGsCreate(void) {
 
 static void perksGsLoop(void) {
 	if(keyUse(KEY_ESCAPE)) {
-		s_isGoBackToGame = 1;
 		statePop(g_pGameStateManager);
 		return;
 	}
@@ -248,11 +246,9 @@ static void perksGsLoop(void) {
 				audioMixerPlaySfx(g_pSfxReload, 0, 0, 0);
 				gameApplyPerk(s_pPerkChoice[s_ubSelectedPerkIndex]);
 				s_isPendingChoice = 0;
-				s_isGoBackToGame = 1;
 				statePop(g_pGameStateManager);
 				break;
 			case PERKS_BUTTON_CANCEL:
-				s_isGoBackToGame = 1;
 				audioMixerPlaySfx(g_pSfxImpact[0], 0, 0, 0);
 				statePop(g_pGameStateManager);
 				break;
@@ -268,16 +264,11 @@ static void perksGsLoop(void) {
 }
 
 static void perksGsDestroy(void) {
-	if(s_isGoBackToGame) {
-		// Sync with game's double buffering
-		viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
-		copProcessBlocks();
-		commHide();
-		gameEnableFrameCounter();
-	}
-	else {
-		gameDiscardUndraw();
-	}
+	// Sync with game's double buffering
+	viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
+	copProcessBlocks();
+	commHide();
+	gameResume();
 }
 
 tState g_sStatePerks = {
