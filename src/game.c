@@ -176,6 +176,9 @@ typedef enum tPickupKind {
 	PICKUP_KIND_SHOTGUN,
 	PICKUP_KIND_SAWOFF,
 
+	PICKUP_KIND_EXP_100,
+	PICKUP_KIND_EXP_300,
+
 	PICKUP_KIND_COUNT,
 	PICKUP_KIND_WEAPON_LAST = PICKUP_KIND_SAWOFF,
 } tPickupKind;
@@ -1571,6 +1574,12 @@ static inline void playerApplyPickup(tPickupKind ePickupKind) {
 			break;
 		case PICKUP_KIND_SAWOFF:
 			playerSetWeapon(WEAPON_KIND_SAWOFF);
+			break;
+		case PICKUP_KIND_EXP_100:
+			scoreAddSmall(100);
+			break;
+		case PICKUP_KIND_EXP_300:
+			scoreAddSmall(300);
 			break;
 		case PICKUP_KIND_COUNT:
 			__builtin_unreachable();

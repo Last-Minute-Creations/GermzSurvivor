@@ -650,6 +650,8 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/pickups.png
 	${GEN_DIR}/pickups/2.png 3  93 16 12
 	${GEN_DIR}/pickups/3.png 3 109 16 12
 	${GEN_DIR}/pickups/4.png 3 125 16 12
+	${GEN_DIR}/pickups/5.png 3 131 16 12
+	${GEN_DIR}/pickups/6.png 3 147 16 12
 )
 
 convertTileset(
