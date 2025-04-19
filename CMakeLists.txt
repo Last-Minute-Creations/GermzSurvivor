@@ -669,8 +669,8 @@ file(MAKE_DIRECTORY ${GEN_DIR}/bullets)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/misc.png
 	GENERATED_FILE_LIST "BULLETS_PATHS"
 	DESTINATIONS
-	${GEN_DIR}/bullets/0.png  270 104 16 6
-	${GEN_DIR}/bullets/1.png  270 111 16 6
+	${GEN_DIR}/bullets/0.png 4 156 16 6
+	${GEN_DIR}/bullets/1.png 4 163 16 6
 )
 
 convertTileset(
@@ -687,9 +687,12 @@ file(MAKE_DIRECTORY ${GEN_DIR}/stains)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/misc.png
 	GENERATED_FILE_LIST "STAINS_PATHS"
 	DESTINATIONS
-	${GEN_DIR}/stains/0.png 256 136 16 16
-	${GEN_DIR}/stains/1.png 256 152 16 16
-	${GEN_DIR}/stains/2.png 256 168 16 16
+	${GEN_DIR}/stains/0.png  5 173 16 16
+	${GEN_DIR}/stains/1.png  5 197 16 16
+	${GEN_DIR}/stains/2.png  5 219 16 16
+	${GEN_DIR}/stains/3.png  5 239 16 16
+	${GEN_DIR}/stains/4.png 31  59 16 16
+	${GEN_DIR}/stains/5.png 31  80 16 16
 )
 
 convertTileset(
