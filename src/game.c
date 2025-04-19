@@ -176,8 +176,8 @@ typedef enum tPickupKind {
 	PICKUP_KIND_SHOTGUN,
 	PICKUP_KIND_SAWOFF,
 
-	PICKUP_KIND_EXP_100,
-	PICKUP_KIND_EXP_300,
+	PICKUP_KIND_EXP_400,
+	PICKUP_KIND_EXP_800,
 
 	PICKUP_KIND_COUNT,
 	PICKUP_KIND_WEAPON_LAST = PICKUP_KIND_SAWOFF,
@@ -1575,11 +1575,12 @@ static inline void playerApplyPickup(tPickupKind ePickupKind) {
 		case PICKUP_KIND_SAWOFF:
 			playerSetWeapon(WEAPON_KIND_SAWOFF);
 			break;
-		case PICKUP_KIND_EXP_100:
-			scoreAddSmall(100);
+		case PICKUP_KIND_EXP_400:
+			scoreAddSmall(400);
 			break;
-		case PICKUP_KIND_EXP_300:
-			scoreAddSmall(300);
+		case PICKUP_KIND_EXP_800:
+			scoreAddSmall(800);
+			break;
 			break;
 		case PICKUP_KIND_COUNT:
 			__builtin_unreachable();
@@ -1782,6 +1783,7 @@ static inline void pickupSpawnRandom(void) {
 	s_pCollisionTiles[s_sPickup.sPos.uwX / COLLISION_SIZE_X][s_sPickup.sPos.uwY / COLLISION_SIZE_Y] = &s_sPickup;
 }
 
+__attribute__((always_inline))
 static inline void pickupProcss(tEntity *pPickup) {
 	if(pPickup->wHealth > 0) {
 		--pPickup->wHealth;
