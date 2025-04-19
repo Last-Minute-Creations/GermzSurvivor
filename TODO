@@ -93,6 +93,7 @@ Final version stuff:
 	☐ Draw 2 bullets on hud at once if possible
 	☐ Make the zombies go away after player death so that death anim is visible
 	☐ Make bullets yellow
+	☐ Add more stain variants
 
 Nice to have:
 	☐ Add zombie anti-clumping
@@ -101,10 +102,10 @@ Nice to have:
 		✔ Add perk selection @done(25-04-05)
 		✔ Implement at least 4 perks @done(25-04-05)
 	✘ Instant reload pickup @cancelled(25-04-08)
+	✔ Slomo bomb pickup @done(25-04-19)
 	☐ Fast move pickup
 	☐ Stronger bullets pickup
 	☐ Unlimited ammo pickup
-	☐ Slomo bomb pickup
 	✔ Add pause screen - resume, exit to main menu @done(25-04-05)
 	✔ Add intro @done(25-04-04)
 
@@ -161,6 +162,7 @@ Misc audio:
 	✘ UI selection @cancelled(25-04-08)
 	☐ Death
 	☐ Level up
+	☐ Explosion
 
 Music:
 	✔ Intro @done(25-04-08)

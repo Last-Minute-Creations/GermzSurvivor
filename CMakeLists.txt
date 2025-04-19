@@ -652,6 +652,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/pickups.png
 	${GEN_DIR}/pickups/4.png 3 125 16 12
 	${GEN_DIR}/pickups/5.png 3 141 16 12
 	${GEN_DIR}/pickups/6.png 3 157 16 12
+	${GEN_DIR}/pickups/7.png 3 173 16 12
 )
 
 convertTileset(
@@ -698,6 +699,28 @@ convertTileset(
 	TILE_PATHS ${STAINS_PATHS}
 )
 
+#--------------------------------------------------------------------- EXPLOSION
+
+file(MAKE_DIRECTORY ${GEN_DIR}/explosion)
+
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/explosion.png
+	GENERATED_FILE_LIST "EXPLOSION_PATHS"
+	DESTINATIONS
+	${GEN_DIR}/explosion/0.png 0   0 64 64
+	${GEN_DIR}/explosion/1.png 0  64 64 64
+	${GEN_DIR}/explosion/2.png 0 128 64 64
+	${GEN_DIR}/explosion/3.png 0 192 64 64
+	${GEN_DIR}/explosion/4.png 0 256 64 64
+	${GEN_DIR}/explosion/5.png 0 320 64 64
+)
+
+convertTileset(
+	TARGET ${GAME_EXECUTABLE} SIZE 64
+	SOURCE ${GEN_DIR}/explosion
+	INTERLEAVED DESTINATION ${GEN_DIR}/explosion.png
+	TILE_PATHS ${EXPLOSION_PATHS}
+)
+
 #----------------------------------------------------------------- CONVERT TO BM
 
 convertBitmaps(
@@ -728,15 +751,18 @@ convertBitmaps(
 	INTERLEAVED SOURCES
 		${GEN_DIR}/zombie_s.png ${GEN_DIR}/zombie_sw.png ${GEN_DIR}/zombie_nw.png
 		${GEN_DIR}/zombie_n.png ${GEN_DIR}/zombie_ne.png ${GEN_DIR}/zombie_se.png
-		${GEN_DIR}/bullets.png ${GEN_DIR}/stains.png ${RES_DIR}/edges.png ${GEN_DIR}/pickups.png
+		${GEN_DIR}/bullets.png ${GEN_DIR}/stains.png ${RES_DIR}/edges.png
+		${GEN_DIR}/pickups.png ${RES_DIR}/explosion.png
 	DESTINATIONS
 		${DATA_DIR}/zombie_s.bm ${DATA_DIR}/zombie_sw.bm ${DATA_DIR}/zombie_nw.bm
 		${DATA_DIR}/zombie_n.bm ${DATA_DIR}/zombie_ne.bm ${DATA_DIR}/zombie_se.bm
-		${DATA_DIR}/bullets.bm ${DATA_DIR}/stains.bm NONE ${DATA_DIR}/pickups.bm
+		${DATA_DIR}/bullets.bm ${DATA_DIR}/stains.bm NONE
+		${DATA_DIR}/pickups.bm ${DATA_DIR}/explosion.bm
 	MASKS
 		${DATA_DIR}/zombie_s_mask.bm ${DATA_DIR}/zombie_sw_mask.bm ${DATA_DIR}/zombie_nw_mask.bm
 		${DATA_DIR}/zombie_n_mask.bm ${DATA_DIR}/zombie_ne_mask.bm ${DATA_DIR}/zombie_se_mask.bm
-		${DATA_DIR}/bullets_mask.bm ${DATA_DIR}/stains_mask.bm ${DATA_DIR}/killfriend_edges.bm ${DATA_DIR}/pickups_mask.bm
+		${DATA_DIR}/bullets_mask.bm ${DATA_DIR}/stains_mask.bm ${DATA_DIR}/killfriend_edges.bm
+		${DATA_DIR}/pickups_mask.bm ${DATA_DIR}/explosion_mask.bm
 )
 
 #------------------------------------------------------------------------- AUDIO

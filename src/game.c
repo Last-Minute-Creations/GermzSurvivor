@@ -21,7 +21,13 @@
 #include "hi_score.h"
 #include "pause.h"
 
-#define DEATH_CLOCK_COOLDOWN 5
+#define PERK_DEATH_CLOCK_COOLDOWN 5
+
+#define EXPLOSION_HIT_RANGE 64
+#define EXPLOSION_BOB_SIZE_X 64
+#define EXPLOSION_BOB_SIZE_Y 64
+#define EXPLOSION_FRAME_COUNT 6
+#define EXPLOSION_COOLDOWN 5
 
 #define GAME_PLAYER_DEATH_COOLDOWN 50
 #define WEAPON_MAX_BULLETS_IN_MAGAZINE (((30 + 2) * 12 + 5) / 10)
@@ -178,6 +184,8 @@ typedef enum tPickupKind {
 
 	PICKUP_KIND_EXP_400,
 	PICKUP_KIND_EXP_800,
+
+	PICKUP_KIND_BOMB,
 
 	PICKUP_KIND_COUNT,
 	PICKUP_KIND_WEAPON_LAST = PICKUP_KIND_SAWOFF,
@@ -356,6 +364,12 @@ static tEntity *s_pSortedEntities[SORTED_ENTITIES_COUNT];
 static tBitMap *s_pBulletFrames;
 static tBitMap *s_pBulletMasks;
 
+static tBitMap *s_pExplosionFrames;
+static tBitMap *s_pExplosionMasks;
+static tFrameOffset s_pExplosionFrameOffsets[EXPLOSION_FRAME_COUNT];
+static UBYTE s_ubExplosionFrame;
+static UBYTE s_ubExplosionCooldown;
+
 static tBitMap *s_pStainFrames;
 static tBitMap *s_pStainMasks;
 static tFrameOffset s_pStainFrameOffsets[STAIN_FRAME_PRESET_COUNT];
@@ -406,6 +420,7 @@ static UBYTE s_ubHudLevel;
 static UBYTE s_ubHudPendingPerksDrawn;
 static tUbCoordYX s_pHudBulletOffsets[WEAPON_MAX_BULLETS_IN_MAGAZINE];
 
+static tBob s_sExplosionBob;
 static tBob s_pStainBobs[STAINS_MAX];
 static tBob *s_pFreeStains[STAINS_MAX];
 static tBob *s_pPushStains[STAINS_MAX];
@@ -1426,7 +1441,7 @@ void gameApplyPerk(tPerk ePerk) {
 		case PERK_DEATH_CLOCK:
 			s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
 			s_isDeathClock = 1;
-			s_ubDeathClockCooldown = DEATH_CLOCK_COOLDOWN;
+			s_ubDeathClockCooldown = PERK_DEATH_CLOCK_COOLDOWN;
 			perksLock(PERK_FATAL_LOTTERY);
 			perksLock(PERK_GRIM_DEAL);
 			perksLock(PERK_BANDAGE);
@@ -1544,6 +1559,9 @@ void gameStart(void) {
 	s_sPickup.sPos.ulYX = 0;
 	s_pSortedEntities[ubSorted++] = &s_sPickup;
 
+	s_ubExplosionCooldown = 0;
+	s_ubExplosionFrame = EXPLOSION_FRAME_COUNT;
+
 	for(UBYTE i = 0; i < PROJECTILE_COUNT; ++i) {
 		s_pProjectiles[i].ubLife = 0;
 		s_pFreeProjectiles[i] = &s_pProjectiles[i];
@@ -1555,6 +1573,27 @@ void gameStart(void) {
 
 	ptplayerLoadMod(g_pModGame, 0, 0);
 	ptplayerEnableMusic(1);
+}
+
+__attribute__((always_inline))
+static inline void pickupDetonateBomb(void) {
+	s_sExplosionBob.sPos.uwX = s_sPlayer.sPos.uwX - EXPLOSION_BOB_SIZE_X / 2;
+	s_sExplosionBob.sPos.uwY = s_sPlayer.sPos.uwY - EXPLOSION_BOB_SIZE_Y / 2;
+	s_ubExplosionCooldown = 1;
+	s_ubExplosionFrame = -1;
+	for(UBYTE i = 0; i < SORTED_ENTITIES_COUNT; ++i) {
+		tEntity *pChar = s_pSortedEntities[i];
+		if(pChar->eKind == ENTITY_KIND_ENEMY) {
+			WORD wDistanceToPlayerX = s_sPlayer.sPos.uwX - pChar->sPos.uwX;
+			WORD wDistanceToPlayerY = s_sPlayer.sPos.uwY - pChar->sPos.uwY;
+			if(
+				-EXPLOSION_HIT_RANGE < wDistanceToPlayerX && wDistanceToPlayerX < EXPLOSION_HIT_RANGE &&
+				-EXPLOSION_HIT_RANGE < wDistanceToPlayerY && wDistanceToPlayerY < EXPLOSION_HIT_RANGE
+			) {
+				pChar->wHealth -= 200;
+			}
+		}
+	}
 }
 
 __attribute__((always_inline))
@@ -1581,6 +1620,8 @@ static inline void playerApplyPickup(tPickupKind ePickupKind) {
 		case PICKUP_KIND_EXP_800:
 			scoreAddSmall(800);
 			break;
+		case PICKUP_KIND_BOMB:
+			pickupDetonateBomb();
 			break;
 		case PICKUP_KIND_COUNT:
 			__builtin_unreachable();
@@ -1718,7 +1759,7 @@ static inline UBYTE playerProcess(void) {
 				--s_ubDeathClockCooldown;
 			}
 			else {
-				s_ubDeathClockCooldown = DEATH_CLOCK_COOLDOWN;
+				s_ubDeathClockCooldown = PERK_DEATH_CLOCK_COOLDOWN;
 				--s_sPlayer.wHealth;
 			}
 		}
@@ -1817,6 +1858,24 @@ static inline void pickupProcss(tEntity *pPickup) {
 			s_pCollisionTiles[pPickup->sPos.uwX / COLLISION_SIZE_X][pPickup->sPos.uwY / COLLISION_SIZE_Y] = 0;
 			pPickup->wHealth = HEALTH_PICKUP_INACTIVE;
 		}
+	}
+}
+
+__attribute__((always_inline))
+static inline void explosionProcess(void) {
+	if(s_ubExplosionFrame != EXPLOSION_FRAME_COUNT) {
+		if(--s_ubExplosionCooldown == 0) {
+			s_ubExplosionCooldown = EXPLOSION_COOLDOWN;
+			if(++s_ubExplosionFrame == EXPLOSION_FRAME_COUNT) {
+				return;
+			}
+			bobSetFrame(
+				&s_sExplosionBob,
+				s_pExplosionFrameOffsets[s_ubExplosionFrame].pPixels,
+				s_pExplosionFrameOffsets[s_ubExplosionFrame].pMask
+			);
+		}
+		bobPush(&s_sExplosionBob);
 	}
 }
 
@@ -1963,6 +2022,13 @@ static void gameGsCreate(void) {
 		};
 	}
 
+	s_pExplosionFrames = bitmapCreateFromPath("data/explosion.bm", 0);
+	s_pExplosionMasks = bitmapCreateFromPath("data/explosion_mask.bm", 0);
+	for(UBYTE i = 0; i < EXPLOSION_FRAME_COUNT; ++i) {
+		s_pExplosionFrameOffsets[i].pPixels = bobCalcFrameAddress(s_pExplosionFrames, i * EXPLOSION_BOB_SIZE_Y);
+		s_pExplosionFrameOffsets[i].pMask = bobCalcFrameAddress(s_pExplosionMasks, i * EXPLOSION_BOB_SIZE_Y);
+	}
+
 	s_pStainFrames = bitmapCreateFromPath("data/stains.bm", 0);
 	s_pStainMasks = bitmapCreateFromPath("data/stains_mask.bm", 0);
 
@@ -1995,6 +2061,7 @@ static void gameGsCreate(void) {
 		bobInit(&s_pStainBobs[i], STAIN_SIZE_X, STAIN_SIZE_Y, 1, 0, 0, 0, 0);
 		s_pFreeStains[i] = &s_pStainBobs[i];
 	}
+	bobInit(&s_sExplosionBob, EXPLOSION_BOB_SIZE_X, EXPLOSION_BOB_SIZE_Y, 1, 0, 0, 0, 0);
 	s_pNextFreeStain = &s_pFreeStains[STAINS_MAX];
 	s_pNextPushStain = &s_pPushStains[0];
 	s_pNextWaitStain = &s_pWaitStains[0];
@@ -2124,6 +2191,8 @@ static void gameGsLoop(void) {
 		pPrev = &s_pSortedEntities[i];
 	}
 
+	explosionProcess();
+
 	s_pCurrentProjectile = &s_pProjectiles[0];
 	bobEnd();
 	while(s_pCurrentProjectile != &s_pProjectiles[PROJECTILE_COUNT]) {
@@ -2182,6 +2251,8 @@ static void gameGsDestroy(void) {
 	bitmapDestroy(s_pPickupMasks);
 	bitmapDestroy(s_pBulletFrames);
 	bitmapDestroy(s_pBulletMasks);
+	bitmapDestroy(s_pExplosionFrames);
+	bitmapDestroy(s_pExplosionMasks);
 	bitmapDestroy(s_pStainFrames);
 	bitmapDestroy(s_pStainMasks);
 
