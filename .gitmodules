@@ -1,3 +1,7 @@
 [submodule "deps/ace"]
 	path = deps/ace
 	url = https://github.com/AmigaPorts/ACE
+[submodule "deps/private_assets"]
+	path = deps/private_assets
+	url = https://github.com/Last-Minute-Creations/GermzSurvivorAssets
+	branch = main

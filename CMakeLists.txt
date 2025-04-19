@@ -200,7 +200,7 @@ file(MAKE_DIRECTORY ${GEN_DIR}/player_n)
 file(MAKE_DIRECTORY ${GEN_DIR}/player_ne)
 file(MAKE_DIRECTORY ${GEN_DIR}/player_se)
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_S_PATHS_WALK_AIM"
 	DESTINATIONS
 	# Walk + aim
@@ -213,7 +213,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	${GEN_DIR}/player_s/6.png  296  16 32 32
 	${GEN_DIR}/player_s/7.png  344  16 32 32
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/die.png
 	GENERATED_FILE_LIST "PLAYER_S_PATHS_DIE"
 	DESTINATIONS
 	# Walk + aim
@@ -226,7 +226,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
 	${GEN_DIR}/player_s/14.png  296  25 32 32 # 0,9
 	${GEN_DIR}/player_s/15.png  344  25 32 32 # 0,9
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_S_PATHS_WALK_SHOOT"
 	DESTINATIONS
 	# Walk + shoot
@@ -247,7 +247,7 @@ convertTileset(
 	TILE_PATHS ${PLAYER_S_PATHS_WALK_AIM} ${PLAYER_S_PATHS_WALK_SHOOT} ${PLAYER_S_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_SW_PATHS_WALK_AIM"
 	DESTINATIONS
 	${GEN_DIR}/player_sw/0.png    8  80 32 32
@@ -259,7 +259,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	${GEN_DIR}/player_sw/6.png  296  80 32 32
 	${GEN_DIR}/player_sw/7.png  344  80 32 32
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/die.png
 	GENERATED_FILE_LIST "PLAYER_SW_PATHS_DIE"
 	DESTINATIONS
 	${GEN_DIR}/player_sw/8.png    8  80 32 32 #  0,0
@@ -271,7 +271,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
 	${GEN_DIR}/player_sw/14.png 289  81 32 32 # -7,1
 	${GEN_DIR}/player_sw/15.png 337  81 32 32 # -7,1
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_SW_PATHS_WALK_SHOOT"
 	DESTINATIONS
 	${GEN_DIR}/player_sw/16.png   8  80 32 32
@@ -291,7 +291,7 @@ convertTileset(
 	TILE_PATHS ${PLAYER_SW_PATHS_WALK_AIM} ${PLAYER_SW_PATHS_WALK_SHOOT} ${PLAYER_SW_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_NW_PATHS_WALK_AIM"
 	DESTINATIONS
 	${GEN_DIR}/player_nw/0.png   8 144 32 32
@@ -303,7 +303,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	${GEN_DIR}/player_nw/6.png 296 144 32 32
 	${GEN_DIR}/player_nw/7.png 344 144 32 32
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/die.png
 	GENERATED_FILE_LIST "PLAYER_NW_PATHS_DIE"
 	DESTINATIONS
 	${GEN_DIR}/player_nw/8.png    8 144 32 32 #  0,0
@@ -315,7 +315,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
 	${GEN_DIR}/player_nw/14.png 292 144 32 32 # -4,0
 	${GEN_DIR}/player_nw/15.png 340 144 32 32 # -4,0
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_NW_PATHS_WALK_SHOOT"
 	DESTINATIONS
 	${GEN_DIR}/player_nw/16.png   8 144 32 32
@@ -335,7 +335,7 @@ convertTileset(
 	TILE_PATHS ${PLAYER_NW_PATHS_WALK_AIM} ${PLAYER_NW_PATHS_WALK_SHOOT} ${PLAYER_NW_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_N_PATHS_WALK_AIM"
 	DESTINATIONS
 	${GEN_DIR}/player_n/0.png   8 208 32 32
@@ -347,7 +347,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	${GEN_DIR}/player_n/6.png 296 208 32 32
 	${GEN_DIR}/player_n/7.png 344 208 32 32
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/die.png
 	GENERATED_FILE_LIST "PLAYER_N_PATHS_DIE"
 	DESTINATIONS
 	${GEN_DIR}/player_n/8.png    8 208 32 32 # 0,0
@@ -359,7 +359,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
 	${GEN_DIR}/player_n/14.png 296 208 32 32 # 0,0
 	${GEN_DIR}/player_n/15.png 344 208 32 32 # 0,0
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_N_PATHS_WALK_SHOOT"
 	DESTINATIONS
 	${GEN_DIR}/player_n/16.png   8 208 32 32
@@ -379,7 +379,7 @@ convertTileset(
 	TILE_PATHS ${PLAYER_N_PATHS_WALK_AIM} ${PLAYER_N_PATHS_WALK_SHOOT} ${PLAYER_N_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_NE_PATHS_WALK_AIM"
 	DESTINATIONS
 	${GEN_DIR}/player_ne/0.png   8 272 32 32
@@ -391,7 +391,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	${GEN_DIR}/player_ne/6.png 296 272 32 32
 	${GEN_DIR}/player_ne/7.png 344 272 32 32
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/die.png
 	GENERATED_FILE_LIST "PLAYER_NE_PATHS_DIE"
 	DESTINATIONS
 	${GEN_DIR}/player_ne/8.png    8 272 32 32 # 0,0
@@ -403,7 +403,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
 	${GEN_DIR}/player_ne/14.png 304 272 32 32 # 8,0
 	${GEN_DIR}/player_ne/15.png 352 272 32 32 # 8,0
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_NE_PATHS_WALK_SHOOT"
 	DESTINATIONS
 	${GEN_DIR}/player_ne/16.png   8 272 32 32
@@ -423,7 +423,7 @@ convertTileset(
 	TILE_PATHS ${PLAYER_NE_PATHS_WALK_AIM} ${PLAYER_NE_PATHS_WALK_SHOOT} ${PLAYER_NE_PATHS_DIE}
 )
 
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk.png
 	GENERATED_FILE_LIST "PLAYER_SE_PATHS_WALK_AIM"
 	DESTINATIONS
 	${GEN_DIR}/player_se/0.png   8  336 32 32
@@ -435,7 +435,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk.png
 	${GEN_DIR}/player_se/6.png 296  336 32 32
 	${GEN_DIR}/player_se/7.png 344  336 32 32
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/die.png
 	GENERATED_FILE_LIST "PLAYER_SE_PATHS_DIE"
 	DESTINATIONS
 	${GEN_DIR}/player_se/8.png    8  336 32 32 # 0,0
@@ -447,7 +447,7 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/die.png
 	${GEN_DIR}/player_se/14.png 297  341 32 32 # 1,5
 	${GEN_DIR}/player_se/15.png 345  341 32 32 # 1,5
 )
-extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/player/walk_shoot.png
+extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE deps/private_assets/player/walk_shoot.png
 	GENERATED_FILE_LIST "PLAYER_SE_PATHS_WALK_SHOOT"
 	DESTINATIONS
 	${GEN_DIR}/player_se/16.png   8  336 32 32

@@ -88,11 +88,11 @@ Final version stuff:
 	✔ Add shoot sfx for menu selection @done(25-04-11)
 	✔ Prevent HUD text bitmap contamination by perk/pause menu @done(25-04-11)
 	✔ Add Exp points pickup @done(25-04-19)
+	✔ Commit player gfx .bm files @done(25-04-19)
 	☐ Fix bitplanes on AGA/060
 	☐ Draw 2 bullets on hud at once if possible
 	☐ Make the zombies go away after player death so that death anim is visible
 	☐ Make bullets yellow
-	☐ Commit player gfx .bm files
 
 Nice to have:
 	☐ Add zombie anti-clumping
