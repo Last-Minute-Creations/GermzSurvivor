@@ -56,6 +56,7 @@
 #define HUD_WEAPON_SIZE_Y 15
 #define HUD_AMMO_FIELD_OFFSET_X (HUD_WEAPON_SIZE_X + 2)
 #define HUD_AMMO_FIELD_OFFSET_Y 2
+#define HUD_AMMO_BULLETS_MAX_ONCE 5
 #define HUD_AMMO_BULLET_COUNT_Y 2
 #define HUD_AMMO_BULLET_COUNT_X ((WEAPON_MAX_BULLETS_IN_MAGAZINE + HUD_AMMO_BULLET_COUNT_Y - 1) / HUD_AMMO_BULLET_COUNT_Y)
 #define HUD_AMMO_BULLET_SIZE_X 2
@@ -398,6 +399,11 @@ static const UBYTE s_pWeaponReloadCooldowns[] = {
 	[WEAPON_KIND_SAWOFF] = 80,
 };
 
+typedef struct tHudBulletDef {
+	tUbCoordYX sOffs;
+	UBYTE ubMaxDrawDelta;
+} tHudBulletDef;
+
 static ULONG s_pRowOffsetFromY[MAP_TILES_Y * MAP_TILE_SIZE];
 
 static tEntity *s_pCollisionTiles[COLLISION_LOOKUP_SIZE_X][COLLISION_LOOKUP_SIZE_Y];
@@ -418,7 +424,7 @@ static ULONG s_ulHudScore;
 static ULONG s_ubHudBarPixel;
 static UBYTE s_ubHudLevel;
 static UBYTE s_ubHudPendingPerksDrawn;
-static tUbCoordYX s_pHudBulletOffsets[WEAPON_MAX_BULLETS_IN_MAGAZINE];
+static tHudBulletDef s_pHudBulletDefs[WEAPON_MAX_BULLETS_IN_MAGAZINE];
 
 static tBob s_sExplosionBob;
 static tBob s_pStainBobs[STAINS_MAX];
@@ -932,6 +938,8 @@ static void hudProcess(void) {
 					);
 				}
 				else if(s_ubHudAmmoCount < s_sPlayer.sPlayer.ubAmmo) {
+					UBYTE ubDelta = s_sPlayer.sPlayer.ubAmmo - s_ubHudAmmoCount;
+					UBYTE ubDrawBulletCount = MIN(s_pHudBulletDefs[s_ubHudAmmoCount].ubMaxDrawDelta, ubDelta);
 					UWORD uwSrcY;
 					switch(s_sPlayer.sPlayer.eWeaponKind) {
 						case WEAPON_KIND_SAWOFF:
@@ -943,18 +951,18 @@ static void hudProcess(void) {
 					}
 					blitCopyMask(
 						s_pBulletFrames, 0, uwSrcY, s_pBufferHud->pBack,
-						s_pHudBulletOffsets[s_ubHudAmmoCount].ubX,
-						s_pHudBulletOffsets[s_ubHudAmmoCount].ubY,
-						HUD_AMMO_BULLET_SIZE_X, HUD_AMMO_BULLET_SIZE_Y, s_pBulletMasks->Planes[0]
+						s_pHudBulletDefs[s_ubHudAmmoCount].sOffs.ubX,
+						s_pHudBulletDefs[s_ubHudAmmoCount].sOffs.ubY,
+						ubDrawBulletCount * (HUD_AMMO_BULLET_SIZE_X + 1), HUD_AMMO_BULLET_SIZE_Y, s_pBulletMasks->Planes[0]
 					);
-					++s_ubHudAmmoCount;
+					s_ubHudAmmoCount += ubDrawBulletCount;
 				}
 				else {
 					--s_ubHudAmmoCount;
 					blitRect(
 						s_pBufferHud->pBack,
-						s_pHudBulletOffsets[s_ubHudAmmoCount].ubX,
-						s_pHudBulletOffsets[s_ubHudAmmoCount].ubY,
+						s_pHudBulletDefs[s_ubHudAmmoCount].sOffs.ubX,
+						s_pHudBulletDefs[s_ubHudAmmoCount].sOffs.ubY,
 						HUD_AMMO_BULLET_SIZE_X, HUD_AMMO_BULLET_SIZE_Y, COLOR_HUD_BG
 					);
 				}
@@ -2016,9 +2024,12 @@ static void gameGsCreate(void) {
 	s_pBulletFrames = bitmapCreateFromPath("data/bullets.bm", 0);
 	s_pBulletMasks = bitmapCreateFromPath("data/bullets_mask.bm", 0);
 	for(UBYTE i = 0; i < WEAPON_MAX_BULLETS_IN_MAGAZINE; ++i) {
-		s_pHudBulletOffsets[i] = (tUbCoordYX){
-			.ubX = HUD_AMMO_FIELD_OFFSET_X + (i % HUD_AMMO_BULLET_COUNT_X) * (HUD_AMMO_BULLET_SIZE_X + 1),
-			.ubY = HUD_AMMO_FIELD_OFFSET_Y + (i / HUD_AMMO_BULLET_COUNT_X) * (HUD_AMMO_BULLET_SIZE_Y + 1)
+		s_pHudBulletDefs[i] = (tHudBulletDef){
+			.sOffs = {
+				.ubX = HUD_AMMO_FIELD_OFFSET_X + (i % HUD_AMMO_BULLET_COUNT_X) * (HUD_AMMO_BULLET_SIZE_X + 1),
+				.ubY = HUD_AMMO_FIELD_OFFSET_Y + (i / HUD_AMMO_BULLET_COUNT_X) * (HUD_AMMO_BULLET_SIZE_Y + 1)
+			},
+			.ubMaxDrawDelta = MIN(HUD_AMMO_BULLET_COUNT_X - (i % HUD_AMMO_BULLET_COUNT_X), HUD_AMMO_BULLETS_MAX_ONCE)
 		};
 	}
 

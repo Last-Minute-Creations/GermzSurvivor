@@ -90,14 +90,14 @@ Final version stuff:
 	✔ Add Exp points pickup @done(25-04-19)
 	✔ Commit player gfx .bm files @done(25-04-19)
 	✔ Add more stain variants @done(25-04-19)
+	✔ Draw 2 bullets on hud at once if possible @done(25-04-19)
 	☐ Fix bitplanes on AGA/060
-	☐ Draw 2 bullets on hud at once if possible
 	☐ Make the zombies go away after player death so that death anim is visible
-	☐ Make bullets more visible (yellow doesn't help)
+	☐ Make bullets more visible (yellow doesn't help much)
 
 Nice to have:
+	✘ Add sound variations @cancelled(25-04-19)
 	☐ Add zombie anti-clumping
-	☐ Add sound variations
 	Perks:
 		✔ Add perk selection @done(25-04-05)
 		✔ Implement at least 4 perks @done(25-04-05)
