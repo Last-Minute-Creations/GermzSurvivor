@@ -96,10 +96,29 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 	[PERK_ANXIOUS_LOADER] = {
 		.szTitle = "ANXIOUS LOADER",
 		.szDescription = (
-			"All those hordes gives you anxiety, especially when you run out of ammo.\n"
+			"All those hordes give you anxiety, especially when you run out of ammo.\n"
 			"Clicking while reloading shortens the reload time."
 		),
 	},
+	[PERK_BLOODY_AMMO] = {
+		.szTitle = "BLOODY AMMO",
+		.szDescription = (
+			"You can continue to shoot your weapon while reloading, but you pay for them with your blood."
+		)
+	},
+	[PERK_DEATH_DANCE] = {
+		.szTitle = "DEATH DANCE",
+		.szDescription = (
+			"Become immortal, most of the time. Each hit you take has a 5% chance to kill you instantly.\n"
+			"How long will you dance?"
+		)
+	},
+	[PERK_DODGER] = {
+		.szTitle = "DODGE REFLEX",
+		.szDescription = {
+			"Your reflexes have increased, and with them you gain a small chance to dodge each bite."
+		}
+	}
 };
 
 static void perksUnlockPending(void) {

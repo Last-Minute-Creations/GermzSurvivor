@@ -343,12 +343,18 @@ static UBYTE s_ubScoreLevel;
 static UBYTE s_ubHiSpeedChance;
 static UWORD s_uwEnemySpawnHealth;
 static UBYTE s_ubEnemyDamage;
+
+// Perks
 static UBYTE s_isDeathClock;
+static UBYTE s_ubDeathClockCooldown;
 static UBYTE s_isRetaliation;
 static UBYTE s_isAmmoManiac;
 static UBYTE s_isFavouriteWeapon;
 static UBYTE s_isAnxiousLoader;
-static UBYTE s_ubDeathClockCooldown;
+static UBYTE s_isBloodyAmmo;
+static UBYTE s_isDeathDance;
+static UBYTE s_isDodger;
+static UBYTE s_isImmortal;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
@@ -1228,11 +1234,16 @@ static inline void enemyProcess(tEntity *pEnemy) {
 
 		if(pEnemy->sEnemy.ubAttackCooldown == 0) {
 			if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
-				if(!s_isDeathClock) {
-					s_sPlayer.wHealth -= s_ubEnemyDamage;
-				}
-				if(s_isRetaliation) {
-					pEnemy->wHealth -= PLAYER_RETALIATION_DAMAGE;
+				if(!s_isDodger || randUwMax(&g_sRand, 99) >= 5) {
+					if(s_isDeathDance && randUwMax(&g_sRand, 99) < 5) {
+						s_sPlayer.wHealth = 0;
+					}
+					if(!s_isImmortal) {
+						s_sPlayer.wHealth -= s_ubEnemyDamage;
+					}
+					if(s_isRetaliation) {
+						pEnemy->wHealth -= PLAYER_RETALIATION_DAMAGE;
+					}
 				}
 				audioMixerPlaySfx(g_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
 				pEnemy->sEnemy.ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
@@ -1449,6 +1460,7 @@ void gameApplyPerk(tPerk ePerk) {
 		case PERK_DEATH_CLOCK:
 			s_sPlayer.wHealth = PLAYER_HEALTH_MAX;
 			s_isDeathClock = 1;
+			s_isImmortal = 1;
 			s_ubDeathClockCooldown = PERK_DEATH_CLOCK_COOLDOWN;
 			perksLock(PERK_FATAL_LOTTERY);
 			perksLock(PERK_GRIM_DEAL);
@@ -1467,6 +1479,16 @@ void gameApplyPerk(tPerk ePerk) {
 			break;
 		case PERK_ANXIOUS_LOADER:
 			s_isAnxiousLoader = 1;
+			break;
+		case PERK_BLOODY_AMMO:
+			s_isBloodyAmmo = 1;
+			break;
+		case PERK_DEATH_DANCE:
+			s_isDeathDance = 1;
+			s_isImmortal = 1;
+			break;
+		case PERK_DODGER:
+			s_isDodger = 1;
 			break;
 		case PERK_COUNT:
 			__builtin_unreachable();
@@ -1502,11 +1524,18 @@ void gameStart(void) {
 	perksUnlock(PERK_AMMO_MANIAC);
 	perksUnlock(PERK_MY_FAVOURITE_WEAPON);
 	perksUnlock(PERK_ANXIOUS_LOADER);
+	perksUnlock(PERK_BLOODY_AMMO);
+	perksUnlock(PERK_DEATH_DANCE);
+	perksUnlock(PERK_DODGER);
 	s_isDeathClock = 0;
 	s_isRetaliation = 0;
 	s_isAmmoManiac = 0;
 	s_isFavouriteWeapon = 0;
 	s_isAnxiousLoader = 0;
+	s_isBloodyAmmo = 0;
+	s_isDeathDance = 0;
+	s_isDodger = 0;
+	s_isImmortal = 0;
 
 	s_ulKills = 0;
 	s_ulScore = 0;
@@ -1709,15 +1738,8 @@ static inline UBYTE playerProcess(void) {
 				if(!s_sPlayer.sPlayer.ubAmmo) {
 					playerStartReloadWeapon();
 				}
-				else {
-					if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
-						--s_sPlayer.sPlayer.ubAmmo;
-						playerShootWeapon(ubAimAngle);
-						s_sPlayer.eFrame += ENTITY_FRAME_SHOOT_1 - ENTITY_FRAME_WALK_1;
-					}
-					else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_sPlayer.sPlayer.ubMaxAmmo) {
-						playerStartReloadWeapon();
-					}
+				else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_sPlayer.sPlayer.ubMaxAmmo) {
+					playerStartReloadWeapon();
 				}
 			}
 			else {
@@ -1730,6 +1752,16 @@ static inline UBYTE playerProcess(void) {
 					s_sPlayer.sPlayer.ubAmmo = s_sPlayer.sPlayer.ubMaxAmmo;
 					gameSetCursor(CURSOR_KIND_FULL);
 				}
+			}
+			if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB) && (s_sPlayer.sPlayer.ubAmmo || s_isBloodyAmmo)) {
+				if(s_sPlayer.sPlayer.ubAmmo) {
+					--s_sPlayer.sPlayer.ubAmmo;
+				}
+				else if(!s_isImmortal) {
+					--s_sPlayer.wHealth;
+				}
+				playerShootWeapon(ubAimAngle);
+				s_sPlayer.eFrame += ENTITY_FRAME_SHOOT_1 - ENTITY_FRAME_WALK_1;
 			}
 		}
 		else {

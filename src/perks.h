@@ -18,7 +18,9 @@ typedef enum tPerk {
 	PERK_AMMO_MANIAC,
 	PERK_MY_FAVOURITE_WEAPON,
 	PERK_ANXIOUS_LOADER,
-
+	PERK_BLOODY_AMMO,
+	PERK_DEATH_DANCE,
+	PERK_DODGER,
 	PERK_COUNT // also used for locked perk
 } tPerk;
 
