@@ -22,6 +22,8 @@
 #include "pause.h"
 
 #define PERK_DEATH_CLOCK_COOLDOWN 5
+#define PERK_DODGE_CHANCE_DODGER 5
+#define PERK_DODGE_CHANCE_NINJA 15
 
 #define EXPLOSION_HIT_RANGE 64
 #define EXPLOSION_BOB_SIZE_X 64
@@ -353,7 +355,10 @@ static UBYTE s_isFavouriteWeapon;
 static UBYTE s_isAnxiousLoader;
 static UBYTE s_isBloodyAmmo;
 static UBYTE s_isDeathDance;
-static UBYTE s_isDodger;
+static UBYTE s_ubDodgeChance;
+static UBYTE s_isFinalRevenge;
+static UBYTE s_isStationaryReloader;
+static UBYTE s_isToughReloader;
 static UBYTE s_isImmortal;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
@@ -1234,12 +1239,16 @@ static inline void enemyProcess(tEntity *pEnemy) {
 
 		if(pEnemy->sEnemy.ubAttackCooldown == 0) {
 			if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
-				if(!s_isDodger || randUwMax(&g_sRand, 99) >= 5) {
+				if(randUwMax(&g_sRand, 99) >= s_ubDodgeChance) {
 					if(s_isDeathDance && randUwMax(&g_sRand, 99) < 5) {
 						s_sPlayer.wHealth = 0;
 					}
 					if(!s_isImmortal) {
-						s_sPlayer.wHealth -= s_ubEnemyDamage;
+						UBYTE ubDamage = s_ubEnemyDamage;
+						if(s_isToughReloader && s_sPlayer.sPlayer.bReloadCooldown) {
+							--ubDamage;
+						}
+						s_sPlayer.wHealth -= ubDamage
 					}
 					if(s_isRetaliation) {
 						pEnemy->wHealth -= PLAYER_RETALIATION_DAMAGE;
@@ -1488,7 +1497,20 @@ void gameApplyPerk(tPerk ePerk) {
 			s_isImmortal = 1;
 			break;
 		case PERK_DODGER:
-			s_isDodger = 1;
+			s_ubDodgeChance = PERK_DODGE_CHANCE_DODGER;
+			perksUnlock(PERK_NINJA);
+			break;
+		case PERK_NINJA:
+			s_ubDodgeChance = PERK_DODGE_CHANCE_NINJA;
+			break;
+		case PERK_FINAL_REVENGE:
+			s_isFinalRevenge = 1;
+			break;
+		case PERK_STATIONARY_RELOADER:
+			s_isStationaryReloader = 1;
+			break;
+		case PERK_TOUGH_RELOADER:
+			s_isToughReloader = 1;
 			break;
 		case PERK_COUNT:
 			__builtin_unreachable();
@@ -1527,6 +1549,9 @@ void gameStart(void) {
 	perksUnlock(PERK_BLOODY_AMMO);
 	perksUnlock(PERK_DEATH_DANCE);
 	perksUnlock(PERK_DODGER);
+	perksUnlock(PERK_FINAL_REVENGE);
+	perksUnlock(PERK_STATIONARY_RELOADER);
+	perksUnlock(PERK_TOUGH_RELOADER);
 	s_isDeathClock = 0;
 	s_isRetaliation = 0;
 	s_isAmmoManiac = 0;
@@ -1534,7 +1559,10 @@ void gameStart(void) {
 	s_isAnxiousLoader = 0;
 	s_isBloodyAmmo = 0;
 	s_isDeathDance = 0;
-	s_isDodger = 0;
+	s_ubDodgeChance = 0;
+	s_isFinalRevenge = 0;
+	s_isStationaryReloader = 0;
+	s_isToughReloader = 0;
 	s_isImmortal = 0;
 
 	s_ulKills = 0;
@@ -1613,7 +1641,7 @@ void gameStart(void) {
 }
 
 __attribute__((always_inline))
-static inline void pickupDetonateBomb(void) {
+static inline void detonateBombAtPlayer(void) {
 	s_sExplosionBob.sPos.uwX = s_sPlayer.sPos.uwX - EXPLOSION_BOB_SIZE_X / 2;
 	s_sExplosionBob.sPos.uwY = s_sPlayer.sPos.uwY - EXPLOSION_BOB_SIZE_Y / 2;
 	s_ubExplosionCooldown = 1;
@@ -1658,7 +1686,7 @@ static inline void playerApplyPickup(tPickupKind ePickupKind) {
 			scoreAddSmall(800);
 			break;
 		case PICKUP_KIND_BOMB:
-			pickupDetonateBomb();
+			detonateBombAtPlayer();
 			break;
 		case PICKUP_KIND_COUNT:
 			__builtin_unreachable();
@@ -1747,6 +1775,9 @@ static inline UBYTE playerProcess(void) {
 				if(s_isAnxiousLoader && mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
 					--s_sPlayer.sPlayer.bReloadCooldown;
 				}
+				if(s_isStationaryReloader && bDeltaX == 0 && bDeltaY == 0) {
+					--s_sPlayer.sPlayer.bReloadCooldown;
+				}
 				if(s_sPlayer.sPlayer.bReloadCooldown <= 0) {
 					s_sPlayer.sPlayer.bReloadCooldown = 0;
 					s_sPlayer.sPlayer.ubAmmo = s_sPlayer.sPlayer.ubMaxAmmo;
@@ -1812,6 +1843,9 @@ static inline UBYTE playerProcess(void) {
 			// s_sPlayer.sPos.uwY = (MAP_TILES_X * MAP_TILE_SIZE) - s_sPlayer.sPos.uwY;
 			s_sPlayer.eFrame = ENTITY_FRAME_DIE_1;
 			s_sPlayer.sPlayer.ubFrameCooldown = 0;
+			if(s_isFinalRevenge) {
+				detonateBombAtPlayer();
+			}
 		}
 		if(s_ubDeathCooldown) {
 			--s_ubDeathCooldown;

@@ -118,7 +118,33 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 		.szDescription = {
 			"Your reflexes have increased, and with them you gain a small chance to dodge each bite."
 		}
-	}
+	},
+	[PERK_NINJA] = {
+		.szTitle = "NINJA REFLEX",
+		.szDescription = {
+			"Your reflexes are even sharper now, and with them those bites have a harder time to reach you."
+		}
+	},
+	[PERK_FINAL_REVENGE] = {
+		.szTitle = "FINAL REVENGE",
+		.szDescription = (
+			"You strap yourself with a bomb, and wire a dead man's switch to it.\n"
+			"When you die, you will have your revenge. And the final EXP boost."
+		)
+	},
+	[PERK_STATIONARY_RELOADER] = {
+		.szTitle = "STATIONARY RELOADER",
+		.szDescription = {
+			"It's easier to focus on task at hand while you're not running around.\n"
+			"Standing while reloading speeds it up."
+		}
+	},
+	[PERK_TOUGH_RELOADER] = {
+		.szTitle = "TOUGH RELOADER",
+		.szDescription = {
+			"Damage taken from bites while reloading is reduced."
+		}
+	},
 };
 
 static void perksUnlockPending(void) {
