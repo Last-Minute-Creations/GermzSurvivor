@@ -128,7 +128,7 @@ void hiScoreDrawAll(void) {
 
 void hiScoreEnteringProcess(void) {
 	if(keyUse(KEY_RETURN) || mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
-		audioMixerPlaySfx(g_pSfxShotgun[0], 0, 0, 0);
+		audioMixerPlaySfx(g_pSfxShotgun, 0, 0, 0);
 		if(s_ubNewNameLength) {
 			hiScoreSave();
 		}
@@ -164,14 +164,14 @@ void hiScoreEnteringProcess(void) {
 			(wInput >= 'a' && wInput <= 'z') ||
 			(wInput >= '0' && wInput <= '9')
 		) {
-			audioMixerPlaySfx(g_pSfxSmg[0], 0, 0, 0);
+			audioMixerPlaySfx(g_pSfxSmg, 0, 0, 0);
 			if(s_ubNewNameLength < SCORE_NAME_LENGTH) {
 				s_pScores[s_ubNewScorePos].szName[s_ubNewNameLength] = wInput;
 				++s_ubNewNameLength;
 			}
 		}
 		else if(g_sKeyManager.ubLastKey == KEY_BACKSPACE && s_ubNewNameLength) {
-			audioMixerPlaySfx(g_pSfxBite[0], 0, 0, 0);
+			audioMixerPlaySfx(g_pSfxBite, 0, 0, 0);
 			--s_ubNewNameLength;
 			s_pScores[s_ubNewScorePos].szName[s_ubNewNameLength] = '\0';
 		}

@@ -145,6 +145,20 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 			"Damage taken from bites while reloading is reduced."
 		}
 	},
+	[PERK_SWIFT_LEARNER] = {
+		.szTitle = "SWIFT LEARNER",
+		.szDescription = {
+			"Learning to survive the unsurvivable comes natural to you, it seems.\n"
+			"You require 20% less EXP to gain levels."
+		}
+	},
+	[PERK_FAST_SHOT] = {
+		.szTitle = "FAST SHOT",
+		.szDescription = {
+			"You got better at handling weapons, increasing their rate of fire.\n"
+			"Bonus depends on weapon type."
+		}
+	},
 };
 
 static void perksUnlockPending(void) {
@@ -274,7 +288,7 @@ static void perksGsLoop(void) {
 				sIconPos.uwX <= uwCursorAbsX && uwCursorAbsX <= sIconPos.uwX + PERK_ICON_SIZE &&
 				sIconPos.uwY <= uwCursorAbsY && uwCursorAbsY <= sIconPos.uwY + PERK_ICON_SIZE
 			) {
-				audioMixerPlaySfx(g_pSfxSmg[0], 0, 0, 0);
+				audioMixerPlaySfx(g_pSfxSmg, 0, 0, 0);
 				s_ubSelectedPerkIndex = i;
 				break;
 			}
@@ -294,7 +308,7 @@ static void perksGsLoop(void) {
 				statePop(g_pGameStateManager);
 				break;
 			case PERKS_BUTTON_CANCEL:
-				audioMixerPlaySfx(g_pSfxImpact[0], 0, 0, 0);
+				audioMixerPlaySfx(g_pSfxImpact, 0, 0, 0);
 				statePop(g_pGameStateManager);
 				break;
 		}

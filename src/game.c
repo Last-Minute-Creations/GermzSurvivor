@@ -41,18 +41,6 @@
 #define STAIN_BYTES_PER_BITPLANE_ROW (STAIN_SIZE_X / 8)
 #define STAIN_BYTES_PER_PIXEL_ROW (STAIN_BYTES_PER_BITPLANE_ROW * GAME_BPP)
 
-#define WEAPON_DAMAGE_BASE_RIFLE 6
-#define WEAPON_DAMAGE_SMG 5
-#define WEAPON_DAMAGE_ASSAULT_RIFLE 7
-#define WEAPON_DAMAGE_SHOTGUN 7
-#define WEAPON_DAMAGE_SAWOFF 9
-
-#define WEAPON_COOLDOWN_BASE_RIFLE 15
-#define WEAPON_COOLDOWN_SMG 3
-#define WEAPON_COOLDOWN_ASSAULT_RIFLE 4
-#define WEAPON_COOLDOWN_SHOTGUN 18
-#define WEAPON_COOLDOWN_SAWOFF 18
-
 #define DIGIT_WIDTH_MAX 5
 #define HUD_WEAPON_SIZE_X 48
 #define HUD_WEAPON_SIZE_Y 15
@@ -270,6 +258,7 @@ typedef struct tEntity {
 			UBYTE ubAmmo;
 			UBYTE ubMaxAmmo;
 			BYTE bReloadCooldown;
+			UBYTE ubWeaponCooldown;
 		} sPlayer;
 		struct {
 			tDirection eDirection;
@@ -359,6 +348,8 @@ static UBYTE s_ubDodgeChance;
 static UBYTE s_isFinalRevenge;
 static UBYTE s_isStationaryReloader;
 static UBYTE s_isToughReloader;
+static UBYTE s_isSwiftLearner;
+static UBYTE s_isFastShot;
 static UBYTE s_isImmortal;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
@@ -408,6 +399,20 @@ static const UBYTE s_pWeaponReloadCooldowns[] = {
 	[WEAPON_KIND_ASSAULT_RIFLE] = 40,
 	[WEAPON_KIND_SHOTGUN] = 80,
 	[WEAPON_KIND_SAWOFF] = 80,
+};
+static const UBYTE s_pWeaponDamages[] = {
+	[WEAPON_KIND_STOCK_RIFLE] = 6,
+	[WEAPON_KIND_SMG] = 5,
+	[WEAPON_KIND_ASSAULT_RIFLE] = 7,
+	[WEAPON_KIND_SHOTGUN] = 7,
+	[WEAPON_KIND_SAWOFF] = 9,
+};
+static const UBYTE s_pWeaponFireCooldowns[] = {
+	[WEAPON_KIND_STOCK_RIFLE] =  15,
+	[WEAPON_KIND_SMG] =  3,
+	[WEAPON_KIND_ASSAULT_RIFLE] =  4,
+	[WEAPON_KIND_SHOTGUN] =  18,
+	[WEAPON_KIND_SAWOFF] =  18,
 };
 
 typedef struct tHudBulletDef {
@@ -531,28 +536,31 @@ static inline void gameSetCursor(tCursorKind eKind) {
 }
 
 __attribute__((always_inline))
+static inline void scoreLevelUp(void) {
+	s_ulPrevLevelScore = s_ulNextLevelScore;
+	s_ulNextLevelScore *= 2;
+	if(s_isSwiftLearner) {
+		s_ulNextLevelScore -= s_ulPrevLevelScore / 5;
+	}
+	++s_ubScoreLevel;
+	++s_ubPendingPerks;
+	s_ubHiSpeedChance = MIN(s_ubHiSpeedChance + ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL, ENEMY_SPEEDY_CHANCE_MAX);
+	s_uwEnemySpawnHealth += ENEMY_HEALTH_ADD_PER_LEVEL;
+}
+
+__attribute__((always_inline))
 static inline void scoreAddSmall(ULONG ulScore) {
 	s_ulScore += ulScore;
-	if(s_ulScore > s_ulNextLevelScore) {
-		s_ulPrevLevelScore = s_ulNextLevelScore;
-		s_ulNextLevelScore *= 2;
-		++s_ubScoreLevel;
-		++s_ubPendingPerks;
-		s_ubHiSpeedChance = MIN(s_ubHiSpeedChance + ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL, ENEMY_SPEEDY_CHANCE_MAX);
-		s_uwEnemySpawnHealth += ENEMY_HEALTH_ADD_PER_LEVEL;
+	if(s_ulScore >= s_ulNextLevelScore) {
+		scoreLevelUp();
 	}
 }
 
 // Can add multiple levels at once
 static void scoreAddLarge(ULONG ulScore) {
 	s_ulScore += ulScore;
-	while(s_ulScore > s_ulNextLevelScore) {
-		s_ulPrevLevelScore = s_ulNextLevelScore;
-		s_ulNextLevelScore *= 2;
-		++s_ubScoreLevel;
-		++s_ubPendingPerks;
-		s_ubHiSpeedChance = MIN(s_ubHiSpeedChance + ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL, ENEMY_SPEEDY_CHANCE_MAX);
-		s_uwEnemySpawnHealth += ENEMY_HEALTH_ADD_PER_LEVEL;
+	while(s_ulScore >= s_ulNextLevelScore) {
+		scoreLevelUp();
 	}
 }
 
@@ -859,7 +867,7 @@ static inline void projectileDrawNext(void) {
 
 			s_pCurrentProjectile->ubLife = 1; // so that it will be undrawn on both buffers
 			pEnemy->wHealth -= s_pCurrentProjectile->ubDamage;
-			audioMixerPlaySfx(g_pSfxImpact[0], SFX_CHANNEL_IMPACT, SFX_PRIORITY_IMPACT, 0);
+			audioMixerPlaySfx(g_pSfxImpact, SFX_CHANNEL_IMPACT, SFX_PRIORITY_IMPACT, 0);
 		}
 		else {
 			UBYTE ubMask = s_pBulletMaskFromX[uwProjectileX & 0x7];
@@ -1093,6 +1101,10 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 	playerCalculateMaxAmmo();
 	s_sPlayer.sPlayer.ubAmmo = s_sPlayer.sPlayer.ubMaxAmmo;
 	s_sPlayer.sPlayer.bReloadCooldown = 0;
+	s_sPlayer.sPlayer.ubWeaponCooldown = s_pWeaponFireCooldowns[eWeaponKind];
+	if(s_isFastShot) {
+		s_sPlayer.sPlayer.ubWeaponCooldown -= 2;
+	}
 
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
 	gameSetCursor(CURSOR_KIND_FULL);
@@ -1148,39 +1160,34 @@ static inline void playerShootProjectile(BYTE bAngle, BYTE pSpreadSide[static SP
 }
 
 static void playerShootWeapon(UBYTE ubAimAngle) {
-	// TODO: precalculate random stuff
-	switch(s_sPlayer.sPlayer.eWeaponKind) {
+	tWeaponKind eWeaponKind = s_sPlayer.sPlayer.eWeaponKind;
+	s_sPlayer.sPlayer.ubAttackCooldown = s_sPlayer.sPlayer.ubWeaponCooldown;
+	switch(eWeaponKind) {
 		case WEAPON_KIND_STOCK_RIFLE:
-			playerShootProjectile(ubAimAngle, s_pSpreadSide1, WEAPON_DAMAGE_BASE_RIFLE);
-			audioMixerPlaySfx(g_pSfxRifle[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_BASE_RIFLE;
+			playerShootProjectile(ubAimAngle, s_pSpreadSide1, s_pWeaponDamages[WEAPON_KIND_STOCK_RIFLE]);
+			audioMixerPlaySfx(g_pSfxRifle, SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			break;
-			case WEAPON_KIND_SMG:
-			playerShootProjectile(ubAimAngle, s_pSpreadSide3, WEAPON_DAMAGE_SMG);
-			audioMixerPlaySfx(g_pSfxSmg[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SMG;
+		case WEAPON_KIND_SMG:
+			playerShootProjectile(ubAimAngle, s_pSpreadSide3, s_pWeaponDamages[WEAPON_KIND_SMG]);
+			audioMixerPlaySfx(g_pSfxSmg, SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			break;
 		case WEAPON_KIND_ASSAULT_RIFLE:
-			playerShootProjectile(ubAimAngle, s_pSpreadSide2, WEAPON_DAMAGE_ASSAULT_RIFLE);
-			audioMixerPlaySfx(g_pSfxAssault[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_ASSAULT_RIFLE;
+			playerShootProjectile(ubAimAngle, s_pSpreadSide2, s_pWeaponDamages[WEAPON_KIND_ASSAULT_RIFLE]);
+			audioMixerPlaySfx(g_pSfxAssault, SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			break;
 		case WEAPON_KIND_SHOTGUN:
 			for(UBYTE i = 0; i < 10; ++i) {
-				playerShootProjectile(ubAimAngle, s_pSpreadSide3, WEAPON_DAMAGE_SHOTGUN);
+				playerShootProjectile(ubAimAngle, s_pSpreadSide3, s_pWeaponDamages[WEAPON_KIND_SHOTGUN]);
 			}
-			audioMixerPlaySfx(g_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SHOTGUN;
+			audioMixerPlaySfx(g_pSfxShotgun, SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			break;
 		case WEAPON_KIND_SAWOFF:
 			for(UBYTE i = 0; i < 10; ++i) {
-				playerShootProjectile(ubAimAngle, s_pSpreadSide10, WEAPON_DAMAGE_SAWOFF);
+				playerShootProjectile(ubAimAngle, s_pSpreadSide10, s_pWeaponDamages[WEAPON_KIND_SAWOFF]);
 			}
-			audioMixerPlaySfx(g_pSfxShotgun[0], SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
-			s_sPlayer.sPlayer.ubAttackCooldown = WEAPON_COOLDOWN_SAWOFF;
+			audioMixerPlaySfx(g_pSfxShotgun, SFX_CHANNEL_SHOOT, SFX_PRIORITY_SHOOT, 0);
 			break;
 	}
-	// TODO: remove ammo from magazine
 }
 
 __attribute__((always_inline))
@@ -1248,13 +1255,13 @@ static inline void enemyProcess(tEntity *pEnemy) {
 						if(s_isToughReloader && s_sPlayer.sPlayer.bReloadCooldown) {
 							--ubDamage;
 						}
-						s_sPlayer.wHealth -= ubDamage
+						s_sPlayer.wHealth -= ubDamage;
 					}
 					if(s_isRetaliation) {
 						pEnemy->wHealth -= PLAYER_RETALIATION_DAMAGE;
 					}
 				}
-				audioMixerPlaySfx(g_pSfxBite[0], SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
+				audioMixerPlaySfx(g_pSfxBite, SFX_CHANNEL_BITE, SFX_PRIORITY_BITE, 0);
 				pEnemy->sEnemy.ubAttackCooldown = ENEMY_ATTACK_COOLDOWN;
 			}
 		}
@@ -1474,6 +1481,7 @@ void gameApplyPerk(tPerk ePerk) {
 			perksLock(PERK_FATAL_LOTTERY);
 			perksLock(PERK_GRIM_DEAL);
 			perksLock(PERK_BANDAGE);
+			perksLock(PERK_BLOODY_AMMO);
 			break;
 		case PERK_RETALIATION:
 			s_isRetaliation = 1;
@@ -1491,10 +1499,15 @@ void gameApplyPerk(tPerk ePerk) {
 			break;
 		case PERK_BLOODY_AMMO:
 			s_isBloodyAmmo = 1;
+			perksLock(PERK_DEATH_CLOCK);
+			perksLock(PERK_DEATH_DANCE);
 			break;
 		case PERK_DEATH_DANCE:
 			s_isDeathDance = 1;
 			s_isImmortal = 1;
+			perksLock(PERK_DEATH_CLOCK);
+			perksLock(PERK_BANDAGE);
+			perksLock(PERK_BLOODY_AMMO);
 			break;
 		case PERK_DODGER:
 			s_ubDodgeChance = PERK_DODGE_CHANCE_DODGER;
@@ -1511,6 +1524,14 @@ void gameApplyPerk(tPerk ePerk) {
 			break;
 		case PERK_TOUGH_RELOADER:
 			s_isToughReloader = 1;
+			break;
+		case PERK_SWIFT_LEARNER:
+			s_isSwiftLearner = 1;
+			s_ulNextLevelScore -= s_ulPrevLevelScore / 5;
+			break;
+		case PERK_FAST_SHOT:
+			s_isFastShot = 1;
+			s_sPlayer.sPlayer.ubWeaponCooldown -= 2;
 			break;
 		case PERK_COUNT:
 			__builtin_unreachable();
@@ -1552,6 +1573,8 @@ void gameStart(void) {
 	perksUnlock(PERK_FINAL_REVENGE);
 	perksUnlock(PERK_STATIONARY_RELOADER);
 	perksUnlock(PERK_TOUGH_RELOADER);
+	perksUnlock(PERK_SWIFT_LEARNER);
+	perksUnlock(PERK_FAST_SHOT);
 	s_isDeathClock = 0;
 	s_isRetaliation = 0;
 	s_isAmmoManiac = 0;
@@ -1563,6 +1586,8 @@ void gameStart(void) {
 	s_isFinalRevenge = 0;
 	s_isStationaryReloader = 0;
 	s_isToughReloader = 0;
+	s_isSwiftLearner = 0;
+	s_isFastShot = 0;
 	s_isImmortal = 0;
 
 	s_ulKills = 0;

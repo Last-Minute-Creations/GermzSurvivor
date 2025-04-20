@@ -97,6 +97,10 @@ Final version stuff:
 	☐ Add LMC/ACE logo
 	☐ Add perk graphics
 	☐ Fix health bar not emptying completely on death
+	☐ Make bullets pass through enemies, reduce bullet life
+	☐ Blink red on hit
+	☐ Blink yellow on level up
+	☐ Make the game less boring after level 5 - speed up the enemies? increase the exp for fast enemies?
 
 Nice to have:
 	✘ Add sound variations @cancelled(25-04-19)
@@ -143,14 +147,15 @@ Perks to implement:
 		✘ Swift reloader - reloading doesn't slow you down @cancelled(25-04-08)
 		✘ Unstoppable - getting hit doesn't slow you down @cancelled(25-04-20)
 		✘ Increase max hp by 10% @cancelled(25-04-20)
+		✘ Fast loader @cancelled(25-04-20)
 		☐ Ninja - improved dodger @started(25-04-20)
 		☐ Final revenge @started(25-04-20)
 		☐ Stationary reloader - reload quicker when standing still @started(25-04-20)
-		☐ Fast loader
-		☐ Bonus magnet - move pickups to you
-		☐ Perk expert - lower exp requirements for levels
-		☐ Bonus Economist - increase effect of pickups
-		☐ Tough reloader - damage received during reload is reduced
+		☐ Tough reloader - damage received during reload is reduced @started(25-04-20)
+		☐ Swift learner - lower exp requirements for levels @started(25-04-20)
+		☐ Fast shot @started(25-04-20)
+		☐ Bonus magnet - move pickups towards you
+		☐ Bonus Economist - increase effect of exp pickups
 		☐ Increase chance for pickups
 
 Weapon audio:
