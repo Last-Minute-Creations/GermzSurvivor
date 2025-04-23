@@ -101,6 +101,8 @@
 #define BG_TILE_COUNT 8
 #define SPRITE_CHANNEL_CURSOR 4
 
+#define COLOR_HURT 23
+#define COLOR_LEVEL 25
 #define COLOR_HUD_BG 28
 #define COLOR_BAR_BG 24
 #define COLOR_HUD_HP 9
@@ -124,6 +126,7 @@
 #define PLAYER_BOB_OFFSET_X 12
 #define PLAYER_BOB_OFFSET_Y 19
 #define PLAYER_ATTACK_COOLDOWN 12
+#define PLAYER_BLINK_COOLDOWN 4
 #define PLAYER_HEALTH_MAX 100
 #define PLAYER_RETALIATION_DAMAGE 30
 
@@ -165,6 +168,12 @@
 #define CURSOR_SPRITE_SIZE_Y (CURSOR_SIZE+2)
 
 typedef UWORD tFix10p6;
+
+typedef enum tBlinkKind {
+	BLINK_KIND_HURT,
+	BLINK_KIND_LEVEL,
+	BLINK_KIND_COUNT
+} tBlinkKind;
 
 typedef enum tPickupKind {
 	PICKUP_KIND_RIFLE,
@@ -259,6 +268,7 @@ typedef struct tEntity {
 			UBYTE ubMaxAmmo;
 			BYTE bReloadCooldown;
 			UBYTE ubWeaponCooldown;
+			UBYTE ubBlinkCooldown;
 		} sPlayer;
 		struct {
 			tDirection eDirection;
@@ -323,6 +333,8 @@ static ULONG s_ulFrameWaitCount;
 
 static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
+static tBitMap *s_pPlayerBlinkBitmaps[BLINK_KIND_COUNT];
+static UBYTE *s_pPlayerBlinkData[BLINK_KIND_COUNT];
 static tFrameOffset s_pPlayerFrameOffsets[DIRECTION_COUNT][ENTITY_FRAME_COUNT];
 static tEntity s_sPlayer;
 static ULONG s_ulScore;
@@ -537,6 +549,12 @@ static inline void gameSetCursor(tCursorKind eKind) {
 }
 
 __attribute__((always_inline))
+static inline void playerSetBlink(tBlinkKind eBlinkKind) {
+	s_sPlayer.sBob.pFrameData = s_pPlayerBlinkData[eBlinkKind];
+	s_sPlayer.sPlayer.ubBlinkCooldown = PLAYER_BLINK_COOLDOWN;
+}
+
+__attribute__((always_inline))
 static inline void scoreLevelUp(void) {
 	s_ulPrevLevelScore = s_ulNextLevelScore;
 	s_ulNextLevelScore *= 2;
@@ -547,6 +565,7 @@ static inline void scoreLevelUp(void) {
 	++s_ubPendingPerks;
 	s_ubHiSpeedChance = MIN(s_ubHiSpeedChance + ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL, ENEMY_SPEEDY_CHANCE_MAX);
 	s_uwEnemySpawnHealth += ENEMY_HEALTH_ADD_PER_LEVEL;
+	playerSetBlink(BLINK_KIND_LEVEL);
 }
 
 __attribute__((always_inline))
@@ -1257,6 +1276,7 @@ static inline void enemyProcess(tEntity *pEnemy) {
 							--ubDamage;
 						}
 						s_sPlayer.wHealth -= ubDamage;
+						playerSetBlink(BLINK_KIND_HURT);
 					}
 					if(s_isRetaliation) {
 						pEnemy->wHealth -= PLAYER_RETALIATION_DAMAGE;
@@ -1646,6 +1666,7 @@ void gameStart(void) {
 	s_sPlayer.eFrame = 0;
 	s_sPlayer.sEnemy.ubFrameCooldown = 0;
 	s_sPlayer.sPlayer.ubAttackCooldown = PLAYER_ATTACK_COOLDOWN;
+	s_sPlayer.sPlayer.ubBlinkCooldown = PLAYER_BLINK_COOLDOWN;
 	playerSetWeapon(WEAPON_KIND_STOCK_RIFLE);
 	s_pCollisionTiles[s_sPlayer.sPos.uwX / COLLISION_SIZE_X][s_sPlayer.sPos.uwY / COLLISION_SIZE_Y] = &s_sPlayer;
 	s_pSortedEntities[ubSorted++] = &s_sPlayer;
@@ -1855,7 +1876,13 @@ static inline UBYTE playerProcess(void) {
 		}
 		s_sPlayer.sPlayer.eDirection = eDir;
 		tFrameOffset *pOffset = &s_pPlayerFrameOffsets[eDir][s_sPlayer.eFrame];
-		bobSetFrame(&s_sPlayer.sBob, pOffset->pPixels, pOffset->pMask);
+		if(s_sPlayer.sPlayer.ubBlinkCooldown) {
+			--s_sPlayer.sPlayer.ubBlinkCooldown;
+		}
+		else {
+			s_sPlayer.sBob.pFrameData = pOffset->pPixels;
+		}
+		s_sPlayer.sBob.pMaskData = pOffset->pMask;
 		s_sPlayer.sBob.sPos.uwX = s_sPlayer.sPos.uwX - PLAYER_BOB_OFFSET_X;
 		s_sPlayer.sBob.sPos.uwY = s_sPlayer.sPos.uwY - PLAYER_BOB_OFFSET_Y;
 		cameraCenterAtOptimized(g_pGameBufferMain->pCamera, s_sPlayer.sPos.uwX, s_sPlayer.sPos.uwY);
@@ -2070,6 +2097,13 @@ static void gameGsCreate(void) {
 	s_pPlayerMasks[DIRECTION_SW] = bitmapCreateFromPath("data/player_sw_mask.bm", 0);
 	s_pPlayerMasks[DIRECTION_S] = bitmapCreateFromPath("data/player_s_mask.bm", 0);
 	s_pPlayerMasks[DIRECTION_SE] = bitmapCreateFromPath("data/player_se_mask.bm", 0);
+
+	s_pPlayerBlinkBitmaps[BLINK_KIND_HURT] = bitmapCreate(PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, GAME_BPP, BMF_INTERLEAVED);
+	s_pPlayerBlinkBitmaps[BLINK_KIND_LEVEL] = bitmapCreate(PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, GAME_BPP, BMF_INTERLEAVED);
+	blitRect(s_pPlayerBlinkBitmaps[BLINK_KIND_HURT], 0, 0, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, COLOR_HURT);
+	blitRect(s_pPlayerBlinkBitmaps[BLINK_KIND_HURT], 0, 0, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, COLOR_LEVEL);
+	s_pPlayerBlinkData[BLINK_KIND_HURT] = s_pPlayerBlinkBitmaps[BLINK_KIND_HURT]->Planes[0];
+	s_pPlayerBlinkData[BLINK_KIND_LEVEL] = s_pPlayerBlinkBitmaps[BLINK_KIND_LEVEL]->Planes[0];
 
 	for(tDirection eDir = 0; eDir < DIRECTION_COUNT; ++eDir) {
 		for(tCharacterFrame eFrame = 0; eFrame < ENTITY_FRAME_COUNT; ++eFrame) {
@@ -2358,6 +2392,9 @@ static void gameGsDestroy(void) {
 		bitmapDestroy(s_pEnemyFrames[eDir]);
 		bitmapDestroy(s_pEnemyMasks[eDir]);
 	}
+
+	bitmapDestroy(s_pPlayerBlinkBitmaps[0]);
+	bitmapDestroy(s_pPlayerBlinkBitmaps[1]);
 
 	bitmapDestroy(s_pPickupFrames);
 	bitmapDestroy(s_pPickupMasks);

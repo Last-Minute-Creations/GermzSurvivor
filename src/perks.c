@@ -115,15 +115,15 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 	},
 	[PERK_DODGER] = {
 		.szTitle = "DODGE REFLEX",
-		.szDescription = {
+		.szDescription = (
 			"Your reflexes have increased, and with them you gain a small chance to dodge each bite."
-		}
+		)
 	},
 	[PERK_NINJA] = {
 		.szTitle = "NINJA REFLEX",
-		.szDescription = {
+		.szDescription = (
 			"Your reflexes are even sharper now, and with them those bites have a harder time to reach you."
-		}
+		)
 	},
 	[PERK_FINAL_REVENGE] = {
 		.szTitle = "FINAL REVENGE",
@@ -134,30 +134,30 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 	},
 	[PERK_STATIONARY_RELOADER] = {
 		.szTitle = "STATIONARY RELOADER",
-		.szDescription = {
+		.szDescription = (
 			"It's easier to focus on task at hand while you're not running around.\n"
 			"Standing while reloading speeds it up."
-		}
+		)
 	},
 	[PERK_TOUGH_RELOADER] = {
 		.szTitle = "TOUGH RELOADER",
-		.szDescription = {
+		.szDescription = (
 			"Damage taken from bites while reloading is reduced."
-		}
+		)
 	},
 	[PERK_SWIFT_LEARNER] = {
 		.szTitle = "SWIFT LEARNER",
-		.szDescription = {
+		.szDescription = (
 			"Learning to survive the unsurvivable comes natural to you, it seems.\n"
 			"You require 20% less EXP to gain levels."
-		}
+		)
 	},
 	[PERK_FAST_SHOT] = {
 		.szTitle = "FAST SHOT",
-		.szDescription = {
+		.szDescription = (
 			"You got better at handling weapons, increasing their rate of fire.\n"
 			"Bonus depends on weapon type."
-		}
+		)
 	},
 	[PERK_BONUS_LEARNER] = {
 		.szTitle = "BONUS LEARNER",

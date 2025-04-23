@@ -91,6 +91,8 @@ Final version stuff:
 	✔ Commit player gfx .bm files @done(25-04-19)
 	✔ Add more stain variants @done(25-04-19)
 	✔ Draw 2 bullets on hud at once if possible @done(25-04-19)
+	☐ Blink red on hit @started(25-04-23)
+	☐ Blink yellow on level up @started(25-04-23)
 	☐ Fix bitplanes on AGA/060
 	☐ Make the zombies go away after player death so that death anim is visible
 	☐ Make bullets more visible (yellow doesn't help much)
@@ -98,9 +100,9 @@ Final version stuff:
 	☐ Add perk graphics
 	☐ Fix health bar not emptying completely on death
 	☐ Make bullets pass through enemies, reduce bullet life
-	☐ Blink red on hit
-	☐ Blink yellow on level up
-	☐ Make the game less boring after level 5 - speed up the enemies? increase the exp for fast enemies?
+	Make the game less boring after level 5:
+		☐ speed up the enemies?
+		☐ increase the exp for fast enemies?
 	☐ Rework pickup spawn chances
 
 Nice to have:
