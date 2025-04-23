@@ -26,8 +26,8 @@ void genericCreate(void) {
 	audioMixerCreate();
 
 	assetsGlobalCreate();
-	statePush(g_pGameStateManager, &g_sStateCutscene);
-	// statePush(g_pGameStateManager, &g_sStateGame);
+	// statePush(g_pGameStateManager, &g_sStateCutscene);
+	statePush(g_pGameStateManager, &g_sStateGame);
 }
 
 void genericProcess(void) {
