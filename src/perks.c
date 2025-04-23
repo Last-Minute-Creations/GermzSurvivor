@@ -159,6 +159,13 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 			"Bonus depends on weapon type."
 		}
 	},
+	[PERK_BONUS_LEARNER] = {
+		.szTitle = "BONUS LEARNER",
+		.szDescription = (
+			"You seem to learn a lesson from each thing you stumble upon.\n"
+			"You gain 100 EXP for each bonus you pick up, including weapons."
+		)
+	}
 };
 
 static void perksUnlockPending(void) {

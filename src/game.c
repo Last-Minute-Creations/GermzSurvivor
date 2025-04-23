@@ -351,6 +351,7 @@ static UBYTE s_isToughReloader;
 static UBYTE s_isSwiftLearner;
 static UBYTE s_isFastShot;
 static UBYTE s_isImmortal;
+static UBYTE s_isBonusLearner;
 
 static tBitMap *s_pEnemyFrames[DIRECTION_COUNT];
 static tBitMap *s_pEnemyMasks[DIRECTION_COUNT];
@@ -1533,6 +1534,9 @@ void gameApplyPerk(tPerk ePerk) {
 			s_isFastShot = 1;
 			s_sPlayer.sPlayer.ubWeaponCooldown -= 2;
 			break;
+		case PERK_BONUS_LEARNER:
+			s_isBonusLearner = 1;
+			break;
 		case PERK_COUNT:
 			__builtin_unreachable();
 	}
@@ -1575,6 +1579,7 @@ void gameStart(void) {
 	perksUnlock(PERK_TOUGH_RELOADER);
 	perksUnlock(PERK_SWIFT_LEARNER);
 	perksUnlock(PERK_FAST_SHOT);
+	perksUnlock(PERK_BONUS_LEARNER);
 	s_isDeathClock = 0;
 	s_isRetaliation = 0;
 	s_isAmmoManiac = 0;
@@ -1588,6 +1593,7 @@ void gameStart(void) {
 	s_isToughReloader = 0;
 	s_isSwiftLearner = 0;
 	s_isFastShot = 0;
+	s_isBonusLearner = 0;
 	s_isImmortal = 0;
 
 	s_ulKills = 0;
@@ -1688,6 +1694,10 @@ static inline void detonateBombAtPlayer(void) {
 
 __attribute__((always_inline))
 static inline void playerApplyPickup(tPickupKind ePickupKind) {
+	if(s_isBonusLearner) {
+		scoreAddSmall(100);
+	}
+
 	switch(ePickupKind) {
 		case PICKUP_KIND_RIFLE:
 			playerSetWeapon(WEAPON_KIND_STOCK_RIFLE);

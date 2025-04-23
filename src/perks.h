@@ -27,6 +27,7 @@ typedef enum tPerk {
 	PERK_TOUGH_RELOADER,
 	PERK_SWIFT_LEARNER,
 	PERK_FAST_SHOT,
+	PERK_BONUS_LEARNER,
 	PERK_COUNT // also used for locked perk
 } tPerk;
 
