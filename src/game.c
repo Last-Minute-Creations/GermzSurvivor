@@ -105,7 +105,7 @@
 #define COLOR_LEVEL 25
 #define COLOR_HUD_BG 28
 #define COLOR_BAR_BG 24
-#define COLOR_HUD_HP 9
+#define COLOR_HUD_HP 10
 #define COLOR_HUD_SCORE 25
 
 #define COLLISION_SIZE_X 8

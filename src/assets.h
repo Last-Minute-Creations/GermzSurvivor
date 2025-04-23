@@ -22,6 +22,8 @@ extern tFont *g_pFontSmall;
 extern tBitMap *g_pLogo;
 extern tTextBitMap *g_pLineBuffer;
 
+extern tBitMap *g_pPerkIcons;
+
 extern tPtplayerMod *g_pModMenu;
 extern tPtplayerMod *g_pModGame;
 // extern tPtplayerSamplePack *g_pModSamples;

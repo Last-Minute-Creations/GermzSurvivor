@@ -97,7 +97,9 @@ Final version stuff:
 	☐ Make the zombies go away after player death so that death anim is visible
 	☐ Make bullets more visible (yellow doesn't help much)
 	☐ Add LMC/ACE logo
-	☐ Add perk graphics
+	Perk icons:
+		✔ Add support for icons @done(25-04-23)
+		☐ Add icons
 	☐ Fix health bar not emptying completely on death
 	☐ Make bullets pass through enemies, reduce bullet life
 	Make the game less boring after level 5:

@@ -21,6 +21,7 @@ void assetsGlobalDestroy(void) {
 void assetsGameCreate(void) {
 	g_pFontSmall = fontCreateFromPath("data/uni54_small.fnt");
 	g_pLogo = bitmapCreateFromPath("data/logo.bm", 0);
+	g_pPerkIcons = bitmapCreateFromPath("data/perk_icons.bm", 0);
 
 	g_pModGame = ptplayerModCreateFromPath("data/game.mod");
 	g_pModMenu = ptplayerModCreateFromPath("data/menu.mod");
@@ -37,6 +38,7 @@ void assetsGameCreate(void) {
 void assetsGameDestroy(void) {
 	fontDestroy(g_pFontSmall);
 	bitmapDestroy(g_pLogo);
+	bitmapDestroy(g_pPerkIcons);
 
 	ptplayerModDestroy(g_pModGame);
 	ptplayerModDestroy(g_pModMenu);
@@ -55,6 +57,8 @@ tFont *g_pFontSmall;
 
 tBitMap *g_pLogo;
 tTextBitMap *g_pLineBuffer;
+
+tBitMap *g_pPerkIcons;
 
 tPtplayerMod *g_pModMenu;
 tPtplayerMod *g_pModGame;

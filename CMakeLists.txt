@@ -84,6 +84,7 @@ convertFont(
 file(GLOB PALETTE_SPRITE ${RES_DIR}/sprite.gpl)
 file(GLOB PALETTE_GPL ${RES_DIR}/survivor.gpl)
 file(GLOB PALETTE_INTRO_GPL ${RES_DIR}/intro.gpl)
+file(GLOB PALETTE_PERKS ${RES_DIR}/perks.gpl)
 set(PALETTE_PLT ${DATA_DIR}/game.plt)
 set(TRANSPARENCY_HEX "#880088")
 
@@ -143,6 +144,14 @@ convertBitmaps(
 		${GEN_DIR}/cursors.png
 	DESTINATIONS
 		${DATA_DIR}/cursors.bm
+)
+
+convertBitmaps(
+	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PERKS}
+	SOURCES
+		${RES_DIR}/perk_icons.png
+	DESTINATIONS
+		${DATA_DIR}/perk_icons.bm
 )
 
 #-------------------------------------------------------------------------- MENU

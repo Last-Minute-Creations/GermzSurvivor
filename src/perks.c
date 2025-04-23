@@ -209,10 +209,35 @@ static tUwCoordYX perksGetIconPosition(UBYTE ubIndex) {
 }
 
 static void perksDrawPerk(UBYTE ubIndex) {
+	tBitMap *s_pBg = commGetDisplayBuffer();
+
+	tBitMap sBmSrc;
+	tBitMap sBmDst;
+	sBmSrc.BytesPerRow = g_pPerkIcons->BytesPerRow;
+	sBmSrc.Rows = g_pPerkIcons->Rows;
+	sBmSrc.Depth = 1;
+	sBmSrc.Flags = 0;
+	sBmSrc.Planes[0] = g_pPerkIcons->Planes[0];
+
+	sBmDst.BytesPerRow = s_pBg->BytesPerRow;
+	sBmDst.Rows = s_pBg->Rows;
+	sBmDst.Depth = 1;
+	sBmDst.Flags = 0;
+
+	// hover 10  010x0
+	// dark   9  0100x
+	// bg     8  01000
 	tUwCoordYX sPerkIconPos = perksGetIconPosition(ubIndex);
 	blitRect(
-		commGetDisplayBuffer(), sPerkIconPos.uwX, sPerkIconPos.uwY,
-		PERK_ICON_SIZE, PERK_ICON_SIZE, (s_ubSelectedPerkIndex == ubIndex) ? COMM_DISPLAY_COLOR_TEXT_HOVER : COMM_DISPLAY_COLOR_TEXT_DARK
+		s_pBg, sPerkIconPos.uwX, sPerkIconPos.uwY,
+		PERK_ICON_SIZE, PERK_ICON_SIZE, COMM_DISPLAY_COLOR_BG
+	);
+
+	UBYTE ubPlane = (s_ubSelectedPerkIndex == ubIndex) ? 1 : 0;
+	sBmDst.Planes[0] = s_pBg->Planes[ubPlane];
+	blitCopy(
+		&sBmSrc, 0, 0, &sBmDst, sPerkIconPos.uwX, sPerkIconPos.uwY,
+		PERK_ICON_SIZE, PERK_ICON_SIZE, MINTERM_COOKIE
 	);
 }
 
