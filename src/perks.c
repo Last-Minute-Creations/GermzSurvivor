@@ -208,7 +208,7 @@ static tUwCoordYX perksGetIconPosition(UBYTE ubIndex) {
 	return sPos;
 }
 
-static void perksDrawPerk(UBYTE ubIndex) {
+static void perksDrawPerk(UBYTE ubChoiceIndex) {
 	tBitMap *s_pBg = commGetDisplayBuffer();
 
 	tBitMap sBmSrc;
@@ -227,16 +227,17 @@ static void perksDrawPerk(UBYTE ubIndex) {
 	// hover 10  010x0
 	// dark   9  0100x
 	// bg     8  01000
-	tUwCoordYX sPerkIconPos = perksGetIconPosition(ubIndex);
+	tUwCoordYX sPerkIconPos = perksGetIconPosition(ubChoiceIndex);
 	blitRect(
 		s_pBg, sPerkIconPos.uwX, sPerkIconPos.uwY,
 		PERK_ICON_SIZE, PERK_ICON_SIZE, COMM_DISPLAY_COLOR_BG
 	);
 
-	UBYTE ubPlane = (s_ubSelectedPerkIndex == ubIndex) ? 1 : 0;
+	UBYTE ubPlane = (s_ubSelectedPerkIndex == ubChoiceIndex) ? 1 : 0;
 	sBmDst.Planes[0] = s_pBg->Planes[ubPlane];
 	blitCopy(
-		&sBmSrc, 0, 0, &sBmDst, sPerkIconPos.uwX, sPerkIconPos.uwY,
+		&sBmSrc, 0, s_pPerkChoice[ubChoiceIndex] * PERK_ICON_SIZE,
+		&sBmDst, sPerkIconPos.uwX, sPerkIconPos.uwY,
 		PERK_ICON_SIZE, PERK_ICON_SIZE, MINTERM_COOKIE
 	);
 }
