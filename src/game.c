@@ -22,8 +22,8 @@
 #include "pause.h"
 
 #define PERK_DEATH_CLOCK_COOLDOWN 5
-#define PERK_DODGE_CHANCE_DODGER 5
-#define PERK_DODGE_CHANCE_NINJA 15
+#define PERK_DODGE_CHANCE_DODGER 10
+#define PERK_DODGE_CHANCE_NINJA 25
 
 #define EXPLOSION_HIT_RANGE 64
 #define EXPLOSION_BOB_SIZE_X 64
@@ -102,7 +102,7 @@
 #define SPRITE_CHANNEL_CURSOR 4
 
 #define COLOR_HURT 23
-#define COLOR_LEVEL 25
+#define COLOR_LEVEL 27
 #define COLOR_HUD_BG 28
 #define COLOR_BAR_BG 24
 #define COLOR_HUD_HP 10
@@ -1267,6 +1267,7 @@ static inline void enemyProcess(tEntity *pEnemy) {
 		if(pEnemy->sEnemy.ubAttackCooldown == 0) {
 			if((UWORD)wDistanceToPlayerX < 10 && (UWORD)wDistanceToPlayerY < 10) {
 				if(randUwMax(&g_sRand, 99) >= s_ubDodgeChance) {
+					playerSetBlink(BLINK_KIND_HURT);
 					if(s_isDeathDance && randUwMax(&g_sRand, 99) < 5) {
 						s_sPlayer.wHealth = 0;
 					}
@@ -1276,7 +1277,6 @@ static inline void enemyProcess(tEntity *pEnemy) {
 							--ubDamage;
 						}
 						s_sPlayer.wHealth -= ubDamage;
-						playerSetBlink(BLINK_KIND_HURT);
 					}
 					if(s_isRetaliation) {
 						pEnemy->wHealth -= PLAYER_RETALIATION_DAMAGE;
@@ -1817,6 +1817,20 @@ static inline UBYTE playerProcess(void) {
 			s_sPlayer.sPlayer.ubFrameCooldown = 0;
 		}
 
+		if(s_sPlayer.sPlayer.bReloadCooldown) {
+			--s_sPlayer.sPlayer.bReloadCooldown;
+			if(s_isAnxiousLoader && mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
+				--s_sPlayer.sPlayer.bReloadCooldown;
+			}
+			if(s_isStationaryReloader && bDeltaX == 0 && bDeltaY == 0) {
+				--s_sPlayer.sPlayer.bReloadCooldown;
+			}
+			if(s_sPlayer.sPlayer.bReloadCooldown <= 0) {
+				s_sPlayer.sPlayer.bReloadCooldown = 0;
+				s_sPlayer.sPlayer.ubAmmo = s_sPlayer.sPlayer.ubMaxAmmo;
+				gameSetCursor(CURSOR_KIND_FULL);
+			}
+		}
 		if(!s_sPlayer.sPlayer.ubAttackCooldown) {
 			if(!s_sPlayer.sPlayer.bReloadCooldown) {
 				if(!s_sPlayer.sPlayer.ubAmmo) {
@@ -1824,20 +1838,6 @@ static inline UBYTE playerProcess(void) {
 				}
 				else if(keyUse(KEY_R) && s_sPlayer.sPlayer.ubAmmo < s_sPlayer.sPlayer.ubMaxAmmo) {
 					playerStartReloadWeapon();
-				}
-			}
-			else {
-				--s_sPlayer.sPlayer.bReloadCooldown;
-				if(s_isAnxiousLoader && mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
-					--s_sPlayer.sPlayer.bReloadCooldown;
-				}
-				if(s_isStationaryReloader && bDeltaX == 0 && bDeltaY == 0) {
-					--s_sPlayer.sPlayer.bReloadCooldown;
-				}
-				if(s_sPlayer.sPlayer.bReloadCooldown <= 0) {
-					s_sPlayer.sPlayer.bReloadCooldown = 0;
-					s_sPlayer.sPlayer.ubAmmo = s_sPlayer.sPlayer.ubMaxAmmo;
-					gameSetCursor(CURSOR_KIND_FULL);
 				}
 			}
 			if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB) && (s_sPlayer.sPlayer.ubAmmo || s_isBloodyAmmo)) {
@@ -2101,7 +2101,7 @@ static void gameGsCreate(void) {
 	s_pPlayerBlinkBitmaps[BLINK_KIND_HURT] = bitmapCreate(PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, GAME_BPP, BMF_INTERLEAVED);
 	s_pPlayerBlinkBitmaps[BLINK_KIND_LEVEL] = bitmapCreate(PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, GAME_BPP, BMF_INTERLEAVED);
 	blitRect(s_pPlayerBlinkBitmaps[BLINK_KIND_HURT], 0, 0, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, COLOR_HURT);
-	blitRect(s_pPlayerBlinkBitmaps[BLINK_KIND_HURT], 0, 0, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, COLOR_LEVEL);
+	blitRect(s_pPlayerBlinkBitmaps[BLINK_KIND_LEVEL], 0, 0, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, COLOR_LEVEL);
 	s_pPlayerBlinkData[BLINK_KIND_HURT] = s_pPlayerBlinkBitmaps[BLINK_KIND_HURT]->Planes[0];
 	s_pPlayerBlinkData[BLINK_KIND_LEVEL] = s_pPlayerBlinkBitmaps[BLINK_KIND_LEVEL]->Planes[0];
 
