@@ -115,9 +115,9 @@ Nice to have:
 		✔ Implement at least 4 perks @done(25-04-05)
 	✘ Instant reload pickup @cancelled(25-04-08)
 	✔ Slomo bomb pickup @done(25-04-19)
-	☐ Fast move pickup
-	☐ Stronger bullets pickup
-	☐ Unlimited ammo pickup
+	✘ Unlimited ammo pickup @cancelled(25-04-27)
+	✘ Fast move pickup @cancelled(25-04-27)
+	☐ Stronger bullets pickup: reload + add strength to bullets for 1 clip
 	✔ Add pause screen - resume, exit to main menu @done(25-04-05)
 	✔ Add intro @done(25-04-04)
 
@@ -129,6 +129,7 @@ Optimizations:
 	☐ Low-height font for HUD score draw
 	☐ Remove rand() fns again
 	☐ Make playerCalculateMaxAmmo() calculate the modified reload time table
+	☐ Make HUD 3/4bpp
 
 Perks to implement first - cyclic:
 	✔ Grim deal - 20% more exp, instant death @done(25-04-05)
