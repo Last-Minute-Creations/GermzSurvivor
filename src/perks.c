@@ -142,7 +142,7 @@ static const tPerkText s_pPerkTexts[PERK_COUNT] = {
 	[PERK_TOUGH_RELOADER] = {
 		.szTitle = "TOUGH RELOADER",
 		.szDescription = (
-			"Damage taken from bites while reloading is reduced."
+			"Damage taken from bites is reduced while reloading."
 		)
 	},
 	[PERK_SWIFT_LEARNER] = {
