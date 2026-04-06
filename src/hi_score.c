@@ -50,7 +50,7 @@ static char s_szResultMsg[SCORE_RESULT_MSG_MAX];
 void hiScoreLoad(void) {
 	systemUse();
 	if(diskFileExists("scores.dat")) {
-		tFile *pFile = diskFileOpen("scores.dat", "rb");
+		tFile *pFile = diskFileOpen("scores.dat", DISK_FILE_MODE_READ, 1);
 		for(UBYTE i = 0; i < SCORE_COUNT; ++i) {
 			fileRead(pFile, &s_pScores[i], sizeof(s_pScores[i]));
 		}
@@ -65,7 +65,7 @@ void hiScoreLoad(void) {
 
 static void hiScoreSave(void) {
 	systemUse();
-	tFile *pFile = diskFileOpen("scores.dat", "wb");
+	tFile *pFile = diskFileOpen("scores.dat", DISK_FILE_MODE_WRITE, 1);
 	if(pFile) {
 		for(UBYTE i = 0; i < SCORE_COUNT; ++i) {
 			fileWrite(pFile, &s_pScores[i], sizeof(s_pScores[i]));

@@ -61,7 +61,7 @@ UWORD fastMagnitude(UWORD uwDx, UWORD uwDy) {
 void gameMathInit(void) {
 #if defined(GAME_MATH_PRECALCULATED)
 	systemUse();
-	tFile *pFile = diskFileOpen("data/game_math.dat", "rb");
+	tFile *pFile = diskFileOpen("data/game_math.dat", DISK_FILE_MODE_READ, 1);
 	fileRead(pFile, s_pAtan2, sizeof(s_pAtan2));
 	fileRead(pFile, g_pSin, sizeof(g_pSin));
 	fileClose(pFile);
@@ -83,7 +83,7 @@ void gameMathInit(void) {
 
 #if defined(GAME_MATH_SAVE_PRECALC)
 	systemUse();
-	tFile *pFile = diskFileOpen("data/game_math.dat", "wb");
+	tFile *pFile = diskFileOpen("data/game_math.dat", DISK_FILE_MODE_WRITE, 1);
 	fileWrite(pFile, s_pAtan2, sizeof(s_pAtan2));
 	fileWrite(pFile, g_pSin, sizeof(g_pSin));
 	fileClose(pFile);

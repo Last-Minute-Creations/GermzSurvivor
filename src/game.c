@@ -1961,7 +1961,7 @@ static inline void pickupSpawnRandom(void) {
 }
 
 __attribute__((always_inline))
-static inline void pickupProcss(tEntity *pPickup) {
+static inline void pickupProcess(tEntity *pPickup) {
 	if(pPickup->wHealth > 0) {
 		--pPickup->wHealth;
 		if(isPositionCollidingWithEntity(pPickup->sPos, &s_sPlayer)) {
@@ -2326,7 +2326,7 @@ static void gameGsLoop(void) {
 				enemyProcess(pChar);
 				break;
 			case ENTITY_KIND_PICKUP:
-				pickupProcss(pChar);
+				pickupProcess(pChar);
 				break;
 		}
 
