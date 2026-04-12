@@ -27,7 +27,7 @@ extern tBitMap *g_pPerkIcons;
 extern tPtplayerMod *g_pModMenu;
 extern tPtplayerMod *g_pModGame;
 extern tPtplayerMod *g_pModGameOver;
-// extern tPtplayerSamplePack *g_pModSamples;
+extern tPtplayerSamplePack *g_pModSamples;
 
 extern tPtplayerSfx *g_pSfxRifle;
 extern tPtplayerSfx *g_pSfxAssault;

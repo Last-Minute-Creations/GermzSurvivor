@@ -1688,7 +1688,7 @@ void gameStart(void) {
 	s_ulFrameWaitCount = 1;
 	gameResume();
 
-	ptplayerLoadMod(g_pModGame, 0, 0);
+	ptplayerLoadMod(g_pModGame, g_pModSamples, 0);
 	ptplayerEnableMusic(1);
 }
 

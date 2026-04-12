@@ -213,7 +213,7 @@ static void cutsceneGsCreate(void) {
 	}
 
 	systemUnuse();
-	ptplayerLoadMod(s_pModIntro, 0, 0); // g_pModSamples
+	ptplayerLoadMod(s_pModIntro, g_pModSamples, 0);
 	ptplayerEnableMusic(1);
 
 	// Draw first slide

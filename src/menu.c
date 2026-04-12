@@ -145,7 +145,7 @@ static void menuScoreGsLoop(void) {
 
 			if(s_isSummaryMusic) {
 				s_isSummaryMusic = 0;
-				ptplayerLoadMod(g_pModMenu, 0, 0); // g_pModSamples
+				ptplayerLoadMod(g_pModMenu, g_pModSamples, 0);
 				ptplayerEnableMusic(1);
 			}
 
@@ -218,7 +218,7 @@ static void menuSummaryGsCreate(void) {
 	);
 
 	s_isSummaryMusic = 1;
-	ptplayerLoadMod(g_pModGameOver, 0, 0); // g_pModSamples
+	ptplayerLoadMod(g_pModGameOver, g_pModSamples, 0);
 	ptplayerEnableMusic(1);
 
 	while(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
@@ -285,7 +285,7 @@ static void menuGsCreate(void) {
 	}
 
 	s_isSummaryMusic = 0;
-	ptplayerLoadMod(g_pModMenu, 0, 0); // g_pModSamples
+	ptplayerLoadMod(g_pModMenu, g_pModSamples, 0);
 	ptplayerEnableMusic(1);
 	logBlockEnd("menuGsCreate()");
 }

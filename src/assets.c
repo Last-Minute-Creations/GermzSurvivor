@@ -8,14 +8,14 @@
 void assetsGlobalCreate(void) {
 	g_pFont = fontCreateFromPath("data/uni54.fnt");
 	g_pLineBuffer = fontCreateTextBitMap(GAME_MAIN_VPORT_SIZE_X, g_pFont->uwHeight);
-	// g_pModSamples = ptplayerSampleDataCreateFromPath("data/music.samplepack");
+	g_pModSamples = ptplayerSampleDataCreateFromPath("data/music.samplepack");
 }
 
 void assetsGlobalDestroy(void) {
 	fontDestroy(g_pFont);
 	fontDestroyTextBitMap(g_pLineBuffer);
 
-	// ptplayerSamplePackDestroy(g_pModSamples);
+	ptplayerSamplePackDestroy(g_pModSamples);
 }
 
 void assetsGameCreate(void) {
@@ -65,7 +65,7 @@ tBitMap *g_pPerkIcons;
 tPtplayerMod *g_pModMenu;
 tPtplayerMod *g_pModGame;
 tPtplayerMod *g_pModGameOver;
-// tPtplayerSamplePack *g_pModSamples;
+tPtplayerSamplePack *g_pModSamples;
 
 tPtplayerSfx *g_pSfxRifle;
 tPtplayerSfx *g_pSfxAssault;

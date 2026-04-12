@@ -66,7 +66,7 @@ file(MAKE_DIRECTORY ${DATA_DIR}/sfx)
 file(MAKE_DIRECTORY ${DATA_DIR}/intro)
 file(MAKE_DIRECTORY ${DATA_DIR}/splash)
 file(MAKE_DIRECTORY ${GEN_DIR})
-file(GLOB COPY_FILES ${RES_DIR}/copied/* ${RES_DIR}/music/*)
+file(GLOB COPY_FILES ${RES_DIR}/copied/*)
 file(COPY ${COPY_FILES} DESTINATION ${DATA_DIR})
 
 #-------------------------------------------------------------------------- FONT
@@ -94,18 +94,20 @@ convertPalette(${GAME_EXECUTABLE} ${PALETTE_INTRO_GPL} ${DATA_DIR}/intro.plt)
 
 #------------------------------------------------------------------------- MUSIC
 
-# mergeMods(
-# 	TARGET ${GAME_EXECUTABLE} COMPRESS
-# 	SOURCES
-# 		${RES_DIR}/music/game.mod
-# 		${RES_DIR}/music/menu.mod
-# 		${RES_DIR}/music/intro.mod
-# 	DESTINATIONS
-# 		${DATA_DIR}/game.mod
-# 		${DATA_DIR}/menu.mod
-# 		${DATA_DIR}/intro.mod
-# 	SAMPLE_PACK ${DATA_DIR}/music.samplepack
-# )
+mergeMods(
+	TARGET ${GAME_EXECUTABLE} COMPRESS
+	SOURCES
+		${RES_DIR}/music/game.mod
+		${RES_DIR}/music/menu.mod
+		${RES_DIR}/music/intro.mod
+		${RES_DIR}/music/dead_hare.mod
+	DESTINATIONS
+		${DATA_DIR}/game.mod
+		${DATA_DIR}/menu.mod
+		${DATA_DIR}/intro.mod
+		${DATA_DIR}/dead_hare.mod
+	SAMPLE_PACK ${DATA_DIR}/music.samplepack
+)
 
 #------------------------------------------------------------------------- INTRO
 
