@@ -25,6 +25,7 @@ void assetsGameCreate(void) {
 
 	g_pModGame = ptplayerModCreateFromPath("data/game.mod");
 	g_pModMenu = ptplayerModCreateFromPath("data/menu.mod");
+	g_pModGameOver = ptplayerModCreateFromPath("data/dead_hare.mod");
 
 	g_pSfxRifle = ptplayerSfxCreateFromPath("data/sfx/rifle_shot_1.sfx", 1);
 	g_pSfxAssault = ptplayerSfxCreateFromPath("data/sfx/assault_shot_1.sfx", 1);
@@ -42,6 +43,7 @@ void assetsGameDestroy(void) {
 
 	ptplayerModDestroy(g_pModGame);
 	ptplayerModDestroy(g_pModMenu);
+	ptplayerModDestroy(g_pModGameOver);
 
 	ptplayerSfxDestroy(g_pSfxRifle);
 	ptplayerSfxDestroy(g_pSfxAssault);
@@ -62,6 +64,7 @@ tBitMap *g_pPerkIcons;
 
 tPtplayerMod *g_pModMenu;
 tPtplayerMod *g_pModGame;
+tPtplayerMod *g_pModGameOver;
 // tPtplayerSamplePack *g_pModSamples;
 
 tPtplayerSfx *g_pSfxRifle;

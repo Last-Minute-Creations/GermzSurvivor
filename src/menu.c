@@ -27,6 +27,8 @@ typedef enum tMenuButton {
 	MENU_BUTTON_QUIT,
 } tMenuButton;
 
+static UBYTE s_isSummaryMusic;
+
 //---------------------------------------------------------------------- CREDITS
 
 static void menuCreditsGsCreate(void);
@@ -140,6 +142,13 @@ static void menuScoreGsLoop(void) {
 	else {
 		if(mouseUse(MOUSE_PORT_1, MOUSE_LMB) || keyUse(KEY_RETURN)) {
 			audioMixerPlaySfx(g_pSfxImpact, 0, 0, 0);
+
+			if(s_isSummaryMusic) {
+				s_isSummaryMusic = 0;
+				ptplayerLoadMod(g_pModMenu, 0, 0); // g_pModSamples
+				ptplayerEnableMusic(1);
+			}
+
 			statePop(g_pGameStateManager);
 			return;
 		}
@@ -159,6 +168,8 @@ static tState s_sStateMenuSummary = {.cbCreate = menuSummaryGsCreate, .cbLoop = 
 
 static void menuSummaryGsCreate(void) {
 	logBlockBegin("menuSummaryGsCreate()");
+
+	ptplayerStop();
 	commEraseAll();
 	UWORD uwOffsY = 0;
 	UBYTE ubLineHeight = commGetLineHeight() - 2;
@@ -205,6 +216,11 @@ static void menuSummaryGsCreate(void) {
 		COMM_DISPLAY_WIDTH / 2, uwOffsY, "Click to continue",
 		FONT_COOKIE | FONT_HCENTER, COMM_DISPLAY_COLOR_TEXT_HOVER
 	);
+
+	s_isSummaryMusic = 1;
+	ptplayerLoadMod(g_pModGameOver, 0, 0); // g_pModSamples
+	ptplayerEnableMusic(1);
+
 	while(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
 		mouseProcess();
 	}
@@ -267,6 +283,8 @@ static void menuGsCreate(void) {
 		viewProcessManagers(g_pGameBufferMain->sCommon.pVPort->pView);
 		copProcessBlocks();
 	}
+
+	s_isSummaryMusic = 0;
 	ptplayerLoadMod(g_pModMenu, 0, 0); // g_pModSamples
 	ptplayerEnableMusic(1);
 	logBlockEnd("menuGsCreate()");
