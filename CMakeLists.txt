@@ -64,6 +64,7 @@ set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
 file(MAKE_DIRECTORY ${DATA_DIR})
 file(MAKE_DIRECTORY ${DATA_DIR}/sfx)
 file(MAKE_DIRECTORY ${DATA_DIR}/intro)
+file(MAKE_DIRECTORY ${DATA_DIR}/splash)
 file(MAKE_DIRECTORY ${GEN_DIR})
 file(GLOB COPY_FILES ${RES_DIR}/copied/* ${RES_DIR}/music/*)
 file(COPY ${COPY_FILES} DESTINATION ${DATA_DIR})
@@ -849,6 +850,26 @@ convertAudio(
 	SOURCE ${RES_DIR}/sfx/reload_1.wav
 	DESTINATION ${DATA_DIR}/sfx/reload_1.sfx
 )
+
+set(LMC_PLT_PATH ${DATA_DIR}/splash/lmc.plt)
+convertPalette(${GAME_EXECUTABLE} ${RES_DIR}/splash/lmc.gpl ${LMC_PLT_PATH})
+convertBitmaps(
+	TARGET ${GAME_EXECUTABLE} PALETTE ${LMC_PLT_PATH}
+	INTERLEAVED SOURCES ${RES_DIR}/splash/lmc.png DESTINATIONS ${DATA_DIR}/splash/lmc.bm
+)
+convertBitmaps(
+	TARGET ${GAME_EXECUTABLE} PALETTE ${RES_DIR}/splash/ace.gpl
+	INTERLEAVED SOURCES ${RES_DIR}/splash/ace.png DESTINATIONS ${DATA_DIR}/splash/ace.bm
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/splash/ace.wav
+	DESTINATION ${DATA_DIR}/splash/ace.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/splash/lmc.wav
+	STRICT DESTINATION ${DATA_DIR}/splash/lmc.sfx
+)
+
 
 # Version stuff
 string(TIMESTAMP YEAR "%y")

@@ -94,8 +94,8 @@ Final version stuff:
 	✔ Blink red on hit @done(25-04-27)
 	✔ Blink yellow on level up @done(25-04-27)
 	✔ Fix bitplanes on AGA @done(26-04-12)
+	✔ Add LMC/ACE logo @done(26-04-12)
 	☐ Make bullets more visible (yellow doesn't help much)
-	☐ Add LMC/ACE logo
 	Perk icons:
 		✔ Add support for icons @done(25-04-23)
 		☐ Add icons

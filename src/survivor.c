@@ -10,6 +10,7 @@
 #include <ace/contrib/managers/audio_mixer.h>
 #include "game.h"
 #include "cutscene.h"
+#include "splash.h"
 #include "assets.h"
 
 tStateManager *g_pGameStateManager;
@@ -26,7 +27,8 @@ void genericCreate(void) {
 	audioMixerCreate();
 
 	assetsGlobalCreate();
-	statePush(g_pGameStateManager, &g_sStateCutscene);
+	statePush(g_pGameStateManager, &g_sStateSplash);
+	// statePush(g_pGameStateManager, &g_sStateCutscene);
 	// statePush(g_pGameStateManager, &g_sStateGame);
 }
 
