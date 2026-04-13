@@ -140,6 +140,7 @@
 #define ENEMY_DAMAGE_BASE 5
 #define ENEMY_HEALTH_ADD_PER_LEVEL 5
 #define ENEMY_EXP 25
+#define ENEMY_EXP_HI_SPEED 40
 #define ENEMY_SPEEDY_CHANCE_MAX 127
 #define ENEMY_SPEEDY_CHANCE_ADD_PER_LEVEL 20
 #define ENEMY_PREFERRED_SPAWN_NONE 0xFF
@@ -276,6 +277,7 @@ typedef struct tEntity {
 			UBYTE ubAttackCooldown;
 			UBYTE ubSpeed;
 			UBYTE ubPreferredSpawn;
+			UWORD uwExp;
 		} sEnemy;
 		struct {
 			tPickupKind ePickupKind;
@@ -1332,7 +1334,14 @@ static inline void enemyProcess(tEntity *pEnemy) {
 					pEnemy->wHealth = s_uwEnemySpawnHealth;
 					s_pCollisionTiles[sClosest.uwX / COLLISION_SIZE_X][sClosest.uwY / COLLISION_SIZE_Y] = pEnemy;
 					pEnemy->sPos = sClosest;
-					pEnemy->sEnemy.ubSpeed = (randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) ? 2 : 1;
+					if(randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) {
+						pEnemy->sEnemy.ubSpeed = 2;
+						pEnemy->sEnemy.uwExp = ENEMY_EXP_HI_SPEED;
+					}
+					else {
+						pEnemy->sEnemy.ubSpeed = 1;
+						pEnemy->sEnemy.uwExp = ENEMY_EXP;
+					}
 					return;
 				}
 			}
@@ -1342,7 +1351,14 @@ static inline void enemyProcess(tEntity *pEnemy) {
 					pEnemy->wHealth = s_uwEnemySpawnHealth;
 					s_pCollisionTiles[sSpawn.uwX / COLLISION_SIZE_X][sSpawn.uwY / COLLISION_SIZE_Y] = pEnemy;
 					pEnemy->sPos = sSpawn;
-					pEnemy->sEnemy.ubSpeed = (randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) ? 2 : 1;
+					if(randUwMax(&g_sRand, ENEMY_SPEEDY_CHANCE_MAX) <= s_ubHiSpeedChance) {
+						pEnemy->sEnemy.ubSpeed = 2;
+						pEnemy->sEnemy.uwExp = ENEMY_EXP_HI_SPEED;
+					}
+					else {
+						pEnemy->sEnemy.ubSpeed = 1;
+						pEnemy->sEnemy.uwExp = ENEMY_EXP;
+					}
 					return;
 				}
 			}
@@ -1368,7 +1384,7 @@ static inline void enemyProcess(tEntity *pEnemy) {
 				pEnemy->wHealth = HEALTH_ENEMY_DEAD_AWAITING_RESPAWN;
 			}
 			else {
-				scoreAddSmall(ENEMY_EXP);
+				scoreAddSmall(pEnemy->sEnemy.uwExp);
 				++s_ulKills;
 				if(s_sPickup.wHealth == HEALTH_PICKUP_INACTIVE) {
 					s_sPickup.wHealth = HEALTH_PICKUP_READY_TO_SPAWN;
