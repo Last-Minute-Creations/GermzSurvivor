@@ -102,7 +102,7 @@ Final version stuff:
 		☐ Add icons
 	☐ Fix health bar not emptying completely on death
 	Make the game less boring after level 5:
-		☐ speed up the enemies?
+		✔ speed up the enemies? @done(26-04-13)
 		☐ increase the exp for fast enemies?
 	☐ Rework pickup spawn chances
 
