@@ -12,6 +12,7 @@
 #include <ace/utils/palette.h>
 #include <ace/managers/ptplayer.h>
 #include "cutscene.h"
+#include "game.h"
 #include "fade.h"
 #include "survivor.h"
 
@@ -32,6 +33,7 @@ static tSimpleBufferManager *s_pBfr;
 static UBYTE s_ubWaitFrame = 0;
 
 static UBYTE s_isAnyPressed = 0;
+static UBYTE s_isEscapePressed = 0;
 static tPtplayerSfx *s_pSfxLmc, *s_pSfxAce;
 
 static tState s_sStateSplashLmc;
@@ -98,10 +100,13 @@ static void splashGsCreate(void) {
 
 static void splashGsLoop(void) {
 	s_isAnyPressed = (
-		keyUse(KEY_RETURN) | keyUse(KEY_ESCAPE) | keyUse(KEY_SPACE) |
+		keyUse(KEY_RETURN) | keyUse(KEY_SPACE) |
 		keyUse(KEY_LSHIFT) | keyUse(KEY_RSHIFT) |
 		joyUse(JOY1 + JOY_FIRE) | joyUse(JOY2 + JOY_FIRE)
 	);
+	if(!s_isEscapePressed) {
+		s_isEscapePressed = keyUse(KEY_ESCAPE);
+	}
 
 	stateProcess(s_pStateMachineSplash);
 }
@@ -122,7 +127,14 @@ static void splashGsDestroy(void) {
 
 static void onLmcFadeOut(void)
 {
-	stateChange(s_pStateMachineSplash, &s_sStateSplashAce);
+	if(s_isEscapePressed) {
+		ptplayerStop();
+		ptplayerSetMasterVolume(32);
+		stateChange(g_pGameStateManager, &g_sStateGame);
+	}
+	else {
+		stateChange(s_pStateMachineSplash, &s_sStateSplashAce);
+	}
 }
 
 static void splashLmcCreate(void) {
@@ -158,14 +170,14 @@ static void splashLmcLoop(void) {
 
 	if(
 		(eFadeState == FADE_STATE_IN || eFadeState == FADE_STATE_IDLE) &&
-		s_isAnyPressed
+		(s_isAnyPressed || s_isEscapePressed)
 	) {
 		fadeSet(s_pFade, FADE_STATE_OUT, 50, 1, onLmcFadeOut);
 	}
 	else if(eFadeState == FADE_STATE_IDLE) {
 		++s_ubWaitFrame;
 
-		if(s_ubWaitFrame >= 100 || s_isAnyPressed) {
+		if(s_ubWaitFrame >= 100 || s_isAnyPressed || s_isEscapePressed) {
 			fadeSet(s_pFade, FADE_STATE_OUT, 50, 1, onLmcFadeOut);
 		}
 		else if(s_ubWaitFrame == 1){
@@ -261,7 +273,7 @@ static void splashAceLoop(void) {
 		if(s_uwFlashFrame >= FLASH_START_FRAME_PWR) {
 			s_bRatioFlashPwr = MIN(16, s_bRatioFlashPwr + 1);
 		}
-		if (s_uwFlashFrame >= 215 || s_isAnyPressed) {
+		if (s_uwFlashFrame >= 215 || s_isAnyPressed || s_isEscapePressed) {
 			s_eStateAce = STATE_ACE_FADE_OUT;
 		}
 
@@ -317,7 +329,15 @@ static void splashAceLoop(void) {
 
 	if (s_bAceFadeoutRatio <= 0)
 	{
-		stateChange(g_pGameStateManager, &g_sStateCutscene);
+		if(s_isEscapePressed) {
+			ptplayerStop();
+			ptplayerSetMasterVolume(32);
+			stateChange(g_pGameStateManager, &g_sStateGame);
+		}
+		else {
+			stateChange(g_pGameStateManager, &g_sStateCutscene);
+		}
+
 		return;
 	}
 }

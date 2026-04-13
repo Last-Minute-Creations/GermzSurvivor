@@ -287,7 +287,7 @@ static void cutsceneLoopFinale(void) {
 	}
 	else if(
 		keyUse(KEY_RETURN) || keyUse(KEY_LSHIFT) || keyUse(KEY_RSHIFT) ||
-		mouseUse(MOUSE_PORT_1, MOUSE_LMB)
+		keyUse(KEY_ESCAPE) || mouseUse(MOUSE_PORT_1, MOUSE_LMB)
 	) {
 		// Quit the cutscene
 		fadeSet(s_pFade, FADE_STATE_OUT, 50, 1, onCutsceneFadeOut);
@@ -302,6 +302,8 @@ static void cutsceneGsLoop(void) {
 	if(eFadeState != FADE_STATE_IDLE) {
 		return;
 	}
+
+	UBYTE isEscapePressed = keyUse(KEY_ESCAPE);
 
 	if(s_ubFadeStep <= 0x10) {
 		// Process text fade-in
@@ -347,9 +349,9 @@ static void cutsceneGsLoop(void) {
 	}
 	else if(
 		keyUse(KEY_RETURN) || keyUse(KEY_LSHIFT) || keyUse(KEY_RSHIFT) ||
-		mouseUse(MOUSE_PORT_1, MOUSE_LMB)
+		isEscapePressed || mouseUse(MOUSE_PORT_1, MOUSE_LMB)
 	) {
-		if(++s_ubCurrentSlide < s_ubSlideCount) {
+		if(++s_ubCurrentSlide < s_ubSlideCount && !isEscapePressed) {
 			// Draw next slide
 			fadeSet(s_pFade, FADE_STATE_OUT, 15, 0, onFadeOutSlide);
 		}

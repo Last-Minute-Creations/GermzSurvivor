@@ -39,11 +39,11 @@ void genericProcess(void) {
 }
 
 void genericDestroy(void) {
+	stateManagerDestroy(g_pGameStateManager);
 	audioMixerDestroy();
 	ptplayerDestroy();
 
 	assetsGlobalDestroy();
-	stateManagerDestroy(g_pGameStateManager);
 	keyDestroy();
 	mouseDestroy();
 }

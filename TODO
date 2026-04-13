@@ -95,6 +95,7 @@ Final version stuff:
 	✔ Blink yellow on level up @done(25-04-27)
 	✔ Fix bitplanes on AGA @done(26-04-12)
 	✔ Add LMC/ACE logo @done(26-04-12)
+	✔ Pressing Escape during splash screens / intro should move immediately to main menu @done(26-04-13)
 	☐ Make bullets more visible (yellow doesn't help much)
 	Perk icons:
 		✔ Add support for icons @done(25-04-23)
