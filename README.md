@@ -18,7 +18,7 @@ Controls:
 
 Credits:
 
-- Audio: Beorning
+- Audio: [Beorning](https://github.com/Beorning)
 - Music: [Luc3k](https://github.com/Luc3kLMC)
 - Code: [KaiN](https://github.com/tehKaiN)
 - Graphics: [Softiron](https://github.com/Softiron1)

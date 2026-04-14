@@ -59,23 +59,23 @@
 #define HUD_LEVEL_UP_SIZE_X 80
 #define HUD_LEVEL_UP_SIZE_Y 15
 #define HUD_HEALTH_BAR_OFFSET_X 215
-#define HUD_HEALTH_BAR_OFFSET_Y 11
+#define HUD_HEALTH_BAR_OFFSET_Y 12
 #define HUD_HEALTH_BAR_SIZE_X PLAYER_HEALTH_MAX
 #define HUD_HEALTH_BAR_SIZE_Y 3
-#define HUD_SCORE_DIGITS 10
-#define HUD_SCORE_TEXT_X 215
-#define HUD_SCORE_TEXT_Y 1
-#define HUD_SCORE_TEXT_SIZE_X (HUD_SCORE_DIGITS * (DIGIT_WIDTH_MAX + 1) - 1)
-#define HUD_SCORE_TEXT_SIZE_Y 5
+#define HUD_SCORE_DIGITS 9
+#define HUD_SCORE_NUMBER_X 229
+#define HUD_SCORE_NUMBER_Y 2
+#define HUD_SCORE_NUMBER_SIZE_X (HUD_SCORE_DIGITS * (DIGIT_WIDTH_MAX + 1) - 1)
+#define HUD_SCORE_NUMBER_SIZE_Y 5
 #define HUD_SCORE_BAR_OFFSET_X 215
-#define HUD_SCORE_BAR_OFFSET_Y 7
+#define HUD_SCORE_BAR_OFFSET_Y 8
 #define HUD_SCORE_BAR_SIZE_X 100
 #define HUD_SCORE_BAR_SIZE_Y 3
-#define HUD_LEVEL_DIGITS 3
-#define HUD_LEVEL_TEXT_Y HUD_SCORE_TEXT_Y
-#define HUD_LEVEL_TEXT_SIZE_X (HUD_LEVEL_DIGITS * (DIGIT_WIDTH_MAX + 1) - 1)
-#define HUD_LEVEL_TEXT_SIZE_Y HUD_SCORE_TEXT_SIZE_Y
-#define HUD_LEVEL_TEXT_X (HUD_SCORE_BAR_OFFSET_X + HUD_SCORE_BAR_SIZE_X - HUD_LEVEL_TEXT_SIZE_X)
+#define HUD_LEVEL_DIGITS 2
+#define HUD_LEVEL_NUMBER_Y HUD_SCORE_NUMBER_Y
+#define HUD_LEVEL_NUMBER_SIZE_X (HUD_LEVEL_DIGITS * (DIGIT_WIDTH_MAX + 1) - 1)
+#define HUD_LEVEL_NUMBER_SIZE_Y HUD_SCORE_NUMBER_SIZE_Y
+#define HUD_LEVEL_NUMBER_X (HUD_SCORE_BAR_OFFSET_X + HUD_SCORE_BAR_SIZE_X - HUD_LEVEL_NUMBER_SIZE_X)
 
 #define BULLET_OFFSET_Y_SHELL 0
 #define BULLET_OFFSET_Y_BULLET 6
@@ -107,6 +107,7 @@
 #define COLOR_BAR_BG 24
 #define COLOR_HUD_HP 10
 #define COLOR_HUD_SCORE 25
+#define COLOR_HUD_LABEL 27
 
 #define COLLISION_SIZE_X 8
 #define COLLISION_SIZE_Y 8
@@ -921,6 +922,13 @@ static void cameraCenterAtOptimized(
 	pManager->uPos.uwY = CLAMP(lLeft, MAP_MARGIN_TILES * MAP_TILE_SIZE, (MAP_TILES_Y - MAP_MARGIN_TILES) * MAP_TILE_SIZE - GAME_MAIN_VPORT_SIZE_Y);
 }
 
+static void hudDecorateRect(UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight) {
+	blitRect(s_pBufferHud->pBack, uwX - 2, uwY + 1, 1, uwHeight - 2, COLOR_BAR_BG);
+	blitRect(s_pBufferHud->pBack, uwX - 1, uwY, 1, uwHeight, COLOR_BAR_BG);
+	blitRect(s_pBufferHud->pBack, uwX + uwWidth, uwY, 1, uwHeight, COLOR_BAR_BG);
+	blitRect(s_pBufferHud->pBack, uwX + uwWidth + 1, uwY + 1, 1, uwHeight - 2, COLOR_BAR_BG);
+}
+
 static void hudProcess(void) {
 	switch(s_eHudState) {
 		case HUD_STATE_DRAW_LEVEL_UP:
@@ -1028,11 +1036,11 @@ static void hudProcess(void) {
 			++s_eHudState;
 			blitRect(
 				s_pBufferHud->pBack,
-				HUD_SCORE_TEXT_X, HUD_SCORE_TEXT_Y,
-				HUD_SCORE_TEXT_SIZE_X, HUD_SCORE_TEXT_SIZE_Y, COLOR_HUD_BG
+				HUD_SCORE_NUMBER_X, HUD_SCORE_NUMBER_Y,
+				HUD_SCORE_NUMBER_SIZE_X, HUD_SCORE_NUMBER_SIZE_Y, COLOR_BAR_BG
 			);
 			fontDrawTextBitMap(
-				s_pBufferHud->pBack, g_pLineBuffer, HUD_SCORE_TEXT_X, HUD_SCORE_TEXT_Y,
+				s_pBufferHud->pBack, g_pLineBuffer, HUD_SCORE_NUMBER_X, HUD_SCORE_NUMBER_Y,
 				COLOR_HUD_SCORE, FONT_COOKIE
 			);
 			break;
@@ -1071,11 +1079,11 @@ static void hudProcess(void) {
 			s_eHudState = 0; // HUD_STATE_END
 			blitRect(
 				s_pBufferHud->pBack,
-				HUD_LEVEL_TEXT_X, HUD_LEVEL_TEXT_Y,
-				HUD_LEVEL_TEXT_SIZE_X, HUD_LEVEL_TEXT_SIZE_Y, COLOR_HUD_BG
+				HUD_LEVEL_NUMBER_X, HUD_LEVEL_NUMBER_Y,
+				HUD_LEVEL_NUMBER_SIZE_X, HUD_LEVEL_NUMBER_SIZE_Y, COLOR_BAR_BG
 			);
 			fontDrawTextBitMap(
-				s_pBufferHud->pBack, g_pLineBuffer, HUD_LEVEL_TEXT_X, HUD_LEVEL_TEXT_Y,
+				s_pBufferHud->pBack, g_pLineBuffer, HUD_LEVEL_NUMBER_X, HUD_LEVEL_NUMBER_Y,
 				COLOR_HUD_SCORE, FONT_COOKIE
 			);
 		}
@@ -1642,14 +1650,19 @@ void gameStart(void) {
 
 	fontDrawStr(
 		g_pFontSmall, s_pBufferHud->pBack,
-		HUD_SCORE_TEXT_X - 20, HUD_SCORE_TEXT_Y, "EXP",
-		COLOR_HUD_SCORE, FONT_COOKIE, g_pLineBuffer
+		HUD_SCORE_NUMBER_X - 14, HUD_SCORE_NUMBER_Y, "XP",
+		COLOR_HUD_LABEL, FONT_COOKIE, g_pLineBuffer
 	);
 	fontDrawStr(
 		g_pFontSmall, s_pBufferHud->pBack,
-		HUD_LEVEL_TEXT_X - 20, HUD_LEVEL_TEXT_Y, "LVL",
-		COLOR_HUD_SCORE, FONT_COOKIE, g_pLineBuffer
+		HUD_LEVEL_NUMBER_X - 13, HUD_LEVEL_NUMBER_Y, "LV",
+		COLOR_HUD_LABEL, FONT_COOKIE, g_pLineBuffer
 	);
+
+	hudDecorateRect(HUD_SCORE_NUMBER_X, HUD_SCORE_NUMBER_Y, HUD_SCORE_NUMBER_SIZE_X, HUD_SCORE_NUMBER_SIZE_Y);
+	hudDecorateRect(HUD_LEVEL_NUMBER_X, HUD_LEVEL_NUMBER_Y, HUD_LEVEL_NUMBER_SIZE_X, HUD_LEVEL_NUMBER_SIZE_Y);
+	hudDecorateRect(HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y, HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y);
+	hudDecorateRect(HUD_HEALTH_BAR_OFFSET_X, HUD_HEALTH_BAR_OFFSET_Y, HUD_HEALTH_BAR_SIZE_X, HUD_HEALTH_BAR_SIZE_Y);
 
 	hudReset();
 
@@ -1775,6 +1788,10 @@ static inline UBYTE playerProcess(void) {
 	}
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
+
+	if(keyUse(KEY_K)) {
+		s_sPlayer.wHealth = 0;
+	}
 
 	if(s_sPlayer.wHealth > 0) {
 #if defined(GAME_DEBUG)
@@ -2089,7 +2106,6 @@ static void gameGsCreate(void) {
 	s_pPristinePlanes = g_pGamePristineBuffer->Planes[0];
 
 	paletteLoadFromPath("data/game.plt", s_pVpHud->pPalette, 1 << GAME_BPP);
-
 
 	randInit(&g_sRand, 2184, 1911);
 
