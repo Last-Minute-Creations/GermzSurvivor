@@ -129,7 +129,7 @@ static void onLmcFadeOut(void)
 {
 	if(s_isEscapePressed) {
 		ptplayerStop();
-		ptplayerSetMasterVolume(32);
+		ptplayerSetMasterVolume(PTPLAYER_MASTER_VOLUME);
 		stateChange(g_pGameStateManager, &g_sStateGame);
 	}
 	else {
@@ -331,7 +331,7 @@ static void splashAceLoop(void) {
 	{
 		if(s_isEscapePressed) {
 			ptplayerStop();
-			ptplayerSetMasterVolume(32);
+			ptplayerSetMasterVolume(20);
 			stateChange(g_pGameStateManager, &g_sStateGame);
 		}
 		else {

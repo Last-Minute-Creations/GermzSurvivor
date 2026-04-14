@@ -7,6 +7,8 @@
 
 #include <ace/managers/state.h>
 
+#define PTPLAYER_MASTER_VOLUME 20
+
 extern tStateManager *g_pGameStateManager;
 
 #endif // SURVIVOR_SURVIVOR_H

@@ -224,7 +224,7 @@ static void cutsceneGsCreate(void) {
 
 static void onCutsceneFadeOut(void) {
 	ptplayerStop();
-	ptplayerSetMasterVolume(32);
+	ptplayerSetMasterVolume(PTPLAYER_MASTER_VOLUME);
 	stateChange(g_pGameStateManager, &g_sStateGame);
 }
 
