@@ -849,8 +849,28 @@ convertAudio(
 
 convertAudio(
 	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
-	SOURCE ${RES_DIR}/sfx/reload_1.wav
+	SOURCE ${RES_DIR}/sfx/reload_click_1.wav
 	DESTINATION ${DATA_DIR}/sfx/reload_1.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/reload_click_2.wav
+	DESTINATION ${DATA_DIR}/sfx/reload_2.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/reload_click_3.wav
+	DESTINATION ${DATA_DIR}/sfx/reload_3.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/reload_click_4.wav
+	DESTINATION ${DATA_DIR}/sfx/reload_4.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/reload_final.wav
+	DESTINATION ${DATA_DIR}/sfx/reload_final.sfx
 )
 
 set(LMC_PLT_PATH ${DATA_DIR}/splash/lmc.plt)
