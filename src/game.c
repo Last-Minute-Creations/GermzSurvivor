@@ -1148,6 +1148,7 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 
 __attribute__((always_inline))
 static inline void playerStartReloadWeapon(void) {
+	s_sPlayer.sPlayer.ubAmmo = 0; // Prevent shooting when reloading on impartial magazine
 	s_sPlayer.sPlayer.bReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.sPlayer.eWeaponKind];
 	// s_sPlayer.sPlayer.bReloadCooldown = 1;
 	gameSetCursor(CURSOR_KIND_EMPTY);
