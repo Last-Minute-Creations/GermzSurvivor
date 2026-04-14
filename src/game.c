@@ -1820,16 +1820,16 @@ static inline UBYTE playerProcess(void) {
 
 		BYTE bDeltaX = 0;
 		BYTE bDeltaY = 0;
-		if(keyCheck(KEY_W)) {
+		if(keyCheck(KEY_W) || keyCheck(KEY_UP)) {
 			bDeltaY = -3;
 		}
-		else if(keyCheck(KEY_S)) {
+		else if(keyCheck(KEY_S) || keyCheck(KEY_DOWN)) {
 			bDeltaY = 3;
 		}
-		if(keyCheck(KEY_A)) {
+		if(keyCheck(KEY_A) || keyCheck(KEY_LEFT)) {
 			bDeltaX = -3;
 		}
-		else if(keyCheck(KEY_D)) {
+		else if(keyCheck(KEY_D) || keyCheck(KEY_RIGHT)) {
 			bDeltaX = 3;
 		}
 		if(bDeltaX || bDeltaY) {
