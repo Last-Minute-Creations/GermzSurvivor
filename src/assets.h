@@ -35,7 +35,8 @@ extern tPtplayerSfx *g_pSfxSmg;
 extern tPtplayerSfx *g_pSfxShotgun;
 extern tPtplayerSfx *g_pSfxImpact;
 extern tPtplayerSfx *g_pSfxBite;
-extern tPtplayerSfx *g_pSfxReload;
+extern tPtplayerSfx *g_pSfxReloadFinal;
+extern tPtplayerSfx *g_pSfxReloadClicks[4];
 
 #endif // SURVIVOR_ASSETS_H
 

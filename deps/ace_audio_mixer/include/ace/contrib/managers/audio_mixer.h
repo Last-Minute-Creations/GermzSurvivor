@@ -30,7 +30,7 @@ void audioMixerPlaySfx(
  */
 void audioMixerStopSfxOnChannel(UBYTE ubChannel);
 
-UBYTE audioMixerIsPlaybackDone(void);
+UBYTE audioMixerIsPlaybackDone(UBYTE ubChannelIndex);
 
 void audioMixerSetVolume(UBYTE ubVolume);
 

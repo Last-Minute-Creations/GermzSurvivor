@@ -335,7 +335,7 @@ static void perksGsLoop(void) {
 		UBYTE ubSelectedButton = buttonGetSelected();
 		switch(ubSelectedButton) {
 			case PERKS_BUTTON_ACCEPT:
-				audioMixerPlaySfx(g_pSfxReload, 0, 0, 0);
+				audioMixerPlaySfx(g_pSfxReloadFinal, 0, 0, 0);
 				gameApplyPerk(s_pPerkChoice[s_ubSelectedPerkIndex]);
 				s_isPendingChoice = 0;
 				statePop(g_pGameStateManager);

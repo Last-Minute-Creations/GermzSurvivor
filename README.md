@@ -10,7 +10,7 @@ System requirements:
 
 Controls:
 
-- movement: <kbd>W</kbd> <kbd>S</kbd> <kbd>A</kbd> <kbd>D</kbd>,
+- movement: <kbd>W</kbd> <kbd>S</kbd> <kbd>A</kbd> <kbd>D</kbd> or <kbd>Up</kbd> <kbd>Down</kbd> <kbd>Left</kbd> <kbd>Right</kbd>,
 - aiming: mouse,
 - attack: <kbd>LMB</kbd>,
 - reload: <kbd>R</kbd>,

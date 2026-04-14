@@ -21,6 +21,8 @@
 #include "hi_score.h"
 #include "pause.h"
 
+#define RELOAD_CLICK_COOLDOWN 4
+
 #define PERK_DEATH_CLOCK_COOLDOWN 5
 #define PERK_DODGE_CHANCE_DODGER 10
 #define PERK_DODGE_CHANCE_NINJA 25
@@ -349,6 +351,9 @@ static UBYTE s_ubScoreLevel;
 static UBYTE s_ubHiSpeedChance;
 static UWORD s_uwEnemySpawnHealth;
 static UBYTE s_ubEnemyDamage;
+static UBYTE s_isFinalReloadSfxPlayed;
+static UBYTE s_ubReloadClickCooldown;
+static UBYTE s_ubReloadFinalLength;
 
 // Perks
 static UBYTE s_isDeathClock;
@@ -1138,7 +1143,7 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
 	gameSetCursor(CURSOR_KIND_FULL);
-	audioMixerPlaySfx(g_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
+	audioMixerPlaySfx(g_pSfxReloadFinal, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
 __attribute__((always_inline))
@@ -1146,7 +1151,9 @@ static inline void playerStartReloadWeapon(void) {
 	s_sPlayer.sPlayer.bReloadCooldown = s_pWeaponReloadCooldowns[s_sPlayer.sPlayer.eWeaponKind];
 	// s_sPlayer.sPlayer.bReloadCooldown = 1;
 	gameSetCursor(CURSOR_KIND_EMPTY);
-	audioMixerPlaySfx(g_pSfxReload, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
+	s_isFinalReloadSfxPlayed = 0;
+	s_ubReloadClickCooldown = RELOAD_CLICK_COOLDOWN;
+	audioMixerPlaySfx(g_pSfxReloadClicks[0], SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
 __attribute__((always_inline))
@@ -1647,6 +1654,8 @@ void gameStart(void) {
 	s_ubScoreLevel = 1;
 	s_ubPendingPerks = 0;
 	s_ubHiSpeedChance = 0;
+	s_isFinalReloadSfxPlayed = 0;
+	s_ubReloadFinalLength = ptplayerSfxLengthInFrames(g_pSfxReloadFinal) / 2;
 
 	fontDrawStr(
 		g_pFontSmall, s_pBufferHud->pBack,
@@ -1851,6 +1860,20 @@ static inline UBYTE playerProcess(void) {
 		}
 
 		if(s_sPlayer.sPlayer.bReloadCooldown) {
+			if(!s_isFinalReloadSfxPlayed && s_sPlayer.sPlayer.bReloadCooldown <= s_ubReloadFinalLength) {
+				audioMixerPlaySfx(g_pSfxReloadFinal, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
+				s_isFinalReloadSfxPlayed = 1;
+			}
+			else if(audioMixerIsPlaybackDone(SFX_CHANNEL_RELOAD)) {
+				if(s_ubReloadClickCooldown <= 0) {
+					s_ubReloadClickCooldown = RELOAD_CLICK_COOLDOWN;
+					audioMixerPlaySfx(g_pSfxReloadClicks[randUw(&g_sRand) & 0x3], SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
+				}
+				else {
+					--s_ubReloadClickCooldown;
+				}
+			}
+
 			--s_sPlayer.sPlayer.bReloadCooldown;
 			if(s_isAnxiousLoader && mouseUse(MOUSE_PORT_1, MOUSE_LMB)) {
 				--s_sPlayer.sPlayer.bReloadCooldown;
