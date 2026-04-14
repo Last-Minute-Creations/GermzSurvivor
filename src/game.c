@@ -1799,10 +1799,6 @@ static inline UBYTE playerProcess(void) {
 	UWORD uwMouseX = mouseGetX(MOUSE_PORT_1);
 	UWORD uwMouseY = mouseGetY(MOUSE_PORT_1);
 
-	if(keyUse(KEY_K)) {
-		s_sPlayer.wHealth = 0;
-	}
-
 	if(s_sPlayer.wHealth > 0) {
 #if defined(GAME_DEBUG)
 		if(keyUse(KEY_1)) {
@@ -1819,6 +1815,12 @@ static inline UBYTE playerProcess(void) {
 		}
 		else if(keyUse(KEY_5)) {
 			playerSetWeapon(WEAPON_KIND_SAWOFF);
+		}
+		else if(keyUse(KEY_B)) {
+			detonateBombAtPlayer();
+		}
+		else if(keyUse(KEY_K)) {
+			s_sPlayer.wHealth = 0;
 		}
 #endif
 
