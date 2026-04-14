@@ -1931,6 +1931,7 @@ static inline UBYTE playerProcess(void) {
 		}
 	}
 	else {
+		s_ubPendingPerks = 0;
 		s_sPlayer.wHealth = 0; // Get rid of negative value for HUD etc
 		if(s_ubDeathCooldown == GAME_PLAYER_DEATH_COOLDOWN) {
 			// Create a different move target for zombies
