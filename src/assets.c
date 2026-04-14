@@ -35,8 +35,6 @@ void assetsGameCreate(void) {
 	g_pSfxBite = ptplayerSfxCreateFromPath("data/sfx/bite_1.sfx", 1);
 	g_pSfxReloadClicks[0] = ptplayerSfxCreateFromPath("data/sfx/reload_1.sfx", 1);
 	g_pSfxReloadClicks[1] = ptplayerSfxCreateFromPath("data/sfx/reload_2.sfx", 1);
-	g_pSfxReloadClicks[2] = ptplayerSfxCreateFromPath("data/sfx/reload_3.sfx", 1);
-	g_pSfxReloadClicks[3] = ptplayerSfxCreateFromPath("data/sfx/reload_4.sfx", 1);
 	g_pSfxReloadFinal = ptplayerSfxCreateFromPath("data/sfx/reload_final.sfx", 1);
 }
 
@@ -57,8 +55,6 @@ void assetsGameDestroy(void) {
 	ptplayerSfxDestroy(g_pSfxBite);
 	ptplayerSfxDestroy(g_pSfxReloadClicks[0]);
 	ptplayerSfxDestroy(g_pSfxReloadClicks[1]);
-	ptplayerSfxDestroy(g_pSfxReloadClicks[2]);
-	ptplayerSfxDestroy(g_pSfxReloadClicks[3]);
 	ptplayerSfxDestroy(g_pSfxReloadFinal);
 }
 

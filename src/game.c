@@ -354,6 +354,7 @@ static UBYTE s_ubEnemyDamage;
 static UBYTE s_isFinalReloadSfxPlayed;
 static UBYTE s_ubReloadClickCooldown;
 static UBYTE s_ubReloadFinalLength;
+static UBYTE s_ubReloadClickIndex;
 
 // Perks
 static UBYTE s_isDeathClock;
@@ -1154,6 +1155,7 @@ static inline void playerStartReloadWeapon(void) {
 	gameSetCursor(CURSOR_KIND_EMPTY);
 	s_isFinalReloadSfxPlayed = 0;
 	s_ubReloadClickCooldown = RELOAD_CLICK_COOLDOWN;
+	s_ubReloadClickIndex = 1;
 	audioMixerPlaySfx(g_pSfxReloadClicks[0], SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
@@ -1870,7 +1872,8 @@ static inline UBYTE playerProcess(void) {
 			else if(audioMixerIsPlaybackDone(SFX_CHANNEL_RELOAD)) {
 				if(s_ubReloadClickCooldown <= 0) {
 					s_ubReloadClickCooldown = RELOAD_CLICK_COOLDOWN;
-					audioMixerPlaySfx(g_pSfxReloadClicks[randUw(&g_sRand) & 0x3], SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
+					audioMixerPlaySfx(g_pSfxReloadClicks[s_ubReloadClickIndex], SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
+					s_ubReloadClickIndex ^= 1;
 				}
 				else {
 					--s_ubReloadClickCooldown;

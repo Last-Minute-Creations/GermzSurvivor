@@ -859,16 +859,6 @@ convertAudio(
 )
 convertAudio(
 	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
-	SOURCE ${RES_DIR}/sfx/reload_click_3.wav
-	DESTINATION ${DATA_DIR}/sfx/reload_3.sfx
-)
-convertAudio(
-	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
-	SOURCE ${RES_DIR}/sfx/reload_click_4.wav
-	DESTINATION ${DATA_DIR}/sfx/reload_4.sfx
-)
-convertAudio(
-	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
 	SOURCE ${RES_DIR}/sfx/reload_final.wav
 	DESTINATION ${DATA_DIR}/sfx/reload_final.sfx
 )
