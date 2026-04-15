@@ -2197,9 +2197,6 @@ static void gameGsCreate(void) {
 		copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[i + 1], s_pVpMain->pPalette[i + 1]);
 		++ulCopOffset;
 	}
-	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_BPP << 12));
-	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_BPP << 12));
-	++ulCopOffset;
 
 	g_pGameBufferMain = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
@@ -2209,6 +2206,9 @@ static void gameGsCreate(void) {
 		TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
 		TAG_SIMPLEBUFFER_COPLIST_OFFSET, ulCopOffset,
 	TAG_END);
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_BPP << 12));
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_BPP << 12));
+
 	cameraCenterAtOptimized(
 		g_pGameBufferMain->pCamera,
 		MAP_TILES_X * MAP_TILE_SIZE / 2,
@@ -2428,7 +2428,7 @@ static void gameGsCreate(void) {
 	viewProcessManagers(s_pView);
 	copSwapBuffers();
 
-	copDumpBfr(s_pView->pCopList->pFrontBfr);
+	// copDumpBfr(s_pView->pCopList->pFrontBfr);
 
 	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
 	viewProcessManagers(s_pView);
