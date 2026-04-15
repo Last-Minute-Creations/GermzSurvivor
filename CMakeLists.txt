@@ -835,6 +835,16 @@ convertAudio(
 	SOURCE ${RES_DIR}/sfx/reload_final.wav
 	DESTINATION ${DATA_DIR}/sfx/reload_final.sfx
 )
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/explosion.wav
+	DESTINATION ${DATA_DIR}/sfx/explosion.sfx
+)
+convertAudio(
+	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
+	SOURCE ${RES_DIR}/sfx/death.wav
+	DESTINATION ${DATA_DIR}/sfx/death.sfx
+)
 
 set(LMC_PLT_PATH ${DATA_DIR}/splash/lmc.plt)
 convertPalette(${GAME_EXECUTABLE} ${RES_DIR}/splash/lmc.gpl ${LMC_PLT_PATH})

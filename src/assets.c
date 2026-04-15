@@ -36,6 +36,8 @@ void assetsGameCreate(void) {
 	g_pSfxReloadClicks[0] = ptplayerSfxCreateFromPath("data/sfx/reload_1.sfx", 1);
 	g_pSfxReloadClicks[1] = ptplayerSfxCreateFromPath("data/sfx/reload_2.sfx", 1);
 	g_pSfxReloadFinal = ptplayerSfxCreateFromPath("data/sfx/reload_final.sfx", 1);
+	g_pSfxDeath = ptplayerSfxCreateFromPath("data/sfx/death.sfx", 1);
+	g_pSfxExplosion = ptplayerSfxCreateFromPath("data/sfx/explosion.sfx", 1);
 }
 
 void assetsGameDestroy(void) {
@@ -56,6 +58,8 @@ void assetsGameDestroy(void) {
 	ptplayerSfxDestroy(g_pSfxReloadClicks[0]);
 	ptplayerSfxDestroy(g_pSfxReloadClicks[1]);
 	ptplayerSfxDestroy(g_pSfxReloadFinal);
+	ptplayerSfxDestroy(g_pSfxDeath);
+	ptplayerSfxDestroy(g_pSfxExplosion);
 }
 
 tFont *g_pFont;
@@ -79,3 +83,5 @@ tPtplayerSfx *g_pSfxImpact;
 tPtplayerSfx *g_pSfxBite;
 tPtplayerSfx *g_pSfxReloadFinal;
 tPtplayerSfx *g_pSfxReloadClicks[4];
+tPtplayerSfx *g_pSfxDeath;
+tPtplayerSfx *g_pSfxExplosion;

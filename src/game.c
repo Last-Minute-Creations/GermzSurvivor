@@ -90,6 +90,10 @@
 #define SFX_PRIORITY_BITE 0
 #define SFX_CHANNEL_IMPACT 1
 #define SFX_PRIORITY_IMPACT 0
+#define SFX_CHANNEL_EXPLOSION 0
+#define SFX_PRIORITY_EXPLOSION 2
+#define SFX_CHANNEL_DEATH 1
+#define SFX_PRIORITY_DEATH 1
 
 #define MAP_TILES_X 32
 #define MAP_TILES_Y 32
@@ -1773,6 +1777,8 @@ static inline void detonateBombAtPlayer(void) {
 			}
 		}
 	}
+
+	audioMixerPlaySfx(g_pSfxExplosion, SFX_CHANNEL_EXPLOSION, SFX_PRIORITY_EXPLOSION, 0);
 }
 
 __attribute__((always_inline))
@@ -1992,6 +1998,7 @@ static inline UBYTE playerProcess(void) {
 			if(s_isFinalRevenge) {
 				detonateBombAtPlayer();
 			}
+			audioMixerPlaySfx(g_pSfxDeath, SFX_CHANNEL_DEATH, SFX_PRIORITY_DEATH, 0);
 		}
 		if(s_ubDeathCooldown) {
 			--s_ubDeathCooldown;
