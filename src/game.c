@@ -425,7 +425,7 @@ static const UBYTE s_pWeaponReloadCooldowns[] = {
 	[WEAPON_KIND_SAWOFF] = 80,
 };
 static const UBYTE s_pWeaponDamages[] = {
-	[WEAPON_KIND_STOCK_RIFLE] = 6,
+	[WEAPON_KIND_STOCK_RIFLE] = 12,
 	[WEAPON_KIND_SMG] = 5,
 	[WEAPON_KIND_ASSAULT_RIFLE] = 7,
 	[WEAPON_KIND_SHOTGUN] = 7,

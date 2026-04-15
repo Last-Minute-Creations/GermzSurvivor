@@ -789,20 +789,11 @@ convertAudio(
 	SOURCE ${RES_DIR}/sfx/bite_1.wav
 	DESTINATION ${DATA_DIR}/sfx/bite_1.sfx
 )
-convertAudio(
-	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
-	SOURCE ${RES_DIR}/sfx/bite_2.wav
-	DESTINATION ${DATA_DIR}/sfx/bite_2.sfx
-)
+
 convertAudio(
 	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
 	SOURCE ${RES_DIR}/sfx/impact_1.wav
 	DESTINATION ${DATA_DIR}/sfx/impact_1.sfx
-)
-convertAudio(
-	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
-	SOURCE ${RES_DIR}/sfx/impact_2.wav
-	DESTINATION ${DATA_DIR}/sfx/impact_2.sfx
 )
 
 convertAudio(
@@ -810,21 +801,11 @@ convertAudio(
 	SOURCE ${RES_DIR}/sfx/rifle_shot_1.wav
 	DESTINATION ${DATA_DIR}/sfx/rifle_shot_1.sfx
 )
-convertAudio(
-	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
-	SOURCE ${RES_DIR}/sfx/rifle_shot_2.wav
-	DESTINATION ${DATA_DIR}/sfx/rifle_shot_2.sfx
-)
 
 convertAudio(
 	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
 	SOURCE ${RES_DIR}/sfx/assault_shot_1.wav
 	DESTINATION ${DATA_DIR}/sfx/assault_shot_1.sfx
-)
-convertAudio(
-	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
-	SOURCE ${RES_DIR}/sfx/assault_shot_2.wav
-	DESTINATION ${DATA_DIR}/sfx/assault_shot_2.sfx
 )
 
 convertAudio(
@@ -832,21 +813,11 @@ convertAudio(
 	SOURCE ${RES_DIR}/sfx/smg_shot_1.wav
 	DESTINATION ${DATA_DIR}/sfx/smg_shot_1.sfx
 )
-convertAudio(
-	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
-	SOURCE ${RES_DIR}/sfx/smg_shot_2.wav
-	DESTINATION ${DATA_DIR}/sfx/smg_shot_2.sfx
-)
 
 convertAudio(
 	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
 	SOURCE ${RES_DIR}/sfx/shotgun_shot_1.wav
 	DESTINATION ${DATA_DIR}/sfx/shotgun_shot_1.sfx
-)
-convertAudio(
-	TARGET ${GAME_EXECUTABLE} STRICT NORMALIZE PAD 2 DIVIDE_AMPLITUDE 3
-	SOURCE ${RES_DIR}/sfx/shotgun_shot_2.wav
-	DESTINATION ${DATA_DIR}/sfx/shotgun_shot_2.sfx
 )
 
 convertAudio(
