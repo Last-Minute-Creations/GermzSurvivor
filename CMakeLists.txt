@@ -84,12 +84,14 @@ convertFont(
 
 file(GLOB PALETTE_SPRITE ${RES_DIR}/sprite.gpl)
 file(GLOB PALETTE_GPL ${RES_DIR}/survivor.gpl)
+file(GLOB PALETTE_HUD_GPL ${RES_DIR}/survivor_hud.gpl)
 file(GLOB PALETTE_INTRO_GPL ${RES_DIR}/intro.gpl)
 file(GLOB PALETTE_PERKS ${RES_DIR}/perks.gpl)
 set(PALETTE_PLT ${DATA_DIR}/game.plt)
 set(TRANSPARENCY_HEX "#880088")
 
 convertPalette(${GAME_EXECUTABLE} ${PALETTE_GPL} ${PALETTE_PLT})
+convertPalette(${GAME_EXECUTABLE} ${PALETTE_HUD_GPL} ${DATA_DIR}/hud.plt)
 convertPalette(${GAME_EXECUTABLE} ${PALETTE_INTRO_GPL} ${DATA_DIR}/intro.plt)
 
 #------------------------------------------------------------------------- MUSIC
@@ -681,15 +683,7 @@ file(MAKE_DIRECTORY ${GEN_DIR}/bullets)
 extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/misc.png
 	GENERATED_FILE_LIST "BULLETS_PATHS"
 	DESTINATIONS
-	${GEN_DIR}/bullets/0.png 4 156 16 6
-	${GEN_DIR}/bullets/1.png 4 163 16 6
-)
-
-convertTileset(
-	TARGET ${GAME_EXECUTABLE} SIZE 16 HEIGHT 6
-	SOURCE ${GEN_DIR}/bullets
-	INTERLEAVED DESTINATION ${GEN_DIR}/bullets.png
-	TILE_PATHS ${BULLETS_PATHS}
+	${GEN_DIR}/bullets.png 4 163 16 6
 )
 
 #------------------------------------------------------------------------ STAINS
@@ -741,11 +735,19 @@ convertTileset(
 convertBitmaps(
 	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_PLT}
 	INTERLEAVED SOURCES
-		${GEN_DIR}/tiles.png ${RES_DIR}/weapons.png ${GEN_DIR}/killfriend.png
-		${GEN_DIR}/logo.png ${RES_DIR}/level_up.png
+		${GEN_DIR}/tiles.png ${GEN_DIR}/killfriend.png ${GEN_DIR}/logo.png
 	DESTINATIONS
-		${DATA_DIR}/tiles.bm ${DATA_DIR}/weapons.bm ${DATA_DIR}/killfriend.bm
-		${DATA_DIR}/logo.bm ${DATA_DIR}/level_up.bm
+		${DATA_DIR}/tiles.bm ${DATA_DIR}/killfriend.bm ${DATA_DIR}/logo.bm
+)
+
+convertBitmaps(
+	TARGET ${GAME_EXECUTABLE} PALETTE ${PALETTE_HUD_GPL} MASK_COLOR ${TRANSPARENCY_HEX}
+	INTERLEAVED SOURCES
+		${RES_DIR}/weapons.png ${GEN_DIR}/bullets.png ${RES_DIR}/level_up.png
+	DESTINATIONS
+		${DATA_DIR}/weapons.bm ${DATA_DIR}/bullets.bm ${DATA_DIR}/level_up.bm
+	MASKS
+		NONE ${DATA_DIR}/bullets_mask.bm NONE
 )
 
 convertBitmaps(
@@ -766,17 +768,17 @@ convertBitmaps(
 	INTERLEAVED SOURCES
 		${GEN_DIR}/zombie_s.png ${GEN_DIR}/zombie_sw.png ${GEN_DIR}/zombie_nw.png
 		${GEN_DIR}/zombie_n.png ${GEN_DIR}/zombie_ne.png ${GEN_DIR}/zombie_se.png
-		${GEN_DIR}/bullets.png ${GEN_DIR}/stains.png ${RES_DIR}/edges.png
+		${GEN_DIR}/stains.png ${RES_DIR}/edges.png
 		${GEN_DIR}/pickups.png ${RES_DIR}/explosion.png
 	DESTINATIONS
 		${DATA_DIR}/zombie_s.bm ${DATA_DIR}/zombie_sw.bm ${DATA_DIR}/zombie_nw.bm
 		${DATA_DIR}/zombie_n.bm ${DATA_DIR}/zombie_ne.bm ${DATA_DIR}/zombie_se.bm
-		${DATA_DIR}/bullets.bm ${DATA_DIR}/stains.bm NONE
+		${DATA_DIR}/stains.bm NONE
 		${DATA_DIR}/pickups.bm ${DATA_DIR}/explosion.bm
 	MASKS
 		${DATA_DIR}/zombie_s_mask.bm ${DATA_DIR}/zombie_sw_mask.bm ${DATA_DIR}/zombie_nw_mask.bm
 		${DATA_DIR}/zombie_n_mask.bm ${DATA_DIR}/zombie_ne_mask.bm ${DATA_DIR}/zombie_se_mask.bm
-		${DATA_DIR}/bullets_mask.bm ${DATA_DIR}/stains_mask.bm ${DATA_DIR}/killfriend_edges.bm
+		${DATA_DIR}/stains_mask.bm ${DATA_DIR}/killfriend_edges.bm
 		${DATA_DIR}/pickups_mask.bm ${DATA_DIR}/explosion_mask.bm
 )
 

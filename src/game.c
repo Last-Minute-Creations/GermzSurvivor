@@ -31,7 +31,7 @@
 #define EXPLOSION_BOB_SIZE_X 64
 #define EXPLOSION_BOB_SIZE_Y 64
 #define EXPLOSION_FRAME_COUNT 6
-#define EXPLOSION_COOLDOWN 5
+#define EXPLOSION_COOLDOWN 4
 
 #define GAME_PLAYER_DEATH_COOLDOWN 50
 #define WEAPON_MAX_BULLETS_IN_MAGAZINE (((30 + 2) * 12 + 5) / 10)
@@ -79,8 +79,8 @@
 #define HUD_LEVEL_NUMBER_SIZE_Y HUD_SCORE_NUMBER_SIZE_Y
 #define HUD_LEVEL_NUMBER_X (HUD_SCORE_BAR_OFFSET_X + HUD_SCORE_BAR_SIZE_X - HUD_LEVEL_NUMBER_SIZE_X)
 
-#define BULLET_OFFSET_Y_SHELL 0
-#define BULLET_OFFSET_Y_BULLET 6
+// #define BULLET_OFFSET_Y_SHELL 0
+// #define BULLET_OFFSET_Y_BULLET 6
 
 #define SFX_CHANNEL_SHOOT 0
 #define SFX_PRIORITY_SHOOT 0
@@ -103,13 +103,14 @@
 #define BG_TILE_COUNT 8
 #define SPRITE_CHANNEL_CURSOR 4
 
-#define COLOR_HURT 23
-#define COLOR_LEVEL 27
-#define COLOR_HUD_BG 28
-#define COLOR_BAR_BG 24
-#define COLOR_HUD_HP 10
-#define COLOR_HUD_SCORE 25
-#define COLOR_HUD_LABEL 27
+#define COLOR_FRAME_HURT 23
+#define COLOR_FRAME_LEVEL 27
+#define COLOR_HUD_BG 13
+#define COLOR_HUD_BAR_BG 3
+#define COLOR_HUD_BAR_HP 8
+#define COLOR_HUD_BAR_SCORE 8
+#define COLOR_HUD_LABEL 8
+#define COLOR_HUD_DIGITS 7
 
 #define COLLISION_SIZE_X 8
 #define COLLISION_SIZE_Y 8
@@ -335,6 +336,7 @@ static tBitMap *s_pHudLevelUp;
 static tSprite *s_pSpriteCursor;
 static volatile ULONG s_ulFrameCount;
 static ULONG s_ulFrameWaitCount;
+static UBYTE s_ubHudBulletColorOffset;
 
 static tBitMap *s_pPlayerFrames[DIRECTION_COUNT];
 static tBitMap *s_pPlayerMasks[DIRECTION_COUNT];
@@ -929,10 +931,37 @@ static void cameraCenterAtOptimized(
 }
 
 static void hudDecorateRect(UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight) {
-	blitRect(s_pBufferHud->pBack, uwX - 2, uwY + 1, 1, uwHeight - 2, COLOR_BAR_BG);
-	blitRect(s_pBufferHud->pBack, uwX - 1, uwY, 1, uwHeight, COLOR_BAR_BG);
-	blitRect(s_pBufferHud->pBack, uwX + uwWidth, uwY, 1, uwHeight, COLOR_BAR_BG);
-	blitRect(s_pBufferHud->pBack, uwX + uwWidth + 1, uwY + 1, 1, uwHeight - 2, COLOR_BAR_BG);
+	blitRect(s_pBufferHud->pBack, uwX - 2, uwY + 1, 1, uwHeight - 2, COLOR_HUD_BAR_BG);
+	blitRect(s_pBufferHud->pBack, uwX - 1, uwY, 1, uwHeight, COLOR_HUD_BAR_BG);
+	blitRect(s_pBufferHud->pBack, uwX + uwWidth, uwY, 1, uwHeight, COLOR_HUD_BAR_BG);
+	blitRect(s_pBufferHud->pBack, uwX + uwWidth + 1, uwY + 1, 1, uwHeight - 2, COLOR_HUD_BAR_BG);
+}
+
+static void hudUpdateBulletColors(void) {
+	switch(s_sPlayer.sPlayer.eWeaponKind) {
+		case WEAPON_KIND_SAWOFF:
+		case WEAPON_KIND_SHOTGUN:
+			copSetMoveVal(&s_pView->pCopList->pBackBfr->pList[s_ubHudBulletColorOffset + 0].sMove, s_pVpMain->pPalette[23]);
+			copSetMoveVal(&s_pView->pCopList->pBackBfr->pList[s_ubHudBulletColorOffset + 1].sMove, s_pVpMain->pPalette[22]);
+			copSetMoveVal(&s_pView->pCopList->pBackBfr->pList[s_ubHudBulletColorOffset + 2].sMove, s_pVpMain->pPalette[21]);
+			copSetMoveVal(&s_pView->pCopList->pBackBfr->pList[s_ubHudBulletColorOffset + 3].sMove, s_pVpMain->pPalette[25]);
+
+			copSetMoveVal(&s_pView->pCopList->pFrontBfr->pList[s_ubHudBulletColorOffset + 0].sMove, s_pVpMain->pPalette[23]);
+			copSetMoveVal(&s_pView->pCopList->pFrontBfr->pList[s_ubHudBulletColorOffset + 1].sMove, s_pVpMain->pPalette[22]);
+			copSetMoveVal(&s_pView->pCopList->pFrontBfr->pList[s_ubHudBulletColorOffset + 2].sMove, s_pVpMain->pPalette[21]);
+			copSetMoveVal(&s_pView->pCopList->pFrontBfr->pList[s_ubHudBulletColorOffset + 3].sMove, s_pVpMain->pPalette[25]);
+			break;
+		default:
+			copSetMoveVal(&s_pView->pCopList->pBackBfr->pList[s_ubHudBulletColorOffset + 0].sMove, s_pVpMain->pPalette[20]);
+			copSetMoveVal(&s_pView->pCopList->pBackBfr->pList[s_ubHudBulletColorOffset + 1].sMove, s_pVpMain->pPalette[19]);
+			copSetMoveVal(&s_pView->pCopList->pBackBfr->pList[s_ubHudBulletColorOffset + 2].sMove, s_pVpMain->pPalette[18]);
+			copSetMoveVal(&s_pView->pCopList->pBackBfr->pList[s_ubHudBulletColorOffset + 3].sMove, s_pVpMain->pPalette[17]);
+
+			copSetMoveVal(&s_pView->pCopList->pFrontBfr->pList[s_ubHudBulletColorOffset + 0].sMove, s_pVpMain->pPalette[20]);
+			copSetMoveVal(&s_pView->pCopList->pFrontBfr->pList[s_ubHudBulletColorOffset + 1].sMove, s_pVpMain->pPalette[19]);
+			copSetMoveVal(&s_pView->pCopList->pFrontBfr->pList[s_ubHudBulletColorOffset + 2].sMove, s_pVpMain->pPalette[18]);
+			copSetMoveVal(&s_pView->pCopList->pFrontBfr->pList[s_ubHudBulletColorOffset + 3].sMove, s_pVpMain->pPalette[17]);
+	}
 }
 
 static void hudProcess(void) {
@@ -966,10 +995,10 @@ static void hudProcess(void) {
 			UWORD uwCurrentHealth = s_sPlayer.wHealth;
 			if(s_uwHudHealth != uwCurrentHealth) {
 				if(uwCurrentHealth > s_uwHudHealth) {
-					blitRect(s_pBufferHud->pBack, HUD_HEALTH_BAR_OFFSET_X + s_uwHudHealth, HUD_HEALTH_BAR_OFFSET_Y, uwCurrentHealth - s_uwHudHealth, HUD_HEALTH_BAR_SIZE_Y, COLOR_HUD_HP);
+					blitRect(s_pBufferHud->pBack, HUD_HEALTH_BAR_OFFSET_X + s_uwHudHealth, HUD_HEALTH_BAR_OFFSET_Y, uwCurrentHealth - s_uwHudHealth, HUD_HEALTH_BAR_SIZE_Y, COLOR_HUD_BAR_HP);
 				}
 				else {
-					blitRect(s_pBufferHud->pBack, HUD_HEALTH_BAR_OFFSET_X + uwCurrentHealth, HUD_HEALTH_BAR_OFFSET_Y, s_uwHudHealth - uwCurrentHealth, HUD_HEALTH_BAR_SIZE_Y, COLOR_BAR_BG);
+					blitRect(s_pBufferHud->pBack, HUD_HEALTH_BAR_OFFSET_X + uwCurrentHealth, HUD_HEALTH_BAR_OFFSET_Y, s_uwHudHealth - uwCurrentHealth, HUD_HEALTH_BAR_SIZE_Y, COLOR_HUD_BAR_BG);
 				}
 				s_uwHudHealth = uwCurrentHealth;
 				break;
@@ -995,17 +1024,8 @@ static void hudProcess(void) {
 				else if(s_ubHudAmmoCount < s_sPlayer.sPlayer.ubAmmo) {
 					UBYTE ubDelta = s_sPlayer.sPlayer.ubAmmo - s_ubHudAmmoCount;
 					UBYTE ubDrawBulletCount = MIN(s_pHudBulletDefs[s_ubHudAmmoCount].ubMaxDrawDelta, ubDelta);
-					UWORD uwSrcY;
-					switch(s_sPlayer.sPlayer.eWeaponKind) {
-						case WEAPON_KIND_SAWOFF:
-						case WEAPON_KIND_SHOTGUN:
-							uwSrcY = BULLET_OFFSET_Y_SHELL;
-							break;
-						default:
-							uwSrcY = BULLET_OFFSET_Y_BULLET;
-					}
 					blitCopyMask(
-						s_pBulletFrames, 0, uwSrcY, s_pBufferHud->pBack,
+						s_pBulletFrames, 0, 0, s_pBufferHud->pBack,
 						s_pHudBulletDefs[s_ubHudAmmoCount].sOffs.ubX,
 						s_pHudBulletDefs[s_ubHudAmmoCount].sOffs.ubY,
 						ubDrawBulletCount * (HUD_AMMO_BULLET_SIZE_X + 1), HUD_AMMO_BULLET_SIZE_Y, s_pBulletMasks->Planes[0]
@@ -1043,11 +1063,11 @@ static void hudProcess(void) {
 			blitRect(
 				s_pBufferHud->pBack,
 				HUD_SCORE_NUMBER_X, HUD_SCORE_NUMBER_Y,
-				HUD_SCORE_NUMBER_SIZE_X, HUD_SCORE_NUMBER_SIZE_Y, COLOR_BAR_BG
+				HUD_SCORE_NUMBER_SIZE_X, HUD_SCORE_NUMBER_SIZE_Y, COLOR_HUD_BAR_BG
 			);
 			fontDrawTextBitMap(
 				s_pBufferHud->pBack, g_pLineBuffer, HUD_SCORE_NUMBER_X, HUD_SCORE_NUMBER_Y,
-				COLOR_HUD_SCORE, FONT_COOKIE
+				COLOR_HUD_DIGITS, FONT_COOKIE
 			);
 			break;
 		case HUD_STATE_DRAW_EXP_BAR:
@@ -1057,14 +1077,14 @@ static void hudProcess(void) {
 				blitRect(
 					s_pBufferHud->pBack,
 					HUD_SCORE_BAR_OFFSET_X + s_ubHudBarPixel, HUD_SCORE_BAR_OFFSET_Y,
-					ubNewHudBarPixel - s_ubHudBarPixel, HUD_SCORE_BAR_SIZE_Y, COLOR_HUD_SCORE
+					ubNewHudBarPixel - s_ubHudBarPixel, HUD_SCORE_BAR_SIZE_Y, COLOR_HUD_BAR_SCORE
 				);
 			}
 			else if(ubNewHudBarPixel < s_ubHudBarPixel) {
 				blitRect(
 					s_pBufferHud->pBack,
 					HUD_SCORE_BAR_OFFSET_X + ubNewHudBarPixel, HUD_SCORE_BAR_OFFSET_Y,
-					s_ubHudBarPixel - ubNewHudBarPixel, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
+					s_ubHudBarPixel - ubNewHudBarPixel, HUD_SCORE_BAR_SIZE_Y, COLOR_HUD_BAR_BG
 				);
 			}
 			s_ubHudBarPixel = ubNewHudBarPixel;
@@ -1086,11 +1106,11 @@ static void hudProcess(void) {
 			blitRect(
 				s_pBufferHud->pBack,
 				HUD_LEVEL_NUMBER_X, HUD_LEVEL_NUMBER_Y,
-				HUD_LEVEL_NUMBER_SIZE_X, HUD_LEVEL_NUMBER_SIZE_Y, COLOR_BAR_BG
+				HUD_LEVEL_NUMBER_SIZE_X, HUD_LEVEL_NUMBER_SIZE_Y, COLOR_HUD_BAR_BG
 			);
 			fontDrawTextBitMap(
 				s_pBufferHud->pBack, g_pLineBuffer, HUD_LEVEL_NUMBER_X, HUD_LEVEL_NUMBER_Y,
-				COLOR_HUD_SCORE, FONT_COOKIE
+				COLOR_HUD_DIGITS, FONT_COOKIE
 			);
 		}
 	}
@@ -1108,12 +1128,12 @@ static void hudReset(void) {
 	blitRect(
 		s_pBufferHud->pBack,
 		HUD_SCORE_BAR_OFFSET_X, HUD_SCORE_BAR_OFFSET_Y,
-		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_BAR_BG
+		HUD_SCORE_BAR_SIZE_X, HUD_SCORE_BAR_SIZE_Y, COLOR_HUD_BAR_BG
 	);
 	blitRect(
 		s_pBufferHud->pBack,
 		HUD_HEALTH_BAR_OFFSET_X, HUD_HEALTH_BAR_OFFSET_Y,
-		HUD_HEALTH_BAR_SIZE_X, HUD_HEALTH_BAR_SIZE_Y, COLOR_BAR_BG
+		HUD_HEALTH_BAR_SIZE_X, HUD_HEALTH_BAR_SIZE_Y, COLOR_HUD_BAR_BG
 	);
 	do {
 		hudProcess();
@@ -1144,6 +1164,7 @@ static void playerSetWeapon(tWeaponKind eWeaponKind) {
 
 	s_ubHudAmmoCount = HUD_AMMO_COUNT_FORCE_REDRAW;
 	gameSetCursor(CURSOR_KIND_FULL);
+	hudUpdateBulletColors();
 	audioMixerPlaySfx(g_pSfxReloadFinal, SFX_CHANNEL_RELOAD, SFX_PRIORITY_RELOAD, 0);
 }
 
@@ -2087,32 +2108,92 @@ static void gameGsCreate(void) {
 	s_pHudLevelUp = bitmapCreateFromPath("data/level_up.bm", 0);
 	assetsGameCreate();
 
-	ULONG ulRawCopSize = 16 + simpleBufferGetRawCopperlistInstructionCount(GAME_BPP) * 2;
+	ULONG ulRawCopSize = (
+		16 + simpleBufferGetRawCopperlistInstructionCount(GAME_BPP) +
+		simpleBufferGetRawCopperlistInstructionCount(GAME_HUD_BPP) +
+		1 + GAME_HUD_PALETTE_COLORS + // HUD: move bpp + initial color moves
+		2 * (1 + 1) * 2 + // 2x Bars: wait + color move; + 2x their shadows
+		2 + GAME_HUD_PALETTE_COLORS // MAIN: wait + move bpp + final color moves
+	);
 	s_pView = viewCreate(0,
 		TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_RAW,
 		TAG_VIEW_COPLIST_RAW_COUNT, ulRawCopSize,
 	TAG_END);
 
 	s_pVpHud = vPortCreate(0,
-		TAG_VPORT_BPP, GAME_BPP,
+		TAG_VPORT_BPP, GAME_HUD_BPP,
 		TAG_VPORT_HEIGHT, GAME_HUD_VPORT_SIZE_Y,
 		TAG_VPORT_VIEW, s_pView,
 	TAG_END);
+	paletteLoadFromPath("data/hud.plt", s_pVpHud->pPalette, 1 << GAME_HUD_BPP);
+	s_pVpHud->pPalette[8] = 0xE72;
 
 	ULONG ulCopOffset = 16;
+
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_HUD_BPP << 12));
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_HUD_BPP << 12));
+	++ulCopOffset;
+	s_ubHudBulletColorOffset = ulCopOffset + 8;
+	for(UBYTE i = 0; i < GAME_HUD_PALETTE_COLORS; ++i) {
+		copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[i + 1], s_pVpHud->pPalette[i + 1]);
+		copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[i + 1], s_pVpHud->pPalette[i + 1]);
+		++ulCopOffset;
+	}
+
 	s_pBufferHud = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
 		TAG_SIMPLEBUFFER_USE_X_SCROLLING, 0,
 		TAG_SIMPLEBUFFER_VPORT, s_pVpHud,
 		TAG_SIMPLEBUFFER_COPLIST_OFFSET, ulCopOffset,
 	TAG_END);
+	ulCopOffset += simpleBufferGetRawCopperlistInstructionCount(GAME_HUD_BPP);
+
+	// Exp bar
+	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_SCORE_BAR_OFFSET_Y);
+	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_SCORE_BAR_OFFSET_Y);
+	++ulCopOffset;
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0xE92);
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0xE92);
+	++ulCopOffset;
+	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_SCORE_BAR_OFFSET_Y + HUD_SCORE_BAR_SIZE_Y - 1);
+	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_SCORE_BAR_OFFSET_Y + HUD_SCORE_BAR_SIZE_Y - 1);
+	++ulCopOffset;
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0xE72);
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0xE72);
+	++ulCopOffset;
+
+	// Health bar
+	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_HEALTH_BAR_OFFSET_Y);
+	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_HEALTH_BAR_OFFSET_Y);
+	++ulCopOffset;
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0x8C9);
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0x8C9);
+	++ulCopOffset;
+	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_HEALTH_BAR_OFFSET_Y + HUD_HEALTH_BAR_SIZE_Y - 1);
+	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_HEALTH_BAR_OFFSET_Y + HUD_HEALTH_BAR_SIZE_Y - 1);
+	++ulCopOffset;
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0x6A7);
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0x6A7);
+	++ulCopOffset;
 
 	s_pVpMain = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
 		TAG_VPORT_BPP, GAME_BPP,
 	TAG_END);
+	paletteLoadFromPath("data/game.plt", s_pVpMain->pPalette, 1 << GAME_BPP);
 
-	ulCopOffset += simpleBufferGetRawCopperlistInstructionCount(GAME_BPP);
+	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0xAE, s_pView->ubPosY + GAME_HUD_VPORT_SIZE_Y - 1);
+	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0xAE, s_pView->ubPosY + GAME_HUD_VPORT_SIZE_Y - 1);
+	++ulCopOffset;
+	for(UBYTE i = 0; i < GAME_HUD_PALETTE_COLORS; ++i) {
+		copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[i + 1], s_pVpMain->pPalette[i + 1]);
+		copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[i + 1], s_pVpMain->pPalette[i + 1]);
+		++ulCopOffset;
+	}
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_BPP << 12));
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_BPP << 12));
+	++ulCopOffset;
+
 	g_pGameBufferMain = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_INTERLEAVED,
 		TAG_SIMPLEBUFFER_BOUND_WIDTH, MAP_TILES_X * MAP_TILE_SIZE,
@@ -2134,8 +2215,6 @@ static void gameGsCreate(void) {
 		g_pGameBufferMain->pBack->Rows, GAME_BPP, BMF_INTERLEAVED
 	);
 	s_pPristinePlanes = g_pGamePristineBuffer->Planes[0];
-
-	paletteLoadFromPath("data/game.plt", s_pVpHud->pPalette, 1 << GAME_BPP);
 
 	randInit(&g_sRand, 2184, 1911);
 
@@ -2162,8 +2241,8 @@ static void gameGsCreate(void) {
 
 	s_pPlayerBlinkBitmaps[BLINK_KIND_HURT] = bitmapCreate(PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, GAME_BPP, BMF_INTERLEAVED);
 	s_pPlayerBlinkBitmaps[BLINK_KIND_LEVEL] = bitmapCreate(PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, GAME_BPP, BMF_INTERLEAVED);
-	blitRect(s_pPlayerBlinkBitmaps[BLINK_KIND_HURT], 0, 0, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, COLOR_HURT);
-	blitRect(s_pPlayerBlinkBitmaps[BLINK_KIND_LEVEL], 0, 0, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, COLOR_LEVEL);
+	blitRect(s_pPlayerBlinkBitmaps[BLINK_KIND_HURT], 0, 0, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, COLOR_FRAME_HURT);
+	blitRect(s_pPlayerBlinkBitmaps[BLINK_KIND_LEVEL], 0, 0, PLAYER_BOB_SIZE_X, PLAYER_BOB_SIZE_Y, COLOR_FRAME_LEVEL);
 	s_pPlayerBlinkData[BLINK_KIND_HURT] = s_pPlayerBlinkBitmaps[BLINK_KIND_HURT]->Planes[0];
 	s_pPlayerBlinkData[BLINK_KIND_LEVEL] = s_pPlayerBlinkBitmaps[BLINK_KIND_LEVEL]->Planes[0];
 
@@ -2334,9 +2413,15 @@ static void gameGsCreate(void) {
 	gameStart();
 
 	viewLoad(s_pView);
+	for(UBYTE i = 0; i < 32; ++i) {
+		g_pCustom->color[i] = s_pVpMain->pPalette[i];
+	}
+
 	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
 	viewProcessManagers(s_pView);
 	copSwapBuffers();
+
+	copDumpBfr(s_pView->pCopList->pFrontBfr);
 
 	spriteProcessChannel(SPRITE_CHANNEL_CURSOR);
 	viewProcessManagers(s_pView);
