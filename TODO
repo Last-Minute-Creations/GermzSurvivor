@@ -101,7 +101,7 @@ Final version stuff:
 		✔ increase the exp for fast enemies @done(26-04-13)
 	Perk icons:
 		✔ Add support for icons @done(25-04-23)
-		☐ Add icons
+		✔ Add icons @done(26-04-15)
 	☐ Make bullets more visible (yellow doesn't help much)
 	☐ Fix health bar not emptying completely on death
 	☐ Rework pickup spawn chances
@@ -126,11 +126,11 @@ Optimizations:
 	✔ Precalculate weapon attack pattern randomization @done(25-03-22)
 	✘ Skip zombie draw when offscreen? @cancelled(25-03-28)
 	✘ Make playerCalculateMaxAmmo() calculate the modified reload time table @cancelled(26-04-13)
+	✔ Make HUD 3/4bpp @done(26-04-15)
 	☐ Simplify projectile collision - remove check with edges in favor of dummy tiles
 	☐ Process two bullet undraws in one bob undraw and do something else in remaining calls?
 	☐ Low-height font for HUD score draw
 	☐ Remove rand() fns again
-	☐ Make HUD 3/4bpp
 
 Perks to implement first - cyclic:
 	✔ Grim deal - 20% more exp, instant death @done(25-04-05)
@@ -175,9 +175,9 @@ Misc audio:
 	✔ Hitting the meat with bullet @done(25-03-23)
 	✔ Zombie bite @done(25-03-23)
 	✘ UI selection @cancelled(25-04-08)
-	☐ Death
+	✔ Death @done(26-04-15)
+	✔ Explosion @done(26-04-15)
 	☐ Level up
-	☐ Explosion
 
 Music:
 	✔ Intro @done(25-04-08)
