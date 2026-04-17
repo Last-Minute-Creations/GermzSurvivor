@@ -1329,7 +1329,7 @@ static inline void enemyProcess(tEntity *pEnemy) {
 						}
 						s_sPlayer.wHealth -= ubDamage;
 					}
-					if(s_isRetaliation) {
+					if(s_isRetaliation && s_sPlayer.wHealth > 0) {
 						pEnemy->wHealth -= PLAYER_RETALIATION_DAMAGE;
 					}
 				}
