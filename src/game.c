@@ -2150,7 +2150,7 @@ static void gameGsCreate(void) {
 	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_HUD_BPP << 12));
 	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->bplcon0, BV(9) | (GAME_HUD_BPP << 12));
 	++ulCopOffset;
-	s_ubHudBulletColorOffset = ulCopOffset + 8;
+	s_ubHudBulletColorOffset = ulCopOffset + 9;
 	for(UBYTE i = 0; i < GAME_HUD_PALETTE_COLORS; ++i) {
 		copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[i + 1], s_pVpHud->pPalette[i + 1]);
 		copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[i + 1], s_pVpHud->pPalette[i + 1]);
@@ -2169,28 +2169,28 @@ static void gameGsCreate(void) {
 	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_SCORE_BAR_OFFSET_Y);
 	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_SCORE_BAR_OFFSET_Y);
 	++ulCopOffset;
-	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0xE92);
-	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0xE92);
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[COLOR_HUD_BAR_SCORE], 0xE92);
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[COLOR_HUD_BAR_SCORE], 0xE92);
 	++ulCopOffset;
 	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_SCORE_BAR_OFFSET_Y + HUD_SCORE_BAR_SIZE_Y - 1);
 	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_SCORE_BAR_OFFSET_Y + HUD_SCORE_BAR_SIZE_Y - 1);
 	++ulCopOffset;
-	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0xE72);
-	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0xE72);
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[COLOR_HUD_BAR_SCORE], 0xE72);
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[COLOR_HUD_BAR_SCORE], 0xE72);
 	++ulCopOffset;
 
 	// Health bar
 	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_HEALTH_BAR_OFFSET_Y);
 	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_HEALTH_BAR_OFFSET_Y);
 	++ulCopOffset;
-	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0x8C9);
-	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0x8C9);
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[COLOR_HUD_BAR_HP], 0x8C9);
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[COLOR_HUD_BAR_HP], 0x8C9);
 	++ulCopOffset;
 	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_HEALTH_BAR_OFFSET_Y + HUD_HEALTH_BAR_SIZE_Y - 1);
 	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0, s_pView->ubPosY + HUD_HEALTH_BAR_OFFSET_Y + HUD_HEALTH_BAR_SIZE_Y - 1);
 	++ulCopOffset;
-	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0x6A7);
-	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[8], 0x6A7);
+	copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[COLOR_HUD_BAR_HP], 0x6A7);
+	copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[COLOR_HUD_BAR_HP], 0x6A7);
 	++ulCopOffset;
 
 	s_pVpMain = vPortCreate(0,
