@@ -6,11 +6,11 @@ System requirements:
 
 - OCS chipset or newer
 - 1MB of CHIP memory
-- 1MB of any other memory (FAST mem reccomended)
+- 0.5MB of any other memory (FAST mem reccomended)
 
 Controls:
 
-- movement: <kbd>W</kbd> <kbd>S</kbd> <kbd>A</kbd> <kbd>D</kbd> or <kbd>Up</kbd> <kbd>Down</kbd> <kbd>Left</kbd> <kbd>Right</kbd>,
+- movement: <kbd>W</kbd> <kbd>S</kbd> <kbd>A</kbd> <kbd>D</kbd>, alternatively <kbd>Up</kbd> <kbd>Down</kbd> <kbd>Left</kbd> <kbd>Right</kbd>,
 - aiming: mouse,
 - attack: <kbd>LMB</kbd>,
 - reload: <kbd>R</kbd>,
@@ -18,7 +18,7 @@ Controls:
 
 Credits:
 
-- Audio: [Beorning](https://github.com/Beorning)
+- Sfx: [Beorning](https://github.com/Beorning)
 - Music: [Luc3k](https://github.com/Luc3kLMC)
 - Code: [KaiN](https://github.com/tehKaiN)
 - Graphics: [Softiron](https://github.com/Softiron1)

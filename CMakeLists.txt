@@ -895,3 +895,16 @@ add_custom_target(generateZip COMMAND
 	"${DATA_DIR}"
 	COMMENT "Generating ZIP file ${GAME_PACKAGE_NAME}.zip"
 )
+
+# Generating ADF
+set(ADF_DIR "${CMAKE_CURRENT_BINARY_DIR}/adf")
+add_custom_target(generateAdf
+	COMMAND ${CMAKE_COMMAND} -E make_directory "${ADF_DIR}/s"
+	COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${GAME_OUTPUT_EXECUTABLE}" "${ADF_DIR}"
+	# COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${GAME_OUTPUT_EXECUTABLE}.info" "${ADF_DIR}"
+	COMMAND ${CMAKE_COMMAND} -E copy_directory "${DATA_DIR}" "${ADF_DIR}/data"
+	COMMAND ${CMAKE_COMMAND} -E echo "${GAME_OUTPUT_EXECUTABLE}" > "${ADF_DIR}/s/startup-sequence"
+	COMMAND exe2adf -l ${CMAKE_PROJECT_NAME} -a "${GAME_PACKAGE_NAME}.adf" -d ${ADF_DIR}
+	COMMAND ${CMAKE_COMMAND} -E rm -rf "${ADF_DIR}"
+	COMMENT "Generating ADF file ${GAME_PACKAGE_NAME}.adf"
+)
