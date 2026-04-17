@@ -86,7 +86,7 @@ static void menuHowtoGsLoop(void);
 static tState s_sStateMenuHowto = {.cbCreate = menuHowtoGsCreate, .cbLoop = menuHowtoGsLoop};
 
 static const char * const s_pHowtoLines[] = {
-	"Move with WSAD, aim with mouse, shoot with Left Mouse Button",
+	"Move with WSAD or arrows, aim with mouse, shoot with Left Mouse Button",
 	"",
 	"Killing enemies gives you exp, filling exp bar gives you levels",
 	"",
