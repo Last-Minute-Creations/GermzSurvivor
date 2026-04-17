@@ -102,15 +102,15 @@ Final version stuff:
 	Perk icons:
 		✔ Add support for icons @done(25-04-23)
 		✔ Add icons @done(26-04-15)
-	☐ Make bullets more visible (yellow doesn't help much)
-	☐ Fix health bar not emptying completely on death
+	✔ Make bullets more visible (yellow doesn't help much) @done(26-04-17)
+	✔ Fix health bar not emptying completely on death @done(26-04-17)
 	☐ Rework pickup spawn chances
 
 Nice to have:
 	✘ Add sound variations @cancelled(25-04-19)
-	☐ Add zombie anti-clumping
-	☐ Make the zombies go away after player death so that death anim is visible
-	☐ Make bullets pass through enemies, reduce bullet life in the process
+	✘ Add zombie anti-clumping @cancelled(26-04-17)
+	✘ Make the zombies go away after player death so that death anim is visible @cancelled(26-04-17)
+	✘ Make bullets pass through enemies, reduce bullet life in the process @cancelled(26-04-17)
 	Perks:
 		✔ Add perk selection @done(25-04-05)
 		✔ Implement at least 4 perks @done(25-04-05)
@@ -118,7 +118,7 @@ Nice to have:
 	✔ Slomo bomb pickup @done(25-04-19)
 	✘ Unlimited ammo pickup @cancelled(25-04-27)
 	✘ Fast move pickup @cancelled(25-04-27)
-	☐ Stronger bullets pickup: reload + add strength to bullets for 1 clip
+	✘ Stronger bullets pickup: reload + add strength to bullets for 1 clip @cancelled(26-04-17)
 	✔ Add pause screen - resume, exit to main menu @done(25-04-05)
 	✔ Add intro @done(25-04-04)
 
