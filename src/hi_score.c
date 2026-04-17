@@ -89,14 +89,14 @@ static void hiScoreDrawPosition(UBYTE ubPos) {
 	char szBfr[SCORE_NAME_LENGTH + 5];
 	snprintf(szBfr, sizeof(szBfr), "%hhu. %s", ubPos + 1, s_pScores[ubPos].szName);
 	commDrawText(
-		16, uwY, szBfr, FONT_LAZY | FONT_COOKIE | FONT_SHADOW, ubColor
+		16, uwY, szBfr, FONT_COOKIE | FONT_SHADOW, ubColor
 	);
 
 	// Score count
 	stringDecimalFromULong(s_pScores[ubPos].ulScore, szBfr);
 	commDrawText(
 		COMM_DISPLAY_WIDTH - 16, uwY, szBfr,
-		FONT_LAZY | FONT_COOKIE | FONT_RIGHT | FONT_SHADOW, ubColor
+		FONT_COOKIE | FONT_RIGHT | FONT_SHADOW, ubColor
 	);
 }
 
@@ -114,14 +114,14 @@ void hiScoreDrawAll(void) {
 	if(!stringIsEmpty(s_szResultMsg)) {
 		commDrawText(
 			COMM_DISPLAY_WIDTH / 2, COMM_DISPLAY_HEIGHT - g_pFont->uwHeight, s_szResultMsg,
-			FONT_LAZY | FONT_COOKIE | FONT_HCENTER | FONT_BOTTOM,
+			FONT_COOKIE | FONT_HCENTER | FONT_BOTTOM,
 			COMM_DISPLAY_COLOR_TEXT
 		);
 	}
 	const char *szMsg = hiScoreIsEnteringNew() ? "Enter your name" : "Click to continue";
 	commDrawText(
 		COMM_DISPLAY_WIDTH / 2, COMM_DISPLAY_HEIGHT, szMsg,
-		FONT_LAZY | FONT_COOKIE | FONT_HCENTER | FONT_BOTTOM,
+		FONT_COOKIE | FONT_HCENTER | FONT_BOTTOM,
 		COMM_DISPLAY_COLOR_TEXT_HOVER
 	);
 }
