@@ -182,13 +182,23 @@ extractBitmaps(TARGET ${GAME_EXECUTABLE} SOURCE ${RES_DIR}/tiles.png
 	${GEN_DIR}/tiles/0.png   0   0 32 32
 	${GEN_DIR}/tiles/1.png   0  32 32 32
 	${GEN_DIR}/tiles/2.png   0  64 32 32
-	# Barrel
-	${GEN_DIR}/tiles/3.png  32   0 32 32
-	${GEN_DIR}/tiles/4.png  32  32 32 32
-	${GEN_DIR}/tiles/5.png  32  64 32 32
-	# Skeleton
-	${GEN_DIR}/tiles/6.png  32  96 32 32
-	${GEN_DIR}/tiles/7.png  32 128 32 32
+	${GEN_DIR}/tiles/3.png   0  96 32 32
+	# Barrel / sludge
+	${GEN_DIR}/tiles/4.png  32   0 32 32
+	${GEN_DIR}/tiles/5.png  32  32 32 32
+	${GEN_DIR}/tiles/6.png  32  64 32 32
+	${GEN_DIR}/tiles/7.png  32  96 32 32
+	${GEN_DIR}/tiles/8.png  32 128 32 32
+	${GEN_DIR}/tiles/9.png  32 160 32 32
+	${GEN_DIR}/tiles/10.png 32 192 32 32
+	# Skeleton / debris
+	${GEN_DIR}/tiles/11.png  0 128 32 32
+	${GEN_DIR}/tiles/12.png  0 160 32 32
+	${GEN_DIR}/tiles/13.png  0 192 32 32
+	${GEN_DIR}/tiles/14.png  0 224 32 32
+	# Dead dweller
+	${GEN_DIR}/tiles/15.png 32 224 32 32
+
 
 	# # Simple
 	# ${GEN_DIR}/tiles/0.png   0  96 32 32

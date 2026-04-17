@@ -104,7 +104,6 @@
 #define BG_TILE_SIZE (1 << BG_TILE_SHIFT)
 #define BG_TILES_X (MAP_TILES_X * MAP_TILE_SIZE / BG_TILE_SIZE)
 #define BG_TILES_Y (MAP_TILES_Y * MAP_TILE_SIZE / BG_TILE_SIZE)
-#define BG_TILE_COUNT 8
 #define SPRITE_CHANNEL_CURSOR 4
 
 #define COLOR_FRAME_HURT 23
@@ -1622,19 +1621,23 @@ void gameApplyPerk(tPerk ePerk) {
 }
 
 void gameStart(void) {
+	UBYTE wasDweller = 0;
 	for(UBYTE ubX = 0; ubX < BG_TILES_X; ++ubX) {
 		for(UBYTE ubY = 0; ubY < BG_TILES_Y; ++ubY) {
 			UWORD uwRand = randUwMinMax(&g_sRand, 0, 99);
-			if(uwRand < 5) {
-				gameSetTile(randUwMinMax(&g_sRand, 3, 5), ubX, ubY);
+			if(uwRand == 0 && !wasDweller) {
+				wasDweller = 1;
+				gameSetTile(15, ubX, ubY);
+			}
+			else if(uwRand < 5) {
+				gameSetTile(randUwMinMax(&g_sRand, 4, 10), ubX, ubY);
 			}
 			else if(uwRand < 15) {
-				gameSetTile(randUwMinMax(&g_sRand, 6, 7), ubX, ubY);
+				gameSetTile(randUwMinMax(&g_sRand, 11, 14), ubX, ubY);
 			}
 			else {
-				gameSetTile(randUwMinMax(&g_sRand, 0, 2), ubX, ubY);
+				gameSetTile(randUwMinMax(&g_sRand, 0, 3), ubX, ubY);
 			}
-			// gameSetTile(randUwMinMax(&g_sRand, 0, 4), ubX, ubY);
 		}
 	}
 
