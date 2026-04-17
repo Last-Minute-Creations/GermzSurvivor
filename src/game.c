@@ -844,6 +844,7 @@ static inline UBYTE playerTryMoveBy(tEntity *pPlayer, LONG lDeltaX, LONG lDeltaY
 __attribute__((always_inline))
 static inline void projectileUndrawNext(void) {
 	if(s_pCurrentProjectile == &s_pProjectiles[PROJECTILE_COUNT]) {
+		g_pCustom->dmacon = DMAF_SETCLR | DMAF_BLITHOG;
 		return;
 	}
 
@@ -2466,6 +2467,8 @@ static void gameGsLoop(void) {
 	s_pBackPlanes = g_pGameBufferMain->pBack->Planes[0];
 	s_pCurrentProjectile = &s_pProjectiles[0];
 	bobBegin(g_pGameBufferMain->pBack);
+	g_pCustom->dmacon = DMAF_BLITHOG;
+
 	while(s_pCurrentProjectile != &s_pProjectiles[PROJECTILE_COUNT]) {
 		projectileUndrawNext();
 	}
