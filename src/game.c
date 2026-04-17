@@ -108,12 +108,12 @@
 
 #define COLOR_FRAME_HURT 23
 #define COLOR_FRAME_LEVEL 27
-#define COLOR_HUD_BG 13
-#define COLOR_HUD_BAR_BG 3
-#define COLOR_HUD_BAR_HP 8
-#define COLOR_HUD_BAR_SCORE 8
-#define COLOR_HUD_LABEL 8
-#define COLOR_HUD_DIGITS 7
+#define COLOR_HUD_BG 1
+#define COLOR_HUD_BAR_BG 5
+#define COLOR_HUD_BAR_HP 9
+#define COLOR_HUD_BAR_SCORE 9
+#define COLOR_HUD_LABEL 9
+#define COLOR_HUD_DIGITS 3
 
 #define COLLISION_SIZE_X 8
 #define COLLISION_SIZE_Y 8
@@ -969,6 +969,8 @@ static void hudUpdateBulletColors(void) {
 }
 
 static void hudProcess(void) {
+	static char szScoreBuffer[sizeof("4294967295")];
+
 	switch(s_eHudState) {
 		case HUD_STATE_DRAW_LEVEL_UP:
 			++s_eHudState;
@@ -1052,16 +1054,16 @@ static void hudProcess(void) {
 			if(s_ulHudScore != s_ulScore) {
 				s_ulHudScore = s_ulScore;
 				++s_eHudState;
-				char szScore[sizeof("4294967295")];
-				stringDecimalFromULong(s_ulScore, szScore);
-				fontFillTextBitMap(g_pFontSmall, g_pLineBuffer, szScore);
-				break;
+				stringDecimalFromULong(s_ulScore, szScoreBuffer);
 			}
 			else {
 				s_eHudState = 0; // skip to beginning
-				break;
 			}
-			// fallthrough
+			break;
+		case HUD_STATE_PREPARE_EXP_POINTS_TBM:
+			++s_eHudState;
+			fontFillTextBitMap(g_pFontSmall, g_pLineBuffer, szScoreBuffer);
+			break;
 		case HUD_STATE_DRAW_EXP_POINTS:
 			++s_eHudState;
 			blitRect(
@@ -1071,7 +1073,7 @@ static void hudProcess(void) {
 			);
 			fontDrawTextBitMap(
 				s_pBufferHud->pBack, g_pLineBuffer, HUD_SCORE_NUMBER_X, HUD_SCORE_NUMBER_Y,
-				COLOR_HUD_DIGITS, FONT_COOKIE
+				COLOR_HUD_DIGITS & ~COLOR_HUD_BAR_BG, FONT_COOKIE | FONT_LAZY
 			);
 			break;
 		case HUD_STATE_DRAW_EXP_BAR:
@@ -1097,13 +1099,15 @@ static void hudProcess(void) {
 			if(s_ubHudLevel != s_ubScoreLevel) {
 				++s_eHudState;
 				s_ubHudLevel = s_ubScoreLevel;
-				char szScore[sizeof("255")];
-				stringDecimalFromULong(s_ubScoreLevel, szScore);
-				fontFillTextBitMap(g_pFontSmall, g_pLineBuffer, szScore);
+				stringDecimalFromULong(s_ubScoreLevel, szScoreBuffer);
 			}
 			else {
 				s_eHudState = 0; // skip to beginning
 			}
+			break;
+		case HUD_STATE_PREPARE_LEVEL_NUM_TBM:
+			++s_eHudState;
+			fontFillTextBitMap(g_pFontSmall, g_pLineBuffer, szScoreBuffer);
 			break;
 		case HUD_STATE_DRAW_LEVEL_NUM: {
 			s_eHudState = 0; // HUD_STATE_END
@@ -1114,7 +1118,7 @@ static void hudProcess(void) {
 			);
 			fontDrawTextBitMap(
 				s_pBufferHud->pBack, g_pLineBuffer, HUD_LEVEL_NUMBER_X, HUD_LEVEL_NUMBER_Y,
-				COLOR_HUD_DIGITS, FONT_COOKIE
+				COLOR_HUD_DIGITS & ~COLOR_HUD_BAR_BG, FONT_COOKIE | FONT_LAZY
 			);
 		}
 	}
