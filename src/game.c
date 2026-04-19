@@ -2204,9 +2204,12 @@ static void gameGsCreate(void) {
 	copSetWait(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sWait, 0xAE, s_pView->ubPosY + GAME_HUD_VPORT_SIZE_Y - 1);
 	copSetWait(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sWait, 0xAE, s_pView->ubPosY + GAME_HUD_VPORT_SIZE_Y - 1);
 	++ulCopOffset;
+	static const UBYTE s_pHudIndices[GAME_HUD_PALETTE_COLORS] = {
+		13, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, COLOR_HUD_BG
+	}; // make sure HUD BG is updated lastto prevent visual glitch
 	for(UBYTE i = 0; i < GAME_HUD_PALETTE_COLORS; ++i) {
-		copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[i + 1], s_pVpMain->pPalette[i + 1]);
-		copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[i + 1], s_pVpMain->pPalette[i + 1]);
+		copSetMove(&s_pView->pCopList->pFrontBfr->pList[ulCopOffset].sMove, &g_pCustom->color[s_pHudIndices[i]], s_pVpMain->pPalette[s_pHudIndices[i]]);
+		copSetMove(&s_pView->pCopList->pBackBfr->pList[ulCopOffset].sMove, &g_pCustom->color[s_pHudIndices[i]], s_pVpMain->pPalette[s_pHudIndices[i]]);
 		++ulCopOffset;
 	}
 
