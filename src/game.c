@@ -1695,6 +1695,8 @@ void gameStart(void) {
 	s_isFinalReloadSfxPlayed = 0;
 	s_ubReloadFinalLength = ptplayerSfxLengthInFrames(g_pSfxReloadFinal) / 2;
 
+	blitRect(s_pBufferHud->pBack, 0, 0, 320, GAME_HUD_VPORT_SIZE_Y, COLOR_HUD_BG);
+
 	fontDrawStr(
 		g_pFontSmall, s_pBufferHud->pBack,
 		HUD_SCORE_NUMBER_X - 14, HUD_SCORE_NUMBER_Y, "XP",
@@ -2224,8 +2226,6 @@ static void gameGsCreate(void) {
 		MAP_TILES_X * MAP_TILE_SIZE / 2,
 		MAP_TILES_Y * MAP_TILE_SIZE / 2
 	);
-
-	blitRect(s_pBufferHud->pBack, 0, 0, 320, GAME_HUD_VPORT_SIZE_Y, COLOR_HUD_BG);
 
 	g_pGamePristineBuffer = bitmapCreate(
 		bitmapGetByteWidth(g_pGameBufferMain->pBack) * 8,
